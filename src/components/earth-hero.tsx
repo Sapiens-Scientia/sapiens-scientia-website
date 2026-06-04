@@ -66,57 +66,35 @@ function latLonToSpherePoint(lat: number, lon: number, radius: number) {
 }
 
 function DataCenterMarker({
-  index,
   site,
 }: {
-  index: number;
   site: DataCenterSite;
 }) {
-  const pulseRef = useRef<THREE.Mesh>(null);
+  const markerRef = useRef<THREE.Mesh>(null);
   const surfacePoint = useMemo(() => latLonToSpherePoint(site.lat, site.lon, 1.105), [site.lat, site.lon]);
-  const normal = useMemo(() => surfacePoint.clone().normalize(), [surfacePoint]);
-  const beaconPosition = useMemo(() => normal.clone().multiplyScalar(1.17), [normal]);
-  const orientation = useMemo(
-    () => new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal),
-    [normal],
-  );
 
   useFrame(({ clock }) => {
-    if (!pulseRef.current) {
+    if (!markerRef.current) {
       return;
     }
 
-    const pulse = 1 + Math.sin(clock.getElapsedTime() * 2.8 + index * 0.65) * 0.22;
-    pulseRef.current.scale.setScalar(pulse);
+    const pulse = 1 + Math.sin(clock.getElapsedTime() * 3.2 + site.lon * 0.04) * 0.22;
+    markerRef.current.scale.setScalar(pulse);
   });
 
   return (
-    <group>
-      <mesh position={surfacePoint}>
-        <sphereGeometry args={[0.026, 18, 18]} />
-        <meshBasicMaterial color="#e7fbff" transparent opacity={0.96} />
-      </mesh>
-      <mesh ref={pulseRef} position={surfacePoint}>
-        <sphereGeometry args={[0.052, 18, 18]} />
-        <meshBasicMaterial color="#59d9ff" transparent opacity={0.22} depthWrite={false} />
-      </mesh>
-      <mesh position={beaconPosition} quaternion={orientation}>
-        <cylinderGeometry args={[0.008, 0.02, 0.14, 12]} />
-        <meshBasicMaterial color="#5fe7ff" transparent opacity={0.82} />
-      </mesh>
-      <mesh position={normal.clone().multiplyScalar(1.112)} quaternion={orientation}>
-        <torusGeometry args={[0.055, 0.004, 8, 36]} />
-        <meshBasicMaterial color="#8bf4ff" transparent opacity={0.62} />
-      </mesh>
-    </group>
+    <mesh ref={markerRef} position={surfacePoint}>
+      <sphereGeometry args={[0.032, 18, 18]} />
+      <meshBasicMaterial color="#57a6ff" transparent opacity={0.95} />
+    </mesh>
   );
 }
 
 function DataCenterMarkers() {
   return (
     <group>
-      {dataCenterSites.map((site, index) => (
-        <DataCenterMarker key={site.name} index={index} site={site} />
+      {dataCenterSites.map((site) => (
+        <DataCenterMarker key={site.name} site={site} />
       ))}
     </group>
   );
