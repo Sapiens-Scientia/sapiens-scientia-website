@@ -163,8 +163,7 @@ function PhysicalEarth({ targetPosition }: { targetPosition: THREE.Vector3 }) {
 function DigitalEarth({ targetPosition }: { targetPosition: THREE.Vector3 }) {
   const groupRef = useRef<THREE.Group>(null);
   const shellRef = useRef<THREE.Mesh>(null);
-  const nodesRef = useRef<THREE.Points>(null);
-  const linksRef = useRef<THREE.LineSegments>(null);
+  const networkRef = useRef<THREE.Group>(null);
   const hasPositionedRef = useRef(false);
 
   const { nodePositions, linkPositions } = useMemo(() => {
@@ -209,12 +208,8 @@ function DigitalEarth({ targetPosition }: { targetPosition: THREE.Vector3 }) {
       shellRef.current.rotation.x = Math.sin(clock.getElapsedTime() * 0.35) * 0.04;
     }
 
-    if (nodesRef.current) {
-      nodesRef.current.rotation.y -= delta * 0.1;
-    }
-
-    if (linksRef.current) {
-      linksRef.current.rotation.y -= delta * 0.1;
+    if (networkRef.current) {
+      networkRef.current.rotation.y -= delta * 0.1;
     }
   });
 
@@ -237,38 +232,37 @@ function DigitalEarth({ targetPosition }: { targetPosition: THREE.Vector3 }) {
         <sphereGeometry args={[1.12, 32, 32]} />
         <meshBasicMaterial color="#62c7ff" wireframe transparent opacity={0.16} />
       </mesh>
-      <points ref={nodesRef}>
-        <bufferGeometry>
-          <bufferAttribute attach="attributes-position" args={[nodePositions, 3]} />
-        </bufferGeometry>
-        <pointsMaterial
-          color="#b8ecff"
-          size={0.074}
-          sizeAttenuation
-          transparent
-          opacity={1}
-          depthTest={false}
-          depthWrite={false}
-        />
-      </points>
-      <lineSegments ref={linksRef}>
-        <bufferGeometry>
-          <bufferAttribute attach="attributes-position" args={[linkPositions, 3]} />
-        </bufferGeometry>
-        <lineBasicMaterial color="#2fe3ff" transparent opacity={0.38} depthTest={false} depthWrite={false} />
-      </lineSegments>
+      <group ref={networkRef}>
+        <points>
+          <bufferGeometry>
+            <bufferAttribute attach="attributes-position" args={[nodePositions, 3]} />
+          </bufferGeometry>
+          <pointsMaterial
+            color="#b8ecff"
+            size={0.074}
+            sizeAttenuation
+            transparent
+            opacity={1}
+            depthTest={false}
+            depthWrite={false}
+          />
+        </points>
+        <lineSegments>
+          <bufferGeometry>
+            <bufferAttribute attach="attributes-position" args={[linkPositions, 3]} />
+          </bufferGeometry>
+          <lineBasicMaterial color="#2fe3ff" transparent opacity={0.38} depthTest={false} depthWrite={false} />
+        </lineSegments>
+        <FeaturedDigitalNode />
+      </group>
     </group>
   );
 }
 
-function FeaturedDigitalNode({ digitalPosition }: { digitalPosition: THREE.Vector3 }) {
+function FeaturedDigitalNode() {
   const router = useRouter();
   const nodeRef = useRef<THREE.Mesh>(null);
-  const position: [number, number, number] = [
-    digitalPosition.x - 0.18,
-    digitalPosition.y + 0.14,
-    digitalPosition.z + 1.18,
-  ];
+  const position: [number, number, number] = [-0.18, 0.14, 1.18];
 
   useFrame(({ clock }) => {
     if (!nodeRef.current) {
@@ -522,7 +516,6 @@ function Scene() {
       <Stars radius={16} depth={24} count={900} factor={2.4} saturation={0} fade speed={0.18} />
       <PhysicalEarth targetPosition={physicalTarget} />
       <DigitalEarth targetPosition={digitalTarget} />
-      <FeaturedDigitalNode digitalPosition={digitalTarget} />
       {!isMerged && <DataConnectors />}
       {!isMerged && (
         <>
