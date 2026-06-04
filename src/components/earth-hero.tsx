@@ -10,6 +10,7 @@ import * as THREE from "three";
 const physicalCenter = new THREE.Vector3(-1.9, -0.08, 0);
 const digitalCenter = new THREE.Vector3(1.9, -0.08, 0);
 const metaCenter = new THREE.Vector3(0, -0.08, 0);
+const digitalNetworkRadius = 1.16;
 const labelFont = "/fonts/barlow-condensed-light.ttf";
 const earthLabelFont = "/fonts/barlow-condensed-bold.ttf";
 const earthViewUrl = "https://earthview3d.vercel.app/";
@@ -194,7 +195,9 @@ function DigitalEarth({ targetPosition }: { targetPosition: THREE.Vector3 }) {
     const nodes: number[] = [];
     const links: number[] = [];
     const count = 190;
-    const nodeVectors = Array.from({ length: count }, (_, index) => spherePoint(index, count, 1.05));
+    const nodeVectors = Array.from({ length: count }, (_, index) =>
+      spherePoint(index, count, digitalNetworkRadius),
+    );
 
     nodeVectors.forEach((point) => nodes.push(point.x, point.y, point.z));
 
