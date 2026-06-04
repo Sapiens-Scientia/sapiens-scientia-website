@@ -265,7 +265,12 @@ function Scene() {
 export function EarthHero() {
   return (
     <section className="relative min-h-screen bg-black">
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 grid grid-cols-2 px-5 pt-[8vh] text-center sm:px-8 lg:px-16">
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 px-5 pt-6 text-center sm:pt-8">
+        <h1 className="text-balance text-3xl font-semibold tracking-normal text-white sm:text-5xl">
+          Sapiens Scientia
+        </h1>
+      </div>
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 grid grid-cols-2 px-5 pt-[12vh] text-center sm:px-8 lg:px-16">
         <div>
           <p className="text-balance text-2xl font-semibold tracking-normal text-white sm:text-4xl">
             Physical Earth
@@ -276,11 +281,6 @@ export function EarthHero() {
             Digital Earth
           </p>
         </div>
-      </div>
-      <div className="absolute inset-x-0 bottom-6 z-10 flex justify-center px-4">
-        <p className="max-w-3xl text-center text-sm leading-6 text-slate-300 sm:text-base">
-          Sapiens Scientia maps the bridge between planetary infrastructure and digital knowledge.
-        </p>
       </div>
       <div className="absolute inset-0">
         <Canvas
