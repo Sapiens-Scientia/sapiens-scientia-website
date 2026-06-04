@@ -250,11 +250,13 @@ function DigitalEarth({ targetPosition }: { targetPosition: THREE.Vector3 }) {
           transparent
           opacity={0.22}
           side={THREE.DoubleSide}
+          depthTest
+          depthWrite={false}
         />
       </mesh>
       <mesh scale={1.045}>
         <sphereGeometry args={[1.12, 32, 32]} />
-        <meshBasicMaterial color="#62c7ff" wireframe transparent opacity={0.16} />
+        <meshBasicMaterial color="#62c7ff" wireframe transparent opacity={0.16} depthTest depthWrite={false} />
       </mesh>
       <group ref={networkRef}>
         <points>
@@ -267,7 +269,7 @@ function DigitalEarth({ targetPosition }: { targetPosition: THREE.Vector3 }) {
             sizeAttenuation
             transparent
             opacity={1}
-            depthTest={false}
+            depthTest
             depthWrite={false}
           />
         </points>
@@ -275,7 +277,7 @@ function DigitalEarth({ targetPosition }: { targetPosition: THREE.Vector3 }) {
           <bufferGeometry>
             <bufferAttribute attach="attributes-position" args={[linkPositions, 3]} />
           </bufferGeometry>
-          <lineBasicMaterial color="#2fe3ff" transparent opacity={0.38} depthTest={false} depthWrite={false} />
+          <lineBasicMaterial color="#2fe3ff" transparent opacity={0.38} depthTest depthWrite={false} />
         </lineSegments>
         <FeaturedDigitalNode />
       </group>
@@ -300,7 +302,7 @@ function FeaturedDigitalNode() {
     const material = labelRef.current?.material;
 
     if (material && !Array.isArray(material)) {
-      material.depthTest = false;
+      material.depthTest = true;
       material.depthWrite = false;
       material.needsUpdate = true;
     }
@@ -329,15 +331,15 @@ function FeaturedDigitalNode() {
     >
       <mesh>
         <sphereGeometry args={[0.24, 24, 24]} />
-        <meshBasicMaterial transparent opacity={0} depthTest={false} depthWrite={false} />
+        <meshBasicMaterial transparent opacity={0} depthTest depthWrite={false} />
       </mesh>
       <mesh ref={nodeRef} renderOrder={20}>
         <sphereGeometry args={[0.082, 32, 32]} />
-        <meshBasicMaterial color="#ffffff" transparent opacity={0.98} depthTest={false} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.98} depthTest depthWrite={false} />
       </mesh>
       <mesh renderOrder={19}>
         <sphereGeometry args={[0.14, 32, 32]} />
-        <meshBasicMaterial color="#58d7ff" transparent opacity={0.18} depthTest={false} />
+        <meshBasicMaterial color="#58d7ff" transparent opacity={0.18} depthTest depthWrite={false} />
       </mesh>
       <Billboard position={[0, 0.28, 0.08]} follow lockX={false} lockY={false} lockZ={false}>
         <Text
