@@ -210,7 +210,8 @@ function DataConnectors() {
 
     pulsesRef.current.children.forEach((pulse, index) => {
       const arc = arcs[index % arcs.length];
-      const progress = (elapsed * 0.18 + index * 0.075) % 1;
+      const baseProgress = (elapsed * 0.18 + index * 0.075) % 1;
+      const progress = index % 2 === 0 ? baseProgress : 1 - baseProgress;
       pulse.position.copy(arc.curve.getPoint(progress));
     });
   });
@@ -231,7 +232,11 @@ function DataConnectors() {
         {arcs.map((arc, index) => (
           <mesh key={index} position={arc.points[0]}>
             <sphereGeometry args={[0.018 + (index % 3) * 0.003, 16, 16]} />
-            <meshBasicMaterial color="#d8fbff" transparent opacity={0.95} />
+            <meshBasicMaterial
+              color={index % 2 === 0 ? "#d8fbff" : "#57a6ff"}
+              transparent
+              opacity={0.95}
+            />
           </mesh>
         ))}
       </group>
