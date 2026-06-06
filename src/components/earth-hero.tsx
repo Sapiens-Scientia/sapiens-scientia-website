@@ -4,7 +4,7 @@ import { Canvas, useFrame, useLoader } from "@react-three/fiber";
 import { Billboard, Html, Line, OrbitControls, Stars, Text } from "@react-three/drei";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Suspense, useMemo, useRef, useState } from "react";
+import { Suspense, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 
@@ -31,6 +31,7 @@ type DataCenterSite = {
 
 type ConceptNode = {
   color?: string;
+  href?: string;
   label: string;
   level: number;
 };
@@ -45,6 +46,64 @@ type DataIndexCategory = {
   name: string;
   entries: DataIndexEntry[];
 };
+
+type TimeZoneOption = {
+  label: string;
+  value: string;
+};
+
+const timeZoneOptions: TimeZoneOption[] = [
+  { label: "New York", value: "America/New_York" },
+  { label: "Los Angeles", value: "America/Los_Angeles" },
+  { label: "UTC", value: "UTC" },
+  { label: "London", value: "Europe/London" },
+  { label: "Paris", value: "Europe/Paris" },
+  { label: "Sao Paulo", value: "America/Sao_Paulo" },
+  { label: "Singapore", value: "Asia/Singapore" },
+  { label: "Tokyo", value: "Asia/Tokyo" },
+  { label: "Sydney", value: "Australia/Sydney" },
+];
+
+function formatClockTime(date: Date | null, timeZone: string) {
+  if (!date) {
+    return "--:--";
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    hour: "2-digit",
+    hour12: false,
+    minute: "2-digit",
+    timeZone,
+    timeZoneName: "short",
+  }).format(date);
+}
+
+function formatClockDate(date: Date | null, timeZone: string) {
+  if (!date) {
+    return "---, -- ---";
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    day: "2-digit",
+    month: "short",
+    timeZone,
+    weekday: "short",
+  }).format(date);
+}
+
+function subscribeToClock(onStoreChange: () => void) {
+  const intervalId = window.setInterval(onStoreChange, 1000);
+
+  return () => window.clearInterval(intervalId);
+}
+
+function getClockSnapshot() {
+  return Date.now();
+}
+
+function getServerClockSnapshot() {
+  return 0;
+}
 
 const dataCenterSites: DataCenterSite[] = [
   { name: "Northern Virginia", lat: 39.04, lon: -77.49 },
@@ -106,9 +165,12 @@ const earthSystemNodes: ConceptNode[] = [
 ];
 
 const humanPlatformNodes: ConceptNode[] = [
-  { label: "Human Health Platform", level: 0 },
-  { label: "Human Society Platform", level: 0 },
-  { label: "Environmental Platform", level: 0 },
+  { label: "Sapiens Scientia Salus", level: 0, href: "/platforms/salus" },
+  { label: "Human Health Platform", level: 1 },
+  { label: "Sapiens Scientia Societas", level: 0 },
+  { label: "Human Society Platform", level: 1 },
+  { label: "Sapiens Scientia Terra", level: 0 },
+  { label: "Environmental Platform", level: 1 },
 ];
 
 const digitalSystemNodes: ConceptNode[] = [
@@ -634,6 +696,7 @@ function DataIndexSurfaceNode({
 
 function FeaturedDigitalNode() {
   const router = useRouter();
+  const [isHovered, setIsHovered] = useState(false);
   const nodeRef = useRef<THREE.Mesh>(null);
   const labelRef = useRef<THREE.Mesh>(null);
   const position: [number, number, number] = [-0.18, 0.14, 1.18];
@@ -644,7 +707,7 @@ function FeaturedDigitalNode() {
     }
 
     const pulse = 1 + Math.sin(clock.getElapsedTime() * 3.4) * 0.16;
-    nodeRef.current.scale.setScalar(pulse);
+    nodeRef.current.scale.setScalar(isHovered ? pulse * 1.65 : pulse);
 
     const material = labelRef.current?.material;
 
@@ -669,10 +732,13 @@ function FeaturedDigitalNode() {
       position={position}
       onClick={handleActivate}
       onPointerDown={handleActivate}
-      onPointerOver={() => {
+      onPointerOver={(event) => {
+        event.stopPropagation();
+        setIsHovered(true);
         document.body.style.cursor = "pointer";
       }}
       onPointerOut={() => {
+        setIsHovered(false);
         document.body.style.cursor = "";
       }}
     >
@@ -686,7 +752,13 @@ function FeaturedDigitalNode() {
       </mesh>
       <mesh renderOrder={19}>
         <sphereGeometry args={[0.14, 32, 32]} />
-        <meshBasicMaterial color="#58d7ff" transparent opacity={0.18} depthTest depthWrite={false} />
+        <meshBasicMaterial
+          color="#58d7ff"
+          transparent
+          opacity={isHovered ? 0.3 : 0.18}
+          depthTest
+          depthWrite={false}
+        />
       </mesh>
       <Billboard position={[0, 0.28, 0.08]} follow lockX={false} lockY={false} lockZ={false}>
         <Text
@@ -695,7 +767,7 @@ function FeaturedDigitalNode() {
           anchorY="middle"
           color="#ffffff"
           font={labelFont}
-          fontSize={0.12}
+          fontSize={isHovered ? 0.14 : 0.12}
           fontWeight={300}
           renderOrder={50}
           onClick={handleActivate}
@@ -710,10 +782,18 @@ function FeaturedDigitalNode() {
           aria-label="Open Sapiens Scientia projects"
           className="block h-8 w-36 cursor-pointer bg-transparent"
           onPointerEnter={() => {
+            setIsHovered(true);
             document.body.style.cursor = "pointer";
           }}
           onPointerLeave={() => {
+            setIsHovered(false);
             document.body.style.cursor = "";
+          }}
+          onFocus={() => {
+            setIsHovered(true);
+          }}
+          onBlur={() => {
+            setIsHovered(false);
           }}
         />
       </Html>
@@ -1043,7 +1123,8 @@ function ConceptColumn({
           <li
             key={`${node.level}-${node.label}`}
             className={[
-              "flex items-baseline gap-2 text-sm leading-tight text-slate-100/88",
+              "flex items-baseline gap-2 leading-tight text-slate-100/88",
+              size === "compact" && node.level === 0 ? "text-base" : "text-sm",
               isRightAligned ? "justify-end max-lg:justify-start" : "",
               isCenterAligned ? "justify-center" : "",
             ].join(" ")}
@@ -1053,7 +1134,17 @@ function ConceptColumn({
             }}
           >
             <span className={node.level === 0 ? "font-semibold text-sky-100" : "font-normal"}>
-              <span style={{ color: node.color }}>{node.label}</span>
+              {node.href ? (
+                <Link
+                  href={node.href}
+                  className="text-current underline-offset-4 transition-colors hover:text-white hover:underline focus:outline-none focus-visible:text-white focus-visible:underline"
+                  style={{ color: node.color }}
+                >
+                  {node.label}
+                </Link>
+              ) : (
+                <span style={{ color: node.color }}>{node.label}</span>
+              )}
             </span>
           </li>
         ))}
@@ -1062,13 +1153,61 @@ function ConceptColumn({
   );
 }
 
+function TimeOverlay() {
+  const [selectedTimeZone, setSelectedTimeZone] = useState("America/New_York");
+  const clockSnapshot = useSyncExternalStore(subscribeToClock, getClockSnapshot, getServerClockSnapshot);
+  const now = clockSnapshot === 0 ? null : new Date(clockSnapshot);
+
+  const selectedOption = timeZoneOptions.find((option) => option.value === selectedTimeZone);
+  const selectedLabel = selectedOption?.label ?? selectedTimeZone.replaceAll("_", " ");
+
+  return (
+    <aside className="pointer-events-auto w-[min(34rem,calc(100vw-2rem))] border border-white/15 bg-black/48 px-4 py-3 text-center text-white shadow-[0_0_28px_rgba(91,181,255,0.13)] backdrop-blur-sm">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 max-sm:grid-cols-1 max-sm:gap-3">
+        <div className="min-w-0">
+          <p className="text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-blue-200/75">UTC Time</p>
+          <p className="mt-1 font-mono text-2xl leading-none text-sky-100">{formatClockTime(now, "UTC")}</p>
+          <p className="mt-1 text-xs text-slate-300/80">{formatClockDate(now, "UTC")}</p>
+        </div>
+        <div className="h-14 w-px bg-white/12 max-sm:h-px max-sm:w-full" />
+        <div className="min-w-0">
+          <div className="flex items-center justify-center gap-3">
+            <label
+              className="text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-blue-200/75"
+              htmlFor="timezone-clock-select"
+            >
+              Timezone
+            </label>
+            <select
+              id="timezone-clock-select"
+              value={selectedTimeZone}
+              className="max-w-32 border border-white/12 bg-black/55 px-2 py-1 text-xs text-slate-100 outline-none transition focus:border-sky-300/70"
+              onChange={(event) => setSelectedTimeZone(event.target.value)}
+            >
+              {selectedOption ? null : <option value={selectedTimeZone}>{selectedLabel}</option>}
+              {timeZoneOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <p className="mt-2 font-mono text-2xl leading-none text-white">{formatClockTime(now, selectedTimeZone)}</p>
+          <p className="mt-1 text-xs text-slate-300/80">{formatClockDate(now, selectedTimeZone)}</p>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
 function ConceptOverlay() {
   return (
     <>
-      <header className="pointer-events-none absolute inset-x-4 top-8 z-10 flex justify-center max-lg:top-4">
+      <header className="pointer-events-none absolute inset-x-4 top-8 z-10 flex flex-col items-center gap-4 max-lg:top-4">
         <p className="text-2xl font-semibold uppercase tracking-[0.18em] text-blue-200 sm:text-4xl">
           Sapiens Scientia
         </p>
+        <TimeOverlay />
       </header>
       <div className="pointer-events-none absolute inset-x-0 top-1/2 z-10 flex -translate-y-1/2 items-center justify-between gap-6 px-8 max-lg:inset-x-4 max-lg:bottom-36 max-lg:top-auto max-lg:grid max-lg:translate-y-0 max-lg:grid-cols-2 max-lg:px-0 max-md:grid-cols-1">
         <ConceptColumn
