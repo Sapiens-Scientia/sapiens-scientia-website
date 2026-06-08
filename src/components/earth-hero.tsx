@@ -4,7 +4,8 @@ import { Canvas, useFrame, useLoader } from "@react-three/fiber";
 import { Billboard, Line, OrbitControls, Stars, Text } from "@react-three/drei";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { RefObject } from "react";
 import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 
@@ -53,6 +54,18 @@ type HumanPlatformBridge = {
 };
 
 type PopoutSide = "left" | "right";
+
+type BridgeConnectorAnchor = {
+  color: string;
+  id: HumanPlatformBridge["id"];
+  leftX: number;
+  leftSourceX: number;
+  leftSourceY: number;
+  rightX: number;
+  rightSourceX: number;
+  rightSourceY: number;
+  y: number;
+};
 
 type DataIndexEntry = {
   name: string;
@@ -151,7 +164,6 @@ const earthSystemNodes: ConceptNode[] = [
   { label: "Bacteria", level: 2 },
   { label: "Viruses", level: 2 },
   { label: "Mesosystems", level: 0 },
-  { label: "Tree of Life", level: 1 },
   { label: "Multicellular Life Forms", level: 1 },
   { label: "Mammals", level: 2 },
   { label: "Homo sapiens", level: 3 },
@@ -344,7 +356,7 @@ const earthVitalSigns: EarthVitalSign[] = [
   },
   {
     accent: "#bef264",
-    earthSystemLinks: ["Ecosystems", "Biosphere", "Tree of Life"],
+    earthSystemLinks: ["Ecosystems", "Biosphere", "Multicellular Life Forms", "Mammals"],
     label: "Wildlife Populations",
     value: "-73%",
     note: "Average change in monitored vertebrate populations, 1970-2020.",
@@ -361,7 +373,7 @@ const humanPlatformBridges: HumanPlatformBridge[] = [
     subtitle: "Human Health Platform",
     href: "/platforms/salus",
     color: "#38bdf8",
-    earthHighlights: ["Cells", "Microbes", "Healthcare System", "People", "Homo sapiens"],
+    earthHighlights: ["Cells", "Microbes", "Bacteria", "Viruses", "Healthcare System", "People", "Homo sapiens"],
     digitalHighlights: ["Life Sciences", "Databases", "Knowledge Graphs", "Decision Support"],
   },
   {
@@ -370,7 +382,23 @@ const humanPlatformBridges: HumanPlatformBridge[] = [
     subtitle: "Human Society Platform",
     href: "/platforms/societas",
     color: "#818cf8",
-    earthHighlights: ["People", "Legal System", "Economic System", "Financial System", "Technology"],
+    earthHighlights: [
+      "Nations",
+      "Legal System",
+      "Economic System",
+      "Healthcare System",
+      "People",
+      "Technology",
+      "Information Systems",
+      "Data Centers",
+      "Buildings",
+      "Transportation, Pipes, & Cables",
+      "Business & Industrial System",
+      "Financial System",
+      "Agricultural Systems",
+      "Energy Generation System",
+      "Waste Management System",
+    ],
     digitalHighlights: ["Public Data", "Platforms", "Law & Patents", "General Knowledge"],
   },
   {
@@ -379,7 +407,19 @@ const humanPlatformBridges: HumanPlatformBridge[] = [
     subtitle: "Environmental Platform",
     href: "/platforms/terra",
     color: "#34d399",
-    earthHighlights: ["Climate System", "Freshwater", "Ecosystems", "Biosphere", "Hydrosphere", "Soil System"],
+    earthHighlights: [
+      "The Sun",
+      "Atmosphere",
+      "Climate System",
+      "Freshwater",
+      "Fossil Fuels",
+      "Anthropogenic Waste",
+      "Soil System",
+      "Ecosystems",
+      "Biosphere",
+      "Hydrosphere",
+      "Geosphere",
+    ],
     digitalHighlights: ["Public Data", "Digital Twins", "Simulation Models", "Sensor Networks"],
   },
 ];
@@ -1369,6 +1409,7 @@ function ConceptColumn({
   noWrapTitle = false,
   onPanelPointerEnter,
   onPanelPointerLeave,
+  panelRef,
   size = "large",
   title,
 }: {
@@ -1380,6 +1421,7 @@ function ConceptColumn({
   nodes: ConceptNode[];
   onPanelPointerEnter?: () => void;
   onPanelPointerLeave?: () => void;
+  panelRef?: RefObject<HTMLElement | null>;
   size?: "large" | "compact";
   title: string;
 }) {
@@ -1401,6 +1443,7 @@ function ConceptColumn({
 
   return (
     <aside
+      ref={panelRef}
       className={[
         "scrollbar-hidden pointer-events-auto overflow-y-auto overscroll-contain py-4",
         "border border-white/15 bg-black/42 text-white shadow-[0_0_28px_rgba(59,130,246,0.16)] backdrop-blur-sm",
@@ -1566,7 +1609,7 @@ function EarthVitalSignsPanel({
       className={[
         "pointer-events-auto relative z-30 border border-blue-300/24 bg-black/58 text-white shadow-[0_0_34px_rgba(59,130,246,0.18)] backdrop-blur-md",
         "w-full p-4 lg:absolute lg:left-[calc(100%+0.75rem)] lg:top-0 lg:w-80",
-        "max-h-[46vh] overflow-y-auto overscroll-contain lg:max-h-[72vh]",
+        "scrollbar-hidden max-h-[46vh] overflow-y-auto overscroll-contain lg:max-h-[72vh]",
         isOpen ? "block" : "hidden",
       ].join(" ")}
       aria-label="Earth Vital Signs"
@@ -1661,7 +1704,7 @@ function DataIndexPanel({
       className={[
         "pointer-events-auto relative z-30 border border-blue-300/24 bg-black/58 text-white shadow-[0_0_34px_rgba(59,130,246,0.18)] backdrop-blur-md",
         "w-full p-4 lg:absolute lg:right-[calc(100%+0.75rem)] lg:top-0 lg:w-80",
-        "max-h-[46vh] overflow-y-auto overscroll-contain lg:max-h-[72vh]",
+        "scrollbar-hidden max-h-[46vh] overflow-y-auto overscroll-contain lg:max-h-[72vh]",
         isOpen ? "block" : "hidden",
       ].join(" ")}
       aria-label="Global Data Index"
@@ -1724,10 +1767,12 @@ function DataIndexPanel({
 
 function EarthSystemsColumn({
   activeBridge,
+  panelRef,
   onPanelPointerEnter,
   onPanelPointerLeave,
 }: {
   activeBridge: HumanPlatformBridge | null;
+  panelRef: RefObject<HTMLElement | null>;
   onPanelPointerEnter: () => void;
   onPanelPointerLeave: () => void;
 }) {
@@ -1759,6 +1804,7 @@ function EarthSystemsColumn({
           highlights={activeHighlights}
           onPanelPointerEnter={onPanelPointerEnter}
           onPanelPointerLeave={onPanelPointerLeave}
+          panelRef={panelRef}
           headerAction={(
             <PopoutToggleButton
               controlsId="earth-vital-signs-panel"
@@ -1784,10 +1830,12 @@ function EarthSystemsColumn({
 
 function DigitalSystemsColumn({
   activeBridge,
+  panelRef,
   onPanelPointerEnter,
   onPanelPointerLeave,
 }: {
   activeBridge: HumanPlatformBridge | null;
+  panelRef: RefObject<HTMLElement | null>;
   onPanelPointerEnter: () => void;
   onPanelPointerLeave: () => void;
 }) {
@@ -1811,6 +1859,7 @@ function DigitalSystemsColumn({
           highlights={activeHighlights}
           onPanelPointerEnter={onPanelPointerEnter}
           onPanelPointerLeave={onPanelPointerLeave}
+          panelRef={panelRef}
           headerActionPosition="before"
           noWrapTitle
           headerAction={(
@@ -1837,13 +1886,126 @@ function DigitalSystemsColumn({
   );
 }
 
-function BridgeConnectorLayer({ activeBridgeId }: { activeBridgeId: HumanPlatformBridge["id"] | null }) {
+function BridgeConnectorLayer({
+  activeBridgeId,
+  bridgeItemRefs,
+  digitalPanelRef,
+  earthPanelRef,
+  panelRef,
+}: {
+  activeBridgeId: HumanPlatformBridge["id"] | null;
+  bridgeItemRefs: RefObject<Map<HumanPlatformBridge["id"], HTMLLIElement>>;
+  digitalPanelRef: RefObject<HTMLElement | null>;
+  earthPanelRef: RefObject<HTMLElement | null>;
+  panelRef: RefObject<HTMLElement | null>;
+}) {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [anchors, setAnchors] = useState<BridgeConnectorAnchor[]>([]);
+
+  useEffect(() => {
+    let frameId = 0;
+
+    const measureAnchors = () => {
+      frameId = 0;
+
+      const svg = svgRef.current;
+      const panel = panelRef.current;
+      const earthPanel = earthPanelRef.current;
+      const digitalPanel = digitalPanelRef.current;
+
+      if (!svg || !panel || !earthPanel || !digitalPanel) {
+        return;
+      }
+
+      const svgRect = svg.getBoundingClientRect();
+      const panelRect = panel.getBoundingClientRect();
+      const earthPanelRect = earthPanel.getBoundingClientRect();
+      const digitalPanelRect = digitalPanel.getBoundingClientRect();
+      const fallbackStep = panelRect.height / (humanPlatformBridges.length + 1);
+      const panelTop = panelRect.top - svgRect.top;
+      const panelBottom = panelRect.bottom - svgRect.top;
+      const earthBottomY = earthPanelRect.bottom - svgRect.top;
+      const digitalBottomY = digitalPanelRect.bottom - svgRect.top;
+
+      setAnchors(
+        humanPlatformBridges.map((bridge, index) => {
+          const itemRect = bridgeItemRefs.current.get(bridge.id)?.getBoundingClientRect();
+          const rawY = itemRect
+            ? itemRect.top + itemRect.height / 2 - svgRect.top
+            : panelTop + fallbackStep * (index + 1);
+          const y = Math.min(Math.max(rawY, panelTop + 12), panelBottom - 12);
+
+          return {
+            color: bridge.color,
+            id: bridge.id,
+            leftX: panelRect.left - svgRect.left,
+            leftSourceX: earthPanelRect.left + earthPanelRect.width / 2 - svgRect.left,
+            leftSourceY: earthBottomY,
+            rightX: panelRect.right - svgRect.left,
+            rightSourceX: digitalPanelRect.left + digitalPanelRect.width / 2 - svgRect.left,
+            rightSourceY: digitalBottomY,
+            y,
+          };
+        }),
+      );
+    };
+
+    const scheduleMeasure = () => {
+      if (frameId) {
+        return;
+      }
+
+      frameId = window.requestAnimationFrame(measureAnchors);
+    };
+
+    scheduleMeasure();
+
+    const resizeObserver = new ResizeObserver(scheduleMeasure);
+    const panel = panelRef.current;
+    const svg = svgRef.current;
+
+    if (panel) {
+      resizeObserver.observe(panel);
+      panel.addEventListener("scroll", scheduleMeasure, { passive: true });
+    }
+
+    const earthPanel = earthPanelRef.current;
+    const digitalPanel = digitalPanelRef.current;
+
+    if (earthPanel) {
+      resizeObserver.observe(earthPanel);
+      earthPanel.addEventListener("scroll", scheduleMeasure, { passive: true });
+    }
+
+    if (digitalPanel) {
+      resizeObserver.observe(digitalPanel);
+      digitalPanel.addEventListener("scroll", scheduleMeasure, { passive: true });
+    }
+
+    if (svg) {
+      resizeObserver.observe(svg);
+    }
+
+    window.addEventListener("resize", scheduleMeasure);
+
+    return () => {
+      if (frameId) {
+        window.cancelAnimationFrame(frameId);
+      }
+
+      resizeObserver.disconnect();
+      panel?.removeEventListener("scroll", scheduleMeasure);
+      earthPanel?.removeEventListener("scroll", scheduleMeasure);
+      digitalPanel?.removeEventListener("scroll", scheduleMeasure);
+      window.removeEventListener("resize", scheduleMeasure);
+    };
+  }, [activeBridgeId, bridgeItemRefs, digitalPanelRef, earthPanelRef, panelRef]);
+
   return (
     <svg
+      ref={svgRef}
       className="pointer-events-none absolute inset-0 z-[9] hidden h-full w-full overflow-visible lg:block"
       aria-hidden="true"
-      viewBox="0 0 100 100"
-      preserveAspectRatio="none"
     >
       <defs>
         <filter id="bridge-glow" x="-40%" y="-40%" width="180%" height="180%">
@@ -1854,20 +2016,25 @@ function BridgeConnectorLayer({ activeBridgeId }: { activeBridgeId: HumanPlatfor
           </feMerge>
         </filter>
       </defs>
-      {humanPlatformBridges.map((bridge, index) => {
-        const isActive = activeBridgeId === bridge.id;
+      {anchors.map((anchor) => {
+        const isActive = activeBridgeId === anchor.id;
         const opacity = activeBridgeId ? (isActive ? 0.88 : 0.11) : 0.24;
-        const strokeWidth = isActive ? 0.34 : 0.18;
-        const platformY = 75.8 + index * 4.7;
-        const leftPath = `M 15 86 C 26 88, 34 ${platformY}, 41 ${platformY}`;
-        const rightPath = `M 85 86 C 74 88, 66 ${platformY}, 59 ${platformY}`;
+        const strokeWidth = isActive ? 3.4 : 1.8;
+        const leftPath = [
+          `M ${anchor.leftSourceX} ${anchor.leftSourceY}`,
+          `C ${anchor.leftSourceX + 130} ${anchor.leftSourceY + 16}, ${anchor.leftX - 44} ${anchor.y}, ${anchor.leftX} ${anchor.y}`,
+        ].join(" ");
+        const rightPath = [
+          `M ${anchor.rightSourceX} ${anchor.rightSourceY}`,
+          `C ${anchor.rightSourceX - 130} ${anchor.rightSourceY + 16}, ${anchor.rightX + 44} ${anchor.y}, ${anchor.rightX} ${anchor.y}`,
+        ].join(" ");
 
         return (
-          <g key={bridge.id} filter={isActive ? "url(#bridge-glow)" : undefined}>
+          <g key={anchor.id} filter={isActive ? "url(#bridge-glow)" : undefined}>
             <path
               d={leftPath}
               fill="none"
-              stroke={bridge.color}
+              stroke={anchor.color}
               strokeLinecap="round"
               strokeWidth={strokeWidth}
               opacity={opacity}
@@ -1875,13 +2042,27 @@ function BridgeConnectorLayer({ activeBridgeId }: { activeBridgeId: HumanPlatfor
             <path
               d={rightPath}
               fill="none"
-              stroke={bridge.color}
+              stroke={anchor.color}
               strokeLinecap="round"
               strokeWidth={strokeWidth}
               opacity={opacity}
             />
-            <circle cx="41" cy={platformY} r={isActive ? 0.5 : 0.34} fill={bridge.color} opacity={opacity} />
-            <circle cx="59" cy={platformY} r={isActive ? 0.5 : 0.34} fill={bridge.color} opacity={opacity} />
+            <circle
+              cx={anchor.leftSourceX}
+              cy={anchor.leftSourceY}
+              r={isActive ? 4.2 : 2.8}
+              fill={anchor.color}
+              opacity={opacity}
+            />
+            <circle
+              cx={anchor.rightSourceX}
+              cy={anchor.rightSourceY}
+              r={isActive ? 4.2 : 2.8}
+              fill={anchor.color}
+              opacity={opacity}
+            />
+            <circle cx={anchor.leftX} cy={anchor.y} r={isActive ? 5 : 3.4} fill={anchor.color} opacity={opacity} />
+            <circle cx={anchor.rightX} cy={anchor.y} r={isActive ? 5 : 3.4} fill={anchor.color} opacity={opacity} />
           </g>
         );
       })}
@@ -1895,15 +2076,20 @@ function HumanPlatformsBridgePanel({
   onBridgeLeave,
   onPanelPointerEnter,
   onPanelPointerLeave,
+  panelRef,
+  registerBridgeItem,
 }: {
   activeBridgeId: HumanPlatformBridge["id"] | null;
   onBridgeEnter: (bridge: HumanPlatformBridge) => void;
   onBridgeLeave: () => void;
   onPanelPointerEnter: () => void;
   onPanelPointerLeave: () => void;
+  panelRef: RefObject<HTMLElement | null>;
+  registerBridgeItem: (id: HumanPlatformBridge["id"]) => (node: HTMLLIElement | null) => void;
 }) {
   return (
     <aside
+      ref={panelRef}
       className="scrollbar-hidden pointer-events-auto max-h-[24vh] w-72 overflow-y-auto overscroll-contain border border-white/15 bg-black/42 px-6 py-4 text-center text-white shadow-[0_0_28px_rgba(59,130,246,0.16)] backdrop-blur-sm max-lg:w-full max-lg:px-4 max-lg:py-3"
       aria-label="Human Platforms"
       onPointerEnter={onPanelPointerEnter}
@@ -1921,6 +2107,7 @@ function HumanPlatformsBridgePanel({
 
           return (
             <li
+              ref={registerBridgeItem(bridge.id)}
               key={bridge.id}
               className={[
                 "grid justify-items-center gap-1 py-0.5 transition-all duration-300",
@@ -1991,13 +2178,15 @@ function TimeOverlay({
       onTouchMoveCapture={stopPanelScrollPropagation}
     >
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 max-sm:grid-cols-1 max-sm:gap-3">
-        <div className="min-w-0">
-          <p className="text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-blue-300/80">UTC Time</p>
-          <p className="mt-1 font-mono text-2xl leading-none text-sky-100">{formatClockTime(now, "UTC")}</p>
+        <div className="grid min-w-0 grid-rows-[2.35rem_auto_auto]">
+          <p className="flex items-center justify-center text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-blue-300/80">
+            UTC Time
+          </p>
+          <p className="font-mono text-2xl leading-none text-sky-100">{formatClockTime(now, "UTC")}</p>
           <p className="mt-1 text-xs text-slate-300/80">{formatClockDate(now, "UTC")}</p>
         </div>
         <div className="h-14 w-px bg-white/12 max-sm:h-px max-sm:w-full" />
-        <div className="min-w-0">
+        <div className="grid min-w-0 grid-rows-[2.35rem_auto_auto]">
           <div className="flex items-center justify-center gap-3">
             <label
               className="text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-blue-300/80"
@@ -2019,7 +2208,7 @@ function TimeOverlay({
               ))}
             </select>
           </div>
-          <p className="mt-2 font-mono text-2xl leading-none text-white">{formatClockTime(now, selectedTimeZone)}</p>
+          <p className="font-mono text-2xl leading-none text-white">{formatClockTime(now, selectedTimeZone)}</p>
           <p className="mt-1 text-xs text-slate-300/80">{formatClockDate(now, selectedTimeZone)}</p>
         </div>
       </div>
@@ -2039,12 +2228,33 @@ function ConceptOverlay({
   onPanelPointerLeave: () => void;
 }) {
   const [activeBridge, setActiveBridge] = useState<HumanPlatformBridge | null>(null);
+  const bridgeItemRefs = useRef(new Map<HumanPlatformBridge["id"], HTMLLIElement>());
+  const earthSystemsPanelRef = useRef<HTMLElement | null>(null);
+  const digitalSystemsPanelRef = useRef<HTMLElement | null>(null);
+  const humanPlatformsPanelRef = useRef<HTMLElement | null>(null);
+  const registerBridgeItem = useCallback(
+    (id: HumanPlatformBridge["id"]) => (node: HTMLLIElement | null) => {
+      if (node) {
+        bridgeItemRefs.current.set(id, node);
+        return;
+      }
+
+      bridgeItemRefs.current.delete(id);
+    },
+    [],
+  );
 
   return (
     <>
-      <BridgeConnectorLayer activeBridgeId={activeBridge?.id ?? null} />
+      <BridgeConnectorLayer
+        activeBridgeId={activeBridge?.id ?? null}
+        bridgeItemRefs={bridgeItemRefs}
+        digitalPanelRef={digitalSystemsPanelRef}
+        earthPanelRef={earthSystemsPanelRef}
+        panelRef={humanPlatformsPanelRef}
+      />
       <header className="pointer-events-none absolute inset-x-4 top-8 z-10 flex flex-col items-center gap-4 max-lg:top-4">
-        <p className="text-2xl font-semibold uppercase tracking-[0.18em] text-blue-400 drop-shadow-[0_0_18px_rgba(59,130,246,0.65)] sm:text-4xl">
+        <p className="bg-gradient-to-r from-emerald-300/84 to-blue-300/88 bg-clip-text text-2xl font-semibold uppercase tracking-[0.18em] text-transparent drop-shadow-[0_0_18px_rgba(96,165,250,0.42)] sm:text-4xl">
           Sapiens Scientia
         </p>
         <TimeOverlay
@@ -2063,11 +2273,13 @@ function ConceptOverlay({
       <div className="pointer-events-none absolute inset-x-0 top-1/2 z-10 flex -translate-y-1/2 items-center justify-between gap-6 px-8 max-lg:inset-x-4 max-lg:bottom-36 max-lg:top-auto max-lg:grid max-lg:translate-y-0 max-lg:grid-cols-2 max-lg:px-0 max-md:grid-cols-1">
         <EarthSystemsColumn
           activeBridge={activeBridge}
+          panelRef={earthSystemsPanelRef}
           onPanelPointerEnter={onPanelPointerEnter}
           onPanelPointerLeave={onPanelPointerLeave}
         />
         <DigitalSystemsColumn
           activeBridge={activeBridge}
+          panelRef={digitalSystemsPanelRef}
           onPanelPointerEnter={onPanelPointerEnter}
           onPanelPointerLeave={onPanelPointerLeave}
         />
@@ -2079,6 +2291,8 @@ function ConceptOverlay({
           onBridgeLeave={() => setActiveBridge(null)}
           onPanelPointerEnter={onPanelPointerEnter}
           onPanelPointerLeave={onPanelPointerLeave}
+          panelRef={humanPlatformsPanelRef}
+          registerBridgeItem={registerBridgeItem}
         />
       </div>
     </>
