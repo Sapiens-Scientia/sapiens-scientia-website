@@ -659,7 +659,13 @@ function DataCenterMarkers() {
   );
 }
 
-function PhysicalEarth({ targetPosition }: { targetPosition: THREE.Vector3 }) {
+function PhysicalEarth({
+  isInteractive,
+  targetPosition,
+}: {
+  isInteractive: boolean;
+  targetPosition: THREE.Vector3;
+}) {
   const groupRef = useRef<THREE.Group>(null);
   const earthRef = useRef<THREE.Group>(null);
   const atmosphereRef = useRef<THREE.Mesh>(null);
@@ -700,12 +706,14 @@ function PhysicalEarth({ targetPosition }: { targetPosition: THREE.Vector3 }) {
   return (
     <group
       ref={groupRef}
-      onClick={(event) => {
+      onClick={isInteractive ? (event) => {
         event.stopPropagation();
         openEarthView();
-      }}
+      } : undefined}
       onPointerOver={() => {
-        document.body.style.cursor = "pointer";
+        if (isInteractive) {
+          document.body.style.cursor = "pointer";
+        }
       }}
       onPointerOut={() => {
         document.body.style.cursor = "";
@@ -730,7 +738,13 @@ function PhysicalEarth({ targetPosition }: { targetPosition: THREE.Vector3 }) {
   );
 }
 
-function DigitalEarth({ targetPosition }: { targetPosition: THREE.Vector3 }) {
+function DigitalEarth({
+  isInteractive,
+  targetPosition,
+}: {
+  isInteractive: boolean;
+  targetPosition: THREE.Vector3;
+}) {
   const router = useRouter();
   const groupRef = useRef<THREE.Group>(null);
   const shellRef = useRef<THREE.Mesh>(null);
@@ -794,9 +808,11 @@ function DigitalEarth({ targetPosition }: { targetPosition: THREE.Vector3 }) {
   return (
     <group
       ref={groupRef}
-      onClick={openDataIndex}
+      onClick={isInteractive ? openDataIndex : undefined}
       onPointerOver={() => {
-        document.body.style.cursor = "pointer";
+        if (isInteractive) {
+          document.body.style.cursor = "pointer";
+        }
       }}
       onPointerOut={() => {
         document.body.style.cursor = "";
@@ -842,14 +858,14 @@ function DigitalEarth({ targetPosition }: { targetPosition: THREE.Vector3 }) {
           </bufferGeometry>
           <lineBasicMaterial color="#2fe3ff" transparent opacity={0.38} depthTest depthWrite={false} />
         </lineSegments>
-        <DataIndexSurfaceNodes />
-        <FeaturedDigitalNode />
+        <DataIndexSurfaceNodes isInteractive />
+        <FeaturedDigitalNode isInteractive={isInteractive} />
       </group>
     </group>
   );
 }
 
-function DataIndexSurfaceNodes() {
+function DataIndexSurfaceNodes({ isInteractive }: { isInteractive: boolean }) {
   const surfaceNodes = useMemo(
     () => {
       const random = seededRandom(8801);
@@ -880,6 +896,7 @@ function DataIndexSurfaceNodes() {
           key={`${entry.category}-${entry.name}`}
           color={entry.color}
           href={entry.href}
+          isInteractive={isInteractive}
           name={entry.name}
           position={entry.position}
         />
@@ -891,11 +908,13 @@ function DataIndexSurfaceNodes() {
 function DataIndexSurfaceNode({
   color,
   href,
+  isInteractive,
   name,
   position,
 }: {
   color: string;
   href: string;
+  isInteractive: boolean;
   name: string;
   position: [number, number, number];
 }) {
@@ -919,6 +938,10 @@ function DataIndexSurfaceNode({
   });
 
   const openSource = (event: { stopPropagation: () => void }) => {
+    if (!isInteractive) {
+      return;
+    }
+
     event.stopPropagation();
     window.open(href, "_blank", "noopener,noreferrer");
   };
@@ -926,9 +949,13 @@ function DataIndexSurfaceNode({
   return (
     <group
       position={position}
-      onClick={openSource}
-      onPointerDown={openSource}
+      onClick={isInteractive ? openSource : undefined}
+      onPointerDown={isInteractive ? openSource : undefined}
       onPointerOver={(event) => {
+        if (!isInteractive) {
+          return;
+        }
+
         event.stopPropagation();
         setIsHovered(true);
         document.body.style.cursor = "pointer";
@@ -970,7 +997,7 @@ function DataIndexSurfaceNode({
   );
 }
 
-function FeaturedDigitalNode() {
+function FeaturedDigitalNode({ isInteractive }: { isInteractive: boolean }) {
   const router = useRouter();
   const [isHovered, setIsHovered] = useState(false);
   const nodeRef = useRef<THREE.Mesh>(null);
@@ -999,6 +1026,10 @@ function FeaturedDigitalNode() {
   };
 
   const handleActivate = (event: { stopPropagation: () => void }) => {
+    if (!isInteractive) {
+      return;
+    }
+
     event.stopPropagation();
     openProjects();
   };
@@ -1006,9 +1037,13 @@ function FeaturedDigitalNode() {
   return (
     <group
       position={position}
-      onClick={handleActivate}
-      onPointerDown={handleActivate}
+      onClick={isInteractive ? handleActivate : undefined}
+      onPointerDown={isInteractive ? handleActivate : undefined}
       onPointerOver={(event) => {
+        if (!isInteractive) {
+          return;
+        }
+
         event.stopPropagation();
         setIsHovered(true);
         document.body.style.cursor = "pointer";
@@ -1046,8 +1081,8 @@ function FeaturedDigitalNode() {
           fontSize={isHovered ? 0.14 : 0.12}
           fontWeight={300}
           renderOrder={50}
-          onClick={handleActivate}
-          onPointerDown={handleActivate}
+          onClick={isInteractive ? handleActivate : undefined}
+          onPointerDown={isInteractive ? handleActivate : undefined}
         >
           Sapiens Scientia
         </Text>
@@ -1275,9 +1310,16 @@ function ConstrainedOrbitControls({ enableZoom }: { enableZoom: boolean }) {
   );
 }
 
-function Scene({ enableZoom }: { enableZoom: boolean }) {
+function Scene({
+  enableZoom,
+  isMerged,
+  onToggleMerged,
+}: {
+  enableZoom: boolean;
+  isMerged: boolean;
+  onToggleMerged: () => void;
+}) {
   const router = useRouter();
-  const [isMerged, setIsMerged] = useState(false);
   const physicalTarget = isMerged ? metaCenter : physicalCenter;
   const digitalTarget = isMerged ? metaCenter : digitalCenter;
 
@@ -1289,8 +1331,8 @@ function Scene({ enableZoom }: { enableZoom: boolean }) {
       <pointLight position={[2.9, 1.6, 2.2]} intensity={3.2} color="#278aff" />
       <pointLight position={[0, 1.4, 2.8]} intensity={1.3} color="#8ff2ff" />
       <Stars radius={16} depth={24} count={900} factor={2.4} saturation={0} fade speed={0.18} />
-      <PhysicalEarth targetPosition={physicalTarget} />
-      <DigitalEarth targetPosition={digitalTarget} />
+      <PhysicalEarth isInteractive={!isMerged} targetPosition={physicalTarget} />
+      <DigitalEarth isInteractive={!isMerged} targetPosition={digitalTarget} />
       {!isMerged && <DataConnectors />}
       {!isMerged && (
         <>
@@ -1312,7 +1354,7 @@ function Scene({ enableZoom }: { enableZoom: boolean }) {
           </GlobeLabel>
         </>
       )}
-      <MetaEarthLabel isMerged={isMerged} onToggle={() => setIsMerged((value) => !value)} />
+      <MetaEarthLabel isMerged={isMerged} onToggle={onToggleMerged} />
       <ConstrainedOrbitControls enableZoom={enableZoom} />
     </>
   );
@@ -1986,9 +2028,13 @@ function TimeOverlay({
 }
 
 function ConceptOverlay({
+  isMetaEarthMerged,
+  onMetaEarthToggle,
   onPanelPointerEnter,
   onPanelPointerLeave,
 }: {
+  isMetaEarthMerged: boolean;
+  onMetaEarthToggle: () => void;
   onPanelPointerEnter: () => void;
   onPanelPointerLeave: () => void;
 }) {
@@ -2006,6 +2052,14 @@ function ConceptOverlay({
           onPanelPointerLeave={onPanelPointerLeave}
         />
       </header>
+      {isMetaEarthMerged ? (
+        <button
+          type="button"
+          aria-label="Separate Meta Earth"
+          className="pointer-events-auto absolute left-1/2 top-[calc(50%-9.25rem)] z-40 h-10 w-36 -translate-x-1/2 bg-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-200/80"
+          onClick={onMetaEarthToggle}
+        />
+      ) : null}
       <div className="pointer-events-none absolute inset-x-0 top-1/2 z-10 flex -translate-y-1/2 items-center justify-between gap-6 px-8 max-lg:inset-x-4 max-lg:bottom-36 max-lg:top-auto max-lg:grid max-lg:translate-y-0 max-lg:grid-cols-2 max-lg:px-0 max-md:grid-cols-1">
         <EarthSystemsColumn
           activeBridge={activeBridge}
@@ -2033,6 +2087,8 @@ function ConceptOverlay({
 
 export function EarthHero() {
   const [isPanelPointerActive, setIsPanelPointerActive] = useState(false);
+  const [isMetaEarthMerged, setIsMetaEarthMerged] = useState(false);
+  const toggleMetaEarth = () => setIsMetaEarthMerged((value) => !value);
 
   return (
     <section className="relative min-h-screen bg-black">
@@ -2045,11 +2101,17 @@ export function EarthHero() {
           style={{ height: "100%", width: "100%" }}
         >
           <Suspense fallback={null}>
-            <Scene enableZoom={!isPanelPointerActive} />
+            <Scene
+              enableZoom={!isPanelPointerActive}
+              isMerged={isMetaEarthMerged}
+              onToggleMerged={toggleMetaEarth}
+            />
           </Suspense>
         </Canvas>
       </div>
       <ConceptOverlay
+        isMetaEarthMerged={isMetaEarthMerged}
+        onMetaEarthToggle={toggleMetaEarth}
         onPanelPointerEnter={() => setIsPanelPointerActive(true)}
         onPanelPointerLeave={() => setIsPanelPointerActive(false)}
       />
