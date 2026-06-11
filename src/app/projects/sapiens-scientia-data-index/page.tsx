@@ -1,4 +1,11 @@
-import Link from "next/link";
+import type { Metadata } from "next";
+import { SiteNav } from "@/components/site-nav";
+
+export const metadata: Metadata = {
+  title: "Sapiens Scientia Data Index | Sapiens Scientia",
+  description:
+    "A working index of public databases, scholarly indexes, archives, platforms, and registries relevant to Sapiens Scientia.",
+};
 
 const indexSections = [
   {
@@ -334,20 +341,13 @@ const totalEntries = indexSections.reduce(
 export default function SapiensScientiaDataIndexPage() {
   return (
     <main className="min-h-screen bg-black px-6 py-8 text-white sm:px-10">
-      <nav className="mb-14 flex items-center justify-between gap-6">
-        <Link
-          href="/projects"
-          className="text-sm font-medium text-slate-300 transition-colors hover:text-white"
-        >
-          Back to projects
-        </Link>
-        <Link
-          href="/"
-          className="text-sm font-medium text-slate-300 transition-colors hover:text-white"
-        >
-          Home
-        </Link>
-      </nav>
+      <SiteNav
+        links={[
+          { href: "/", label: "Home" },
+          { href: "/projects", label: "Projects" },
+          { href: "/platforms", label: "Platforms" },
+        ]}
+      />
 
       <section className="mx-auto flex max-w-6xl flex-col gap-14">
         <header className="max-w-4xl">

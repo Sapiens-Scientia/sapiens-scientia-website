@@ -1,6 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { SalusPopulationGlobe } from "@/components/salus-population-globe";
+import { SiteNav } from "@/components/site-nav";
+
+export const metadata: Metadata = {
+  title: "Salus | Sapiens Scientia",
+  description:
+    "Sapiens Scientia Salus: the human health platform for biology, medicine, disease, care, and lived experience.",
+};
 
 const diseaseBurdenStats = [
   {
@@ -111,14 +119,7 @@ const morbusSources = [
 export default function SalusPage() {
   return (
     <main className="min-h-screen bg-black px-6 py-8 text-white sm:px-10">
-      <nav className="mb-10 flex gap-6">
-        <Link
-          href="/"
-          className="text-sm font-medium text-slate-300 transition-colors hover:text-white"
-        >
-          Back to home
-        </Link>
-      </nav>
+      <SiteNav />
 
       <section className="mx-auto flex max-w-7xl flex-col gap-10">
         <header className="max-w-4xl">

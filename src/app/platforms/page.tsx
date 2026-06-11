@@ -1,4 +1,12 @@
 import Link from "next/link";
+import type { Metadata } from "next";
+import { SiteNav } from "@/components/site-nav";
+
+export const metadata: Metadata = {
+  title: "Platforms | Sapiens Scientia",
+  description:
+    "The Sapiens Scientia platform triad: Salus for health, Societas for society, and Terra for Earth systems.",
+};
 
 type PlatformId = "salus" | "societas" | "terra";
 
@@ -193,14 +201,7 @@ function SystemsMap() {
 export default function PlatformsPage() {
   return (
     <main className="min-h-screen bg-black px-6 py-8 text-white sm:px-10">
-      <nav className="mb-10 flex gap-6">
-        <Link
-          href="/"
-          className="text-sm font-medium text-slate-300 transition-colors hover:text-white"
-        >
-          Back to home
-        </Link>
-      </nav>
+      <SiteNav />
 
       <section className="mx-auto flex max-w-7xl flex-col gap-10">
         <header className="max-w-4xl">

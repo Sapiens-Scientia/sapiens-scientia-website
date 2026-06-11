@@ -4,9 +4,18 @@ import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.sapiensscientia.com"),
   title: "Sapiens Scientia",
   description:
-    "A cinematic 3D visualization of the bridge between physical Earth and digital knowledge.",
+    "A public knowledge project mapping human health, society, Earth systems, and digital knowledge.",
+  openGraph: {
+    title: "Sapiens Scientia",
+    description:
+      "A public knowledge project mapping human health, society, Earth systems, and digital knowledge.",
+    url: "/",
+    siteName: "Sapiens Scientia",
+    type: "website",
+  },
 };
 
 export default function RootLayout({

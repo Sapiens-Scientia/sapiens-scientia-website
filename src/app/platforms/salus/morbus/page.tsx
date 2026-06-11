@@ -1,4 +1,11 @@
-import Link from "next/link";
+import type { Metadata } from "next";
+import { SiteNav } from "@/components/site-nav";
+
+export const metadata: Metadata = {
+  title: "Morbus | Sapiens Scientia",
+  description:
+    "Sapiens Scientia Morbus: the disease ontology inside Salus for plural classification of human disease.",
+};
 
 type DiseaseGroup = {
   kind: string;
@@ -98,14 +105,13 @@ const morbusSources = [
 export default function MorbusPage() {
   return (
     <main className="min-h-screen bg-black px-6 py-8 text-white sm:px-10">
-      <nav className="mb-10 flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-slate-300">
-        <Link href="/" className="transition-colors hover:text-white">
-          Back to home
-        </Link>
-        <Link href="/platforms/salus" className="transition-colors hover:text-white">
-          ← Sapiens Scientia Salus
-        </Link>
-      </nav>
+      <SiteNav
+        links={[
+          { href: "/", label: "Home" },
+          { href: "/platforms", label: "Platforms" },
+          { href: "/platforms/salus", label: "Salus" },
+        ]}
+      />
 
       <section className="mx-auto flex max-w-7xl flex-col gap-10">
         <header className="max-w-4xl">
