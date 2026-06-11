@@ -61,9 +61,9 @@ const morbusDiseaseGroups = [
     kind: "Primary Etiologic Diseases",
     principle: "Pathology is chiefly organized around a relatively identifiable initiating cause.",
     subtypes: [
-      { name: "Physical injury", examples: ["trauma", "burns", "radiation injury"] },
+      { name: "Physical injury", examples: ["trauma", "burns", "frostbite"] },
       { name: "Deficiency", examples: ["scurvy", "iron-deficiency anaemia", "iodine deficiency"] },
-      { name: "Toxic exposure", examples: ["lead poisoning", "alcohol toxicity", "carbon monoxide poisoning"] },
+      { name: "Chemical exposure", examples: ["asbestosis", "silicosis", "alcohol-related liver disease"] },
       { name: "Infectious disease", examples: ["influenza", "tuberculosis", "HIV disease"] },
       { name: "Hereditary disease", examples: ["cystic fibrosis", "sickle cell disease", "Huntington disease"] },
     ],
@@ -88,7 +88,7 @@ const morbusDiseaseGroups = [
       { name: "Gene plus physiology", examples: ["familial hypercholesterolaemia", "haemochromatosis", "BRCA-associated cancer risk"] },
       { name: "Environment plus regulation", examples: ["COPD", "occupational asthma", "non-alcoholic fatty liver disease"] },
       { name: "Immune plus tissue ecology", examples: ["inflammatory bowel disease", "rheumatoid arthritis", "psoriasis"] },
-      { name: "Treatment effect", examples: ["iatrogenic harm", "adverse drug reaction", "radiation fibrosis"] },
+      { name: "Treatment effect", examples: ["iatrogenic harm", "adverse drug reaction", "post-surgical adhesions"] },
     ],
   },
 ];
