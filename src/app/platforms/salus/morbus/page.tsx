@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
+import { MorbusExplorer } from "@/components/morbus-explorer";
 
 export const metadata: Metadata = {
   title: "Morbus | Sapiens Scientia",
@@ -71,20 +72,6 @@ const distinctionSet = [
   { term: "Treatment effect", detail: "Change in the disease produced by intervention." },
   { term: "Iatrogenic harm", detail: "Harm caused by medical care itself." },
   { term: "Lived experience", detail: "The condition as felt and narrated by the person living it." },
-];
-
-// The axes a single condition can be cross-indexed along — the plural-classification
-// principle, illustrated for inflammatory bowel disease.
-const axes = [
-  { axis: "Anatomical", value: "Gastrointestinal tract, ileum and colon" },
-  { axis: "Etiologic", value: "Polygenic risk plus environmental triggers" },
-  { axis: "Molecular", value: "NOD2, IL-23 / Th17 signalling" },
-  { axis: "Immunological", value: "Dysregulated mucosal immune response" },
-  { axis: "Barrier", value: "Compromised intestinal epithelial barrier" },
-  { axis: "Ecological", value: "Altered gut microbiome (dysbiosis)" },
-  { axis: "Developmental", value: "Onset often in adolescence / young adulthood" },
-  { axis: "Social", value: "Diet, urbanization, antibiotic exposure" },
-  { axis: "Experiential", value: "Relapsing-remitting course, fatigue, stigma" },
 ];
 
 const crosswalks = [
@@ -211,31 +198,17 @@ export default function MorbusPage() {
         <section className="flex flex-col gap-7 border-t border-emerald-200/15 pt-10">
           <div className="max-w-3xl">
             <h2 className="text-3xl font-semibold tracking-normal text-white sm:text-4xl">
-              Plural Classification
+              Plural Classification Explorer
             </h2>
             <p className="mt-4 text-base leading-7 text-slate-300">
-              The working hypothesis: one condition may be simultaneously
+              The working hypothesis of Morbus is that one condition is simultaneously
               anatomical, molecular, immunological, developmental, ecological,
-              environmental, and social. Morbus cross-indexes a disease along
-              every axis it touches instead of forcing it into a single category.
-              Inflammatory bowel disease, read across its axes:
+              environmental, and social. Explore how key human diseases decompose along
+              each axis rather than being forced into a single legacy category.
             </p>
           </div>
 
-          <div className="grid gap-px overflow-hidden border border-white/10 bg-white/10 sm:grid-cols-2 lg:grid-cols-3">
-            {axes.map((row) => (
-              <div key={row.axis} className="flex flex-col gap-1 bg-black p-4">
-                <p className="text-xs font-medium uppercase tracking-[0.16em] text-emerald-200/70">
-                  {row.axis}
-                </p>
-                <p className="text-sm leading-6 text-slate-200">{row.value}</p>
-              </div>
-            ))}
-          </div>
-
-          <p className="text-xs leading-5 text-slate-500">
-            Illustrative decomposition; not a clinical guideline.
-          </p>
+          <MorbusExplorer />
         </section>
 
         <section className="flex flex-col gap-7 border-t border-emerald-200/15 pt-10">

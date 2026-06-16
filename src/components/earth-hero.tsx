@@ -101,6 +101,11 @@ type EarthVitalSign = {
   };
   updated: string;
   value: string;
+  historicalData?: {
+    points: { year: number; value: number }[];
+    projection?: { year: number; value: number }[];
+    unit: string;
+  };
 };
 
 const timeZoneOptions: TimeZoneOption[] = [
@@ -210,6 +215,23 @@ const earthVitalSigns: EarthVitalSign[] = [
     updated: "Jun 2026",
     source: "U.S. Census Bureau",
     sourceHref: "https://www.census.gov/popclock/",
+    historicalData: {
+      points: [
+        { year: 1970, value: 3.7 },
+        { year: 1980, value: 4.4 },
+        { year: 1990, value: 5.3 },
+        { year: 2000, value: 6.1 },
+        { year: 2010, value: 6.9 },
+        { year: 2020, value: 7.8 },
+        { year: 2026, value: 8.19 },
+      ],
+      projection: [
+        { year: 2030, value: 8.5 },
+        { year: 2040, value: 9.2 },
+        { year: 2050, value: 9.7 },
+      ],
+      unit: "B",
+    },
   },
   {
     accent: "#fb923c",
@@ -226,6 +248,23 @@ const earthVitalSigns: EarthVitalSign[] = [
       remainingLabel: "1.8T bbl proved remaining",
       remainingPercent: 51,
     },
+    historicalData: {
+      points: [
+        { year: 1970, value: 10 },
+        { year: 1980, value: 18 },
+        { year: 1990, value: 25 },
+        { year: 2000, value: 32 },
+        { year: 2010, value: 39 },
+        { year: 2020, value: 46 },
+        { year: 2025, value: 49 },
+      ],
+      projection: [
+        { year: 2030, value: 52 },
+        { year: 2040, value: 58 },
+        { year: 2050, value: 64 },
+      ],
+      unit: "% used",
+    },
   },
   {
     accent: "#86efac",
@@ -236,6 +275,23 @@ const earthVitalSigns: EarthVitalSign[] = [
     updated: "2025 est.",
     source: "IMF WEO",
     sourceHref: "https://www.imf.org/external/datamapper/",
+    historicalData: {
+      points: [
+        { year: 1970, value: 3.4 },
+        { year: 1980, value: 11.2 },
+        { year: 1990, value: 22.8 },
+        { year: 2000, value: 33.8 },
+        { year: 2010, value: 66.1 },
+        { year: 2020, value: 85.2 },
+        { year: 2025, value: 118 },
+      ],
+      projection: [
+        { year: 2030, value: 140 },
+        { year: 2040, value: 190 },
+        { year: 2050, value: 250 },
+      ],
+      unit: "$T",
+    },
   },
   {
     accent: "#fbbf24",
@@ -246,6 +302,23 @@ const earthVitalSigns: EarthVitalSign[] = [
     updated: "2024",
     source: "Energy Institute",
     sourceHref: "https://www.energyinst.org/statistical-review",
+    historicalData: {
+      points: [
+        { year: 1970, value: 230 },
+        { year: 1980, value: 290 },
+        { year: 1990, value: 360 },
+        { year: 2000, value: 420 },
+        { year: 2010, value: 520 },
+        { year: 2020, value: 560 },
+        { year: 2024, value: 592 },
+      ],
+      projection: [
+        { year: 2030, value: 630 },
+        { year: 2040, value: 680 },
+        { year: 2050, value: 720 },
+      ],
+      unit: "EJ",
+    },
   },
   {
     accent: "#06b6d4",
@@ -256,6 +329,23 @@ const earthVitalSigns: EarthVitalSign[] = [
     updated: "2024 report",
     source: "UN-Water",
     sourceHref: "https://www.unwater.org/water-facts/water-food-and-energy/",
+    historicalData: {
+      points: [
+        { year: 1970, value: 78 },
+        { year: 1980, value: 76 },
+        { year: 1990, value: 74 },
+        { year: 2000, value: 73 },
+        { year: 2010, value: 72 },
+        { year: 2020, value: 72 },
+        { year: 2024, value: 72 },
+      ],
+      projection: [
+        { year: 2030, value: 71 },
+        { year: 2040, value: 69 },
+        { year: 2050, value: 67 },
+      ],
+      unit: "% ag",
+    },
   },
   {
     accent: "#c084fc",
@@ -266,6 +356,20 @@ const earthVitalSigns: EarthVitalSign[] = [
     updated: "2023",
     source: "UNEP",
     sourceHref: "https://www.unep.org/resources/global-waste-management-outlook-2024",
+    historicalData: {
+      points: [
+        { year: 2000, value: 1.2 },
+        { year: 2010, value: 1.6 },
+        { year: 2020, value: 2.0 },
+        { year: 2023, value: 2.1 },
+      ],
+      projection: [
+        { year: 2030, value: 2.5 },
+        { year: 2040, value: 3.1 },
+        { year: 2050, value: 3.8 },
+      ],
+      unit: "B t/yr",
+    },
   },
   {
     accent: "#fb7185",
@@ -276,6 +380,22 @@ const earthVitalSigns: EarthVitalSign[] = [
     updated: "2019",
     source: "OECD",
     sourceHref: "https://www.oecd.org/en/publications/global-plastics-outlook_de747aef-en.html",
+    historicalData: {
+      points: [
+        { year: 1970, value: 30 },
+        { year: 1980, value: 60 },
+        { year: 1990, value: 110 },
+        { year: 2000, value: 190 },
+        { year: 2010, value: 290 },
+        { year: 2019, value: 353 },
+      ],
+      projection: [
+        { year: 2030, value: 460 },
+        { year: 2040, value: 620 },
+        { year: 2050, value: 800 },
+      ],
+      unit: "M t/yr",
+    },
   },
   {
     accent: "#a3e635",
@@ -286,6 +406,20 @@ const earthVitalSigns: EarthVitalSign[] = [
     updated: "UN estimate",
     source: "United Nations",
     sourceHref: "https://www.un.org/en/climatechange/science/climate-issues/land",
+    historicalData: {
+      points: [
+        { year: 2000, value: 20 },
+        { year: 2010, value: 28 },
+        { year: 2020, value: 36 },
+        { year: 2025, value: 40 },
+      ],
+      projection: [
+        { year: 2030, value: 45 },
+        { year: 2040, value: 52 },
+        { year: 2050, value: 60 },
+      ],
+      unit: "% deg.",
+    },
   },
   {
     accent: "#f97316",
@@ -296,6 +430,23 @@ const earthVitalSigns: EarthVitalSign[] = [
     updated: "2025 annual",
     source: "NASA GISS",
     sourceHref: "https://science.nasa.gov/earth/explore/earth-indicators/global-temperature/",
+    historicalData: {
+      points: [
+        { year: 1970, value: 0.03 },
+        { year: 1980, value: 0.26 },
+        { year: 1990, value: 0.45 },
+        { year: 2000, value: 0.40 },
+        { year: 2010, value: 0.72 },
+        { year: 2020, value: 1.02 },
+        { year: 2025, value: 1.19 },
+      ],
+      projection: [
+        { year: 2030, value: 1.35 },
+        { year: 2040, value: 1.60 },
+        { year: 2050, value: 1.85 },
+      ],
+      unit: "°C",
+    },
   },
   {
     accent: "#38bdf8",
@@ -306,6 +457,23 @@ const earthVitalSigns: EarthVitalSign[] = [
     updated: "Apr 2026",
     source: "NASA / NOAA",
     sourceHref: "https://science.nasa.gov/earth/explore/earth-indicators/carbon-dioxide/",
+    historicalData: {
+      points: [
+        { year: 1970, value: 325 },
+        { year: 1980, value: 338 },
+        { year: 1990, value: 354 },
+        { year: 2000, value: 369 },
+        { year: 2010, value: 389 },
+        { year: 2020, value: 414 },
+        { year: 2026, value: 431 },
+      ],
+      projection: [
+        { year: 2030, value: 442 },
+        { year: 2040, value: 470 },
+        { year: 2050, value: 495 },
+      ],
+      unit: "ppm",
+    },
   },
   {
     accent: "#a78bfa",
@@ -316,6 +484,22 @@ const earthVitalSigns: EarthVitalSign[] = [
     updated: "Jan 2026",
     source: "NASA / NOAA",
     sourceHref: "https://science.nasa.gov/earth/explore/earth-indicators/methane/",
+    historicalData: {
+      points: [
+        { year: 1980, value: 1580 },
+        { year: 1990, value: 1720 },
+        { year: 2000, value: 1775 },
+        { year: 2010, value: 1800 },
+        { year: 2020, value: 1880 },
+        { year: 2026, value: 1940 },
+      ],
+      projection: [
+        { year: 2030, value: 1980 },
+        { year: 2040, value: 2050 },
+        { year: 2050, value: 2100 },
+      ],
+      unit: "ppb",
+    },
   },
   {
     accent: "#22d3ee",
@@ -326,6 +510,23 @@ const earthVitalSigns: EarthVitalSign[] = [
     updated: "Dec 2024",
     source: "NASA / NOAA",
     sourceHref: "https://science.nasa.gov/earth/explore/earth-indicators/ocean-warming/",
+    historicalData: {
+      points: [
+        { year: 1970, value: 20 },
+        { year: 1980, value: 60 },
+        { year: 1990, value: 110 },
+        { year: 2000, value: 180 },
+        { year: 2010, value: 260 },
+        { year: 2020, value: 340 },
+        { year: 2024, value: 372 },
+      ],
+      projection: [
+        { year: 2030, value: 420 },
+        { year: 2040, value: 510 },
+        { year: 2050, value: 600 },
+      ],
+      unit: "ZJ",
+    },
   },
   {
     accent: "#60a5fa",
@@ -336,6 +537,21 @@ const earthVitalSigns: EarthVitalSign[] = [
     updated: "2025",
     source: "NASA JPL",
     sourceHref: "https://www.nasa.gov/earth/nasa-analysis-shows-la-nina-limited-sea-level-rise-in-2025/",
+    historicalData: {
+      points: [
+        { year: 1993, value: 0.0 },
+        { year: 2000, value: 2.2 },
+        { year: 2010, value: 5.5 },
+        { year: 2020, value: 9.3 },
+        { year: 2025, value: 11.2 },
+      ],
+      projection: [
+        { year: 2030, value: 14.0 },
+        { year: 2040, value: 20.0 },
+        { year: 2050, value: 27.0 },
+      ],
+      unit: "cm",
+    },
   },
   {
     accent: "#93c5fd",
@@ -346,6 +562,22 @@ const earthVitalSigns: EarthVitalSign[] = [
     updated: "Annual series",
     source: "NASA / NSIDC",
     sourceHref: "https://science.nasa.gov/earth/explore/earth-indicators/arctic-sea-ice-minimum-extent/",
+    historicalData: {
+      points: [
+        { year: 1980, value: 7.8 },
+        { year: 1990, value: 6.2 },
+        { year: 2000, value: 6.3 },
+        { year: 2010, value: 4.9 },
+        { year: 2020, value: 3.9 },
+        { year: 2024, value: 4.2 },
+      ],
+      projection: [
+        { year: 2030, value: 3.2 },
+        { year: 2040, value: 2.0 },
+        { year: 2050, value: 1.0 },
+      ],
+      unit: "M km²",
+    },
   },
   {
     accent: "#34d399",
@@ -356,6 +588,27 @@ const earthVitalSigns: EarthVitalSign[] = [
     updated: "2024",
     source: "Global Forest Watch / WRI",
     sourceHref: "https://gfr.wri.org/global-tree-cover-loss-data-2024",
+    historicalData: {
+      points: [
+        { year: 2015, value: 3.5 },
+        { year: 2016, value: 4.8 },
+        { year: 2017, value: 4.6 },
+        { year: 2018, value: 3.6 },
+        { year: 2019, value: 3.8 },
+        { year: 2020, value: 4.2 },
+        { year: 2021, value: 3.75 },
+        { year: 2022, value: 4.1 },
+        { year: 2023, value: 3.7 },
+        { year: 2024, value: 6.7 },
+      ],
+      projection: [
+        { year: 2025, value: 6.2 },
+        { year: 2030, value: 5.0 },
+        { year: 2040, value: 3.5 },
+        { year: 2050, value: 2.0 },
+      ],
+      unit: "M ha",
+    },
   },
   {
     accent: "#bef264",
@@ -366,6 +619,22 @@ const earthVitalSigns: EarthVitalSign[] = [
     updated: "2024 report",
     source: "WWF / ZSL",
     sourceHref: "https://www.worldwildlife.org/publications/2024-living-planet-report",
+    historicalData: {
+      points: [
+        { year: 1970, value: 0 },
+        { year: 1980, value: -15 },
+        { year: 1990, value: -35 },
+        { year: 2000, value: -50 },
+        { year: 2010, value: -62 },
+        { year: 2020, value: -73 },
+      ],
+      projection: [
+        { year: 2030, value: -78 },
+        { year: 2040, value: -82 },
+        { year: 2050, value: -85 },
+      ],
+      unit: "%",
+    },
   },
 ];
 
@@ -777,9 +1046,11 @@ function yearProgress(date: Date) {
 function EarthSunOrbitModel({
   position = [0, -1.2, 0.18],
   tilt = defaultOrbitTuning.tilt,
+  theme = "dark",
 }: {
   position?: [number, number, number];
   tilt?: number;
+  theme?: "dark" | "light";
 }) {
   const [now, setNow] = useState(() => new Date());
   const orbitRadius = 0.76;
@@ -815,11 +1086,11 @@ function EarthSunOrbitModel({
           <Text
             anchorX="center"
             anchorY="middle"
-            color="#fde68a"
+            color={theme === "light" ? "#b45309" : "#fde68a"}
             font={labelFont}
             fontSize={0.06}
             fontWeight={300}
-            outlineColor="#000000"
+            outlineColor={theme === "light" ? "#faf8f5" : "#000000"}
             outlineWidth={0.008}
             renderOrder={40}
           >
@@ -847,11 +1118,11 @@ function EarthSunOrbitModel({
                 <Text
                   anchorX="center"
                   anchorY="middle"
-                  color="#d8eeff"
+                  color={theme === "light" ? "#1c1917" : "#d8eeff"}
                   font={labelFont}
                   fontSize={0.052}
                   fontWeight={300}
-                  outlineColor="#000000"
+                  outlineColor={theme === "light" ? "#faf8f5" : "#000000"}
                   outlineWidth={0.007}
                   renderOrder={42}
                 >
@@ -869,11 +1140,11 @@ function EarthSunOrbitModel({
               <Text
                 anchorX="center"
                 anchorY="middle"
-                color="#93c5fd"
+                color={theme === "light" ? "#0284c7" : "#93c5fd"}
                 font={labelFont}
                 fontSize={0.058}
                 fontWeight={300}
-                outlineColor="#000000"
+                outlineColor={theme === "light" ? "#faf8f5" : "#000000"}
                 outlineWidth={0.008}
                 renderOrder={43}
               >
@@ -896,11 +1167,11 @@ function EarthSunOrbitModel({
                 <Text
                   anchorX="center"
                   anchorY="middle"
-                  color="#fef3c7"
+                  color={theme === "light" ? "#b45309" : "#fef3c7"}
                   font={labelFont}
                   fontSize={0.052}
                   fontWeight={300}
-                  outlineColor="#000000"
+                  outlineColor={theme === "light" ? "#faf8f5" : "#000000"}
                   outlineWidth={0.008}
                   renderOrder={44}
                 >
@@ -924,11 +1195,11 @@ function EarthSunOrbitModel({
           <Text
             anchorX="center"
             anchorY="middle"
-            color="#ffffff"
+            color={theme === "light" ? "#0284c7" : "#ffffff"}
             font={labelFont}
             fontSize={0.062}
             fontWeight={300}
-            outlineColor="#000000"
+            outlineColor={theme === "light" ? "#faf8f5" : "#000000"}
             outlineWidth={0.008}
             renderOrder={45}
           >
@@ -1018,9 +1289,11 @@ function PhysicalEarth({
 function DigitalEarth({
   isInteractive,
   targetPosition,
+  theme = "dark",
 }: {
   isInteractive: boolean;
   targetPosition: THREE.Vector3;
+  theme?: "dark" | "light";
 }) {
   const groupRef = useRef<THREE.Group>(null);
   const shellRef = useRef<THREE.Mesh>(null);
@@ -1081,13 +1354,13 @@ function DigitalEarth({
       <mesh ref={shellRef}>
         <sphereGeometry args={[1.12, 96, 96]} />
         <meshPhysicalMaterial
-          color="#1d76ff"
+          color={theme === "light" ? "#93c5fd" : "#1d76ff"}
           roughness={0.28}
           metalness={0.12}
           transmission={0.25}
           thickness={0.9}
           transparent
-          opacity={0.22}
+          opacity={theme === "light" ? 0.42 : 0.22}
           side={THREE.DoubleSide}
           depthTest
           depthWrite
@@ -1095,7 +1368,7 @@ function DigitalEarth({
       </mesh>
       <mesh scale={1.045}>
         <sphereGeometry args={[1.12, 32, 32]} />
-        <meshBasicMaterial color="#62c7ff" wireframe transparent opacity={0.16} depthTest depthWrite={false} />
+        <meshBasicMaterial color={theme === "light" ? "#38bdf8" : "#62c7ff"} wireframe transparent opacity={0.16} depthTest depthWrite={false} />
       </mesh>
       <group ref={networkRef}>
         <points>
@@ -1103,7 +1376,7 @@ function DigitalEarth({
             <bufferAttribute attach="attributes-position" args={[nodePositions, 3]} />
           </bufferGeometry>
           <pointsMaterial
-            color="#b8ecff"
+            color={theme === "light" ? "#0284c7" : "#b8ecff"}
             size={0.074}
             sizeAttenuation
             transparent
@@ -1116,16 +1389,22 @@ function DigitalEarth({
           <bufferGeometry>
             <bufferAttribute attach="attributes-position" args={[linkPositions, 3]} />
           </bufferGeometry>
-          <lineBasicMaterial color="#2fe3ff" transparent opacity={0.38} depthTest depthWrite={false} />
+          <lineBasicMaterial color={theme === "light" ? "#0ea5e9" : "#2fe3ff"} transparent opacity={0.38} depthTest depthWrite={false} />
         </lineSegments>
-        <DataIndexSurfaceNodes isInteractive={isInteractive} />
+        <DataIndexSurfaceNodes isInteractive={isInteractive} theme={theme} />
         <FeaturedDigitalNode isInteractive={isInteractive} />
       </group>
     </group>
   );
 }
 
-function DataIndexSurfaceNodes({ isInteractive }: { isInteractive: boolean }) {
+function DataIndexSurfaceNodes({ 
+  isInteractive, 
+  theme = "dark" 
+}: { 
+  isInteractive: boolean; 
+  theme?: "dark" | "light"; 
+}) {
   const surfaceNodes = useMemo(
     () => {
       const categoryIndexLookup = new Map(
@@ -1161,6 +1440,7 @@ function DataIndexSurfaceNodes({ isInteractive }: { isInteractive: boolean }) {
           isInteractive={isInteractive}
           name={entry.name}
           position={entry.position}
+          theme={theme}
         />
       ))}
     </group>
@@ -1173,12 +1453,14 @@ function DataIndexSurfaceNode({
   isInteractive,
   name,
   position,
+  theme = "dark",
 }: {
   color: string;
   href: string;
   isInteractive: boolean;
   name: string;
   position: [number, number, number];
+  theme?: "dark" | "light";
 }) {
   const [isHovered, setIsHovered] = useState(false);
   const nodeRef = useRef<THREE.Mesh>(null);
@@ -1266,11 +1548,11 @@ function DataIndexSurfaceNode({
           ref={labelRef}
           anchorX="center"
           anchorY="middle"
-          color="#ffffff"
+          color={theme === "light" ? "#1c1917" : "#ffffff"}
           font={labelFont}
           fontSize={isHovered ? 0.086 : 0.069}
           fontWeight={300}
-          outlineColor="#000000"
+          outlineColor={theme === "light" ? "#faf8f5" : "#000000"}
           outlineWidth={0.008}
           renderOrder={55}
         >
@@ -1456,10 +1738,12 @@ function GlobeLabel({
   children,
   onClick,
   position,
+  theme = "dark",
 }: {
   children: string;
   onClick?: () => void;
   position: [number, number, number];
+  theme?: "dark" | "light";
 }) {
   return (
     <Billboard position={position} follow lockX={false} lockY={false} lockZ={false}>
@@ -1490,11 +1774,11 @@ function GlobeLabel({
         <Text
           anchorX="center"
           anchorY="middle"
-          color="#ffffff"
+          color={theme === "light" ? "#1c1917" : "#ffffff"}
           font={earthLabelFont}
           fontSize={0.18}
           fontWeight={700}
-          outlineColor="#000000"
+          outlineColor={theme === "light" ? "#faf8f5" : "#000000"}
           outlineWidth={0.012}
           renderOrder={10}
         >
@@ -1508,9 +1792,11 @@ function GlobeLabel({
 function MetaEarthLabel({
   isMerged,
   onToggle,
+  theme = "dark",
 }: {
   isMerged: boolean;
   onToggle: () => void;
+  theme?: "dark" | "light";
 }) {
   return (
     <Billboard position={[0, metaCenter.y + 1.72, 0.16]} follow lockX={false} lockY={false} lockZ={false}>
@@ -1533,11 +1819,11 @@ function MetaEarthLabel({
         <Text
           anchorX="center"
           anchorY="middle"
-          color={isMerged ? "#b8ecff" : "#ffffff"}
+          color={isMerged ? (theme === "light" ? "#0284c7" : "#b8ecff") : (theme === "light" ? "#1c1917" : "#ffffff")}
           font={earthLabelFont}
           fontSize={0.17}
           fontWeight={700}
-          outlineColor="#000000"
+          outlineColor={theme === "light" ? "#faf8f5" : "#000000"}
           outlineWidth={0.012}
           renderOrder={12}
         >
@@ -1598,28 +1884,45 @@ function Scene({
   enableZoom,
   isMerged,
   onToggleMerged,
+  theme = "dark",
 }: {
   enableZoom: boolean;
   isMerged: boolean;
   onToggleMerged: () => void;
+  theme?: "dark" | "light";
 }) {
   const physicalTarget = isMerged ? metaCenter : physicalCenter;
   const digitalTarget = isMerged ? metaCenter : digitalCenter;
 
   return (
     <>
-      <color attach="background" args={["#000000"]} />
-      <ambientLight intensity={0.9} />
-      <directionalLight position={[-3, 2.6, 4]} intensity={2.1} color="#fff4df" />
-      <pointLight position={[2.9, 1.6, 2.2]} intensity={3.2} color="#278aff" />
-      <pointLight position={[0, 1.4, 2.8]} intensity={1.3} color="#8ff2ff" />
-      <Stars radius={16} depth={24} count={900} factor={2.4} saturation={0} fade speed={0.18} />
+      <color attach="background" args={[theme === "light" ? "#faf8f5" : "#000000"]} />
+      <ambientLight intensity={theme === "light" ? 1.45 : 0.9} />
+      <directionalLight 
+        position={[-3, 2.6, 4]} 
+        intensity={theme === "light" ? 2.5 : 2.1} 
+        color={theme === "light" ? "#ffffff" : "#fff4df"} 
+      />
+      <pointLight 
+        position={[2.9, 1.6, 2.2]} 
+        intensity={theme === "light" ? 2.4 : 3.2} 
+        color={theme === "light" ? "#0284c7" : "#278aff"} 
+      />
+      <pointLight 
+        position={[0, 1.4, 2.8]} 
+        intensity={theme === "light" ? 0.9 : 1.3} 
+        color={theme === "light" ? "#0ea5e9" : "#8ff2ff"} 
+      />
+      {theme === "dark" && (
+        <Stars radius={16} depth={24} count={900} factor={2.4} saturation={0} fade speed={0.18} />
+      )}
       <PhysicalEarth isInteractive={!isMerged} targetPosition={physicalTarget} />
-      <DigitalEarth isInteractive={!isMerged} targetPosition={digitalTarget} />
+      <DigitalEarth isInteractive={!isMerged} targetPosition={digitalTarget} theme={theme} />
       {!isMerged && <DataConnectors />}
       <EarthSunOrbitModel
         position={[0, metaCenter.y + defaultOrbitTuning.yOffset, metaCenter.z + 0.18]}
         tilt={defaultOrbitTuning.tilt}
+        theme={theme}
       />
       {!isMerged && (
         <>
@@ -1628,15 +1931,19 @@ function Scene({
               window.open(earthViewUrl, "_blank", "noopener,noreferrer");
             }}
             position={[physicalCenter.x, physicalCenter.y + 1.72, physicalCenter.z + 0.08]}
+            theme={theme}
           >
             Physical Earth
           </GlobeLabel>
-          <GlobeLabel position={[digitalCenter.x, digitalCenter.y + 1.72, digitalCenter.z + 0.08]}>
+          <GlobeLabel 
+            position={[digitalCenter.x, digitalCenter.y + 1.72, digitalCenter.z + 0.08]}
+            theme={theme}
+          >
             Digital Earth
           </GlobeLabel>
         </>
       )}
-      <MetaEarthLabel isMerged={isMerged} onToggle={onToggleMerged} />
+      <MetaEarthLabel isMerged={isMerged} onToggle={onToggleMerged} theme={theme} />
       <ConstrainedOrbitControls enableZoom={enableZoom} />
     </>
   );
@@ -1834,6 +2141,257 @@ function PopoutToggleButton({
   );
 }
 
+function VitalSignChart({ sign }: { sign: EarthVitalSign }) {
+  const data = sign.historicalData;
+  if (!data) return null;
+
+  const points = data.points;
+  const projection = data.projection || [];
+  const allPoints = [...points, ...projection];
+  if (allPoints.length === 0) return null;
+
+  // Find mins and maxs
+  const years = allPoints.map((p) => p.year);
+  const values = allPoints.map((p) => p.value);
+  const minYear = Math.min(...years);
+  const maxYear = Math.max(...years);
+  const minValue = Math.min(...values);
+  const maxValue = Math.max(...values);
+
+  // Buffer values slightly so the line doesn't clip at top/bottom
+  const valRange = maxValue - minValue || 1;
+  const yMin = minValue - valRange * 0.1;
+  const yMax = maxValue + valRange * 0.1;
+  const yearRange = maxYear - minYear || 1;
+
+  // SVG dimensions
+  const width = 280;
+  const height = 110;
+  const padding = { top: 15, right: 15, bottom: 20, left: 35 };
+
+  // Map coordinates
+  const getX = (year: number) => padding.left + ((year - minYear) / yearRange) * (width - padding.left - padding.right);
+  const getY = (value: number) => height - padding.bottom - ((value - yMin) / (yMax - yMin)) * (height - padding.top - padding.bottom);
+
+  // Generate path for historical data
+  const histPoints = points.map((p) => `${getX(p.year)},${getY(p.value)}`);
+  const histPath = `M ${histPoints.join(" L ")}`;
+
+  // Generate path for area gradient fill
+  const areaPath = points.length > 0 ? `${histPath} L ${getX(points[points.length - 1].year)},${height - padding.bottom} L ${getX(points[0].year)},${height - padding.bottom} Z` : "";
+
+  // Generate path for projection data (dashed line)
+  let projPath = "";
+  if (projection.length > 0 && points.length > 0) {
+    const lastHist = points[points.length - 1];
+    const projPoints = [lastHist, ...projection].map((p) => `${getX(p.year)},${getY(p.value)}`);
+    projPath = `M ${projPoints.join(" L ")}`;
+  }
+
+  // Interactive tooltip tracking state
+  const [hoveredPoint, setHoveredPoint] = useState<{ year: number; value: number } | null>(null);
+
+  const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+
+    // Find the closest point in x direction
+    let closest = allPoints[0];
+    let minDist = Math.abs(getX(allPoints[0].year) - x);
+
+    for (let i = 1; i < allPoints.length; i++) {
+      const dist = Math.abs(getX(allPoints[i].year) - x);
+      if (dist < minDist) {
+        minDist = dist;
+        closest = allPoints[i];
+      }
+    }
+
+    setHoveredPoint(closest);
+  };
+
+  const handlePointerLeave = () => {
+    setHoveredPoint(null);
+  };
+
+  return (
+    <div className="mt-3 border border-white/5 bg-white/[0.015] p-2 rounded" onClick={(e) => e.stopPropagation()}>
+      <div className="flex justify-between items-center text-[0.62rem] font-mono text-slate-400 mb-1">
+        <span>Historical Trend & Projection</span>
+        <span className="text-white font-semibold">
+          {hoveredPoint ? `${hoveredPoint.year}: ${hoveredPoint.value}${data.unit}` : `Hover for details`}
+        </span>
+      </div>
+
+      <svg
+        width="100%"
+        height={height}
+        viewBox={`0 0 ${width} ${height}`}
+        onPointerMove={handlePointerMove}
+        onPointerLeave={handlePointerLeave}
+        className="overflow-visible select-none cursor-crosshair"
+      >
+        <defs>
+          <linearGradient id={`grad-${sign.label.replace(/\s+/g, "-")}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={sign.accent} stopOpacity={0.35} />
+            <stop offset="100%" stopColor={sign.accent} stopOpacity={0.0} />
+          </linearGradient>
+        </defs>
+
+        {/* X axis line */}
+        <line
+          x1={padding.left}
+          y1={height - padding.bottom}
+          x2={width - padding.right}
+          y2={height - padding.bottom}
+          stroke="#334155"
+          strokeWidth="1"
+          opacity="0.6"
+        />
+
+        {/* Grid lines (min, max) */}
+        <line
+          x1={padding.left}
+          y1={getY(minValue)}
+          x2={width - padding.right}
+          y2={getY(minValue)}
+          stroke="#1e293b"
+          strokeWidth="1"
+          strokeDasharray="2 3"
+        />
+        <line
+          x1={padding.left}
+          y1={getY(maxValue)}
+          x2={width - padding.right}
+          y2={getY(maxValue)}
+          stroke="#1e293b"
+          strokeWidth="1"
+          strokeDasharray="2 3"
+        />
+
+        {/* Y Axis Labels */}
+        <text
+          x={padding.left - 6}
+          y={getY(minValue) + 3}
+          textAnchor="end"
+          fontSize="8"
+          fill="#94a3b8"
+          fontFamily="monospace"
+        >
+          {minValue.toFixed(minValue % 1 === 0 ? 0 : 1)}
+        </text>
+        <text
+          x={padding.left - 6}
+          y={getY(maxValue) + 3}
+          textAnchor="end"
+          fontSize="8"
+          fill="#94a3b8"
+          fontFamily="monospace"
+        >
+          {maxValue.toFixed(maxValue % 1 === 0 ? 0 : 1)}
+        </text>
+
+        {/* X Axis Labels */}
+        <text
+          x={getX(minYear)}
+          y={height - padding.bottom + 12}
+          textAnchor="middle"
+          fontSize="8"
+          fill="#94a3b8"
+          fontFamily="monospace"
+        >
+          {minYear}
+        </text>
+        <text
+          x={getX(maxYear)}
+          y={height - padding.bottom + 12}
+          textAnchor="middle"
+          fontSize="8"
+          fill="#94a3b8"
+          fontFamily="monospace"
+        >
+          {maxYear}
+        </text>
+
+        {/* Area fill under historical line */}
+        {areaPath && (
+          <path
+            d={areaPath}
+            fill={`url(#grad-${sign.label.replace(/\s+/g, "-")})`}
+          />
+        )}
+
+        {/* Historical line */}
+        <path
+          d={histPath}
+          fill="none"
+          stroke={sign.accent}
+          strokeWidth="1.75"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {/* Projection line (dashed) */}
+        {projPath && (
+          <path
+            d={projPath}
+            fill="none"
+            stroke={sign.accent}
+            strokeWidth="1.75"
+            strokeDasharray="3 3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            opacity="0.8"
+          />
+        )}
+
+        {/* Data points (circles) */}
+        {points.map((p, idx) => (
+          <circle
+            key={`p-${idx}`}
+            cx={getX(p.year)}
+            cy={getY(p.value)}
+            r={hoveredPoint?.year === p.year ? 4 : 2}
+            fill="#0f172a"
+            stroke={sign.accent}
+            strokeWidth={1.5}
+            className="transition-all duration-200"
+          />
+        ))}
+
+        {/* Projection points (circles) */}
+        {projection.map((p, idx) => (
+          <circle
+            key={`proj-${idx}`}
+            cx={getX(p.year)}
+            cy={getY(p.value)}
+            r={hoveredPoint?.year === p.year ? 4 : 2}
+            fill="#0f172a"
+            stroke={sign.accent}
+            strokeWidth={1.25}
+            strokeDasharray="1 1"
+            className="transition-all duration-200"
+          />
+        ))}
+
+        {/* Vertical hover marker line */}
+        {hoveredPoint && (
+          <line
+            x1={getX(hoveredPoint.year)}
+            y1={padding.top}
+            x2={getX(hoveredPoint.year)}
+            y2={height - padding.bottom}
+            stroke="#64748b"
+            strokeWidth="0.75"
+            strokeDasharray="2 2"
+            opacity="0.8"
+          />
+        )}
+      </svg>
+    </div>
+  );
+}
+
 function EarthVitalSignsPanel({
   isOpen,
   onPanelPointerEnter,
@@ -1844,6 +2402,7 @@ function EarthVitalSignsPanel({
   onPanelPointerLeave: () => void;
 }) {
   const { handlePanelWheel, panelRef } = useManualPanelWheel<HTMLElement>();
+  const [expandedLabel, setExpandedLabel] = useState<string | null>(null);
 
   return (
     <aside
@@ -1869,61 +2428,82 @@ function EarthVitalSignsPanel({
           <h2 className="mt-1 text-2xl font-semibold leading-none text-white max-lg:text-xl">Earth Vital Signs</h2>
         </div>
         <p className="shrink-0 pt-1 text-right font-mono text-[0.62rem] uppercase leading-tight tracking-[0.14em] text-slate-400">
-          Latest
-          <br />
-          Reported
+          Value
         </p>
       </div>
-      <dl className="mt-4 space-y-3">
-        {earthVitalSigns.map((sign) => (
-          <div key={sign.label} className="border-t border-white/10 pt-3 first:border-t-0 first:pt-0">
-            <dt className="flex items-center justify-between gap-3">
-              <span className="flex min-w-0 items-center gap-2 text-sm font-semibold text-slate-100">
-                <span
-                  className="h-2 w-2 shrink-0 rounded-full"
-                  style={{ backgroundColor: sign.accent, boxShadow: `0 0 12px ${sign.accent}` }}
-                />
-                <span className="truncate">{sign.label}</span>
-              </span>
-              <span className="shrink-0 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-slate-400">
-                {sign.updated}
-              </span>
-            </dt>
-            <dd className="mt-1">
-              <p className="font-mono text-2xl leading-none text-sky-100">{sign.value}</p>
-              {sign.statusBar && (
-                <div className="mt-3">
-                  <div
-                    className="flex h-2 overflow-hidden border border-white/10 bg-white/8"
-                    aria-label={`${sign.label}: ${sign.statusBar.usedLabel}; ${sign.statusBar.remainingLabel}`}
-                  >
-                    <span
-                      className="h-full bg-orange-400"
-                      style={{ width: `${sign.statusBar.usedPercent}%` }}
-                    />
-                    <span
-                      className="h-full bg-sky-300/70"
-                      style={{ width: `${sign.statusBar.remainingPercent}%` }}
-                    />
-                  </div>
-                  <div className="mt-1 grid grid-cols-2 gap-2 font-mono text-[0.62rem] uppercase leading-tight tracking-[0.1em] text-slate-400">
-                    <span>{sign.statusBar.usedLabel}</span>
-                    <span className="text-right">{sign.statusBar.remainingLabel}</span>
-                  </div>
-                </div>
-              )}
-              <p className="mt-1 text-xs leading-snug text-slate-300/84">{sign.note}</p>
-              <a
-                href={sign.sourceHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-2 inline-flex text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-blue-300/85 underline-offset-4 transition-colors hover:text-white hover:underline focus:outline-none focus-visible:text-white focus-visible:underline"
+      <dl className="mt-4 space-y-2">
+        {earthVitalSigns.map((sign) => {
+          const isExpanded = expandedLabel === sign.label;
+          return (
+            <div
+              key={sign.label}
+              onClick={() => setExpandedLabel(isExpanded ? null : sign.label)}
+              className={[
+                "border-t border-white/10 pt-2.5 first:border-t-0 first:pt-0 cursor-pointer select-none rounded p-1.5 -mx-1.5 transition-all duration-300",
+                isExpanded ? "bg-white/[0.04] border-l-2 border-l-sky-500 pl-2.5" : "hover:bg-white/[0.02]"
+              ].join(" ")}
+            >
+              <dt className="flex items-center justify-between gap-3">
+                <span className="flex min-w-0 items-center gap-2 text-sm font-semibold text-slate-100">
+                  <span
+                    className="h-2 w-2 shrink-0 rounded-full"
+                    style={{ backgroundColor: sign.accent, boxShadow: `0 0 12px ${sign.accent}` }}
+                  />
+                  <span className="truncate">{sign.label}</span>
+                </span>
+                <span className="shrink-0 font-mono text-xs text-sky-200">
+                  {sign.value}
+                </span>
+              </dt>
+              <dd
+                className={[
+                  "overflow-hidden transition-all duration-300 ease-in-out",
+                  isExpanded ? "max-h-[380px] opacity-100 mt-2" : "max-h-0 opacity-0 pointer-events-none"
+                ].join(" ")}
               >
-                {sign.source}
-              </a>
-            </dd>
-          </div>
-        ))}
+                <p className="font-mono text-[0.62rem] uppercase tracking-[0.12em] text-slate-400">
+                  Last updated: {sign.updated}
+                </p>
+                {sign.statusBar && (
+                  <div className="mt-2.5" onClick={(e) => e.stopPropagation()}>
+                    <div
+                      className="flex h-2 overflow-hidden border border-white/10 bg-white/8"
+                      aria-label={`${sign.label}: ${sign.statusBar.usedLabel}; ${sign.statusBar.remainingLabel}`}
+                    >
+                      <span
+                        className="h-full bg-orange-400"
+                        style={{ width: `${sign.statusBar.usedPercent}%` }}
+                      />
+                      <span
+                        className="h-full bg-sky-300/70"
+                        style={{ width: `${sign.statusBar.remainingPercent}%` }}
+                      />
+                    </div>
+                    <div className="mt-1 grid grid-cols-2 gap-2 font-mono text-[0.62rem] uppercase leading-tight tracking-[0.1em] text-slate-400">
+                      <span>{sign.statusBar.usedLabel}</span>
+                      <span className="text-right">{sign.statusBar.remainingLabel}</span>
+                    </div>
+                  </div>
+                )}
+                <p className="mt-2 text-xs leading-snug text-slate-300/84">{sign.note}</p>
+                
+                <VitalSignChart sign={sign} />
+
+                <div className="mt-2">
+                  <a
+                    href={sign.sourceHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-blue-300/85 underline-offset-4 transition-colors hover:text-white hover:underline focus:outline-none focus-visible:text-white focus-visible:underline"
+                  >
+                    Source: {sign.source}
+                  </a>
+                </div>
+              </dd>
+            </div>
+          );
+        })}
       </dl>
     </aside>
   );
@@ -2544,7 +3124,32 @@ function ConceptOverlay({
 export function EarthHero() {
   const [isPanelPointerActive, setIsPanelPointerActive] = useState(false);
   const [isMetaEarthMerged, setIsMetaEarthMerged] = useState(false);
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
   const toggleMetaEarth = () => setIsMetaEarthMerged((value) => !value);
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("sapiens-theme");
+    const isLight = savedTheme === "light" || document.documentElement.classList.contains("light-theme");
+    if (isLight) {
+      document.documentElement.classList.add("light-theme");
+      setTheme("light");
+    } else {
+      document.documentElement.classList.remove("light-theme");
+      setTheme("dark");
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    if (nextTheme === "light") {
+      document.documentElement.classList.add("light-theme");
+      localStorage.setItem("sapiens-theme", "light");
+    } else {
+      document.documentElement.classList.remove("light-theme");
+      localStorage.setItem("sapiens-theme", "dark");
+    }
+  };
 
   return (
     <section className="relative min-h-screen bg-black">
@@ -2561,10 +3166,23 @@ export function EarthHero() {
               enableZoom={!isPanelPointerActive}
               isMerged={isMetaEarthMerged}
               onToggleMerged={toggleMetaEarth}
+              theme={theme}
             />
           </Suspense>
         </Canvas>
       </div>
+      
+      {/* Floating Theme Switcher */}
+      <div className="pointer-events-auto absolute right-6 top-8 z-50 max-lg:top-4">
+        <button
+          onClick={toggleTheme}
+          className="theme-toggle-btn pointer-events-auto rounded border border-white/10 bg-black/40 px-3 py-1.5 text-xs font-semibold tracking-wide text-slate-300 transition-all hover:bg-black/60 hover:text-white cursor-pointer backdrop-blur-sm"
+          aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+        >
+          {theme === "dark" ? "☀ Light" : "☾ Dark"}
+        </button>
+      </div>
+
       <ConceptOverlay
         isMetaEarthMerged={isMetaEarthMerged}
         onMetaEarthToggle={toggleMetaEarth}
