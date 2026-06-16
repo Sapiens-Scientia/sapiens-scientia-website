@@ -6,6 +6,7 @@ const baseUrl = "https://www.sapiensscientia.com";
 const routes = [
   "/",
   "/scales",
+  "/chronos",
   "/vitals",
   "/platforms",
   "/platforms/salus",

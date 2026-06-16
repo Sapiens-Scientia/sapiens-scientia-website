@@ -15,6 +15,7 @@ type SiteNavProps = {
 const primaryLinks: SiteNavLink[] = [
   { href: "/", label: "Home" },
   { href: "/scales", label: "Scales" },
+  { href: "/chronos", label: "Chronos" },
   { href: "/vitals", label: "Vital Signs" },
   { href: "/platforms", label: "Platforms" },
   { href: "/projects", label: "Projects" },
