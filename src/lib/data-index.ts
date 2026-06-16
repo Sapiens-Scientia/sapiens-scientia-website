@@ -355,8 +355,30 @@ export const dataIndexCategories: DataIndexCategory[] = dataIndexCatalog.map((se
   entries: section.items.map(({ name, href }) => ({ name, href } satisfies DataIndexEntry)),
 }));
 
+export const DATA_INDEX_PAGE = "/projects/sapiens-scientia-data-index";
+
+export function dataIndexCategorySlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+export const dataIndexCategoryBySlug = Object.fromEntries(
+  dataIndexCatalog.map((section) => [dataIndexCategorySlug(section.name), section]),
+);
+
+export function dataIndexCategoryHref(name: string): string {
+  return `${DATA_INDEX_PAGE}#${dataIndexCategorySlug(name)}`;
+}
+
+export function dataIndexTitleForSlug(slug: string): string | null {
+  return dataIndexCategoryBySlug[slug]?.title ?? null;
+}
+
 export const dataIndexSections = dataIndexCatalog.map((section) => ({
   title: section.title,
+  slug: dataIndexCategorySlug(section.name),
   description: section.description,
   items: section.items,
 }));

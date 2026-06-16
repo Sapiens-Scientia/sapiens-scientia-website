@@ -5,6 +5,8 @@ import { SalusPopulationGlobe } from "@/components/salus-population-globe";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { PlatformCouplingLinks } from "@/components/platform-coupling-links";
+import { ScaleRungLinks } from "@/components/scale-rung-links";
+import { morbusDiseases } from "@/lib/morbus";
 
 export const metadata: Metadata = {
   title: "Salus | Sapiens Scientia",
@@ -233,6 +235,24 @@ export default function SalusPage() {
               Explore the Morbus ontology
               <span aria-hidden>→</span>
             </Link>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {(["ibd", "t2d", "covid19", "malaria", "hiv", "mdd"] as const).map((id) => {
+                const disease = morbusDiseases.find((entry) => entry.id === id);
+                if (!disease) {
+                  return null;
+                }
+
+                return (
+                  <Link
+                    key={id}
+                    href={`/platforms/salus/morbus#${id}`}
+                    className="border border-emerald-200/15 bg-emerald-200/[0.05] px-2.5 py-1 text-xs leading-5 text-emerald-100 transition-colors hover:border-emerald-200/35 hover:text-emerald-50"
+                  >
+                    {disease.name.replace(/ \(.*\)/, "")}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
 
           <div className="relative h-[min(68vw,40rem)] min-h-[24rem] overflow-hidden border border-white/10 bg-black">
@@ -314,6 +334,8 @@ export default function SalusPage() {
         </section>
 
         <PlatformCouplingLinks platform="salus" />
+
+        <ScaleRungLinks platform="salus" />
       </section>
       <SiteFooter />
     </main>

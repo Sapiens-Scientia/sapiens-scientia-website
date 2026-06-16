@@ -4,6 +4,7 @@ import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { TerraExplorer } from "@/components/terra-explorer";
 import { PlatformCouplingLinks } from "@/components/platform-coupling-links";
+import { ScaleRungLinks } from "@/components/scale-rung-links";
 
 export const metadata: Metadata = {
   title: "Terra | Sapiens Scientia",
@@ -55,6 +56,8 @@ export default function TerraPage() {
         <TerraExplorer />
 
         <PlatformCouplingLinks platform="terra" />
+
+        <ScaleRungLinks platform="terra" />
 
         <section className="flex flex-col gap-6 border-t border-emerald-200/15 pt-10">
           <div className="max-w-3xl">

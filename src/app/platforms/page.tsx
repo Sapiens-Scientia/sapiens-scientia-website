@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { PlatformsExplorer } from "@/components/platforms-explorer";
+import { CrossPlatformSimulator } from "@/components/cross-platform-simulator";
 
 export const metadata: Metadata = {
   title: "Platforms | Sapiens Scientia",
@@ -31,6 +32,8 @@ export default function PlatformsPage() {
             couplings between health, society, and Earth.
           </p>
         </header>
+
+        <CrossPlatformSimulator />
 
         <PlatformsExplorer />
 

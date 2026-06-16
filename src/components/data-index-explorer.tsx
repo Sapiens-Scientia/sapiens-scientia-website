@@ -1,11 +1,35 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { dataIndexSections } from "@/lib/data-index";
+import { dataIndexSections, dataIndexTitleForSlug } from "@/lib/data-index";
 
 export function DataIndexExplorer() {
   const [query, setQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string | null>(() => {
+    if (typeof window === "undefined") {
+      return null;
+    }
+
+    const slug = window.location.hash.replace(/^#/, "");
+    return slug ? dataIndexTitleForSlug(slug) : null;
+  });
+
+  const selectCategory = (title: string | null) => {
+    setActiveCategory(title);
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if (title) {
+      const section = dataIndexSections.find((entry) => entry.title === title);
+      if (section) {
+        window.history.replaceState(null, "", `#${section.slug}`);
+      }
+    } else {
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+  };
 
   const normalizedQuery = query.trim().toLowerCase();
 
@@ -52,7 +76,7 @@ export function DataIndexExplorer() {
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={() => setActiveCategory(null)}
+            onClick={() => selectCategory(null)}
             className={[
               "border px-3 py-1.5 text-xs font-medium uppercase tracking-[0.14em] transition-colors",
               activeCategory === null
@@ -67,7 +91,7 @@ export function DataIndexExplorer() {
               key={section.title}
               type="button"
               onClick={() =>
-                setActiveCategory((current) => (current === section.title ? null : section.title))
+                selectCategory(activeCategory === section.title ? null : section.title)
               }
               className={[
                 "border px-3 py-1.5 text-xs font-medium uppercase tracking-[0.14em] transition-colors",
@@ -91,7 +115,8 @@ export function DataIndexExplorer() {
           {filteredSections.map((section) => (
             <section
               key={section.title}
-              className="grid gap-6 border-t border-white/15 pt-8 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)]"
+              id={section.slug}
+              className="grid gap-6 border-t border-white/15 pt-8 scroll-mt-24 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)]"
             >
               <div>
                 <h2 className="text-3xl font-semibold tracking-normal text-white">
