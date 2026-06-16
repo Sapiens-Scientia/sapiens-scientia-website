@@ -1,5 +1,51 @@
 export type PlatformId = "salus" | "societas" | "terra";
 
+export type PlatformDefinition = {
+  id: PlatformId;
+  name: string;
+  shortName: string;
+  label: string;
+  domain: string;
+  href: string;
+  color: string;
+};
+
+export const platformDefinitions: Record<PlatformId, PlatformDefinition> = {
+  salus: {
+    id: "salus",
+    name: "Sapiens Scientia Salus",
+    shortName: "Salus",
+    label: "Human Health Platform",
+    domain: "Health, biology, medicine",
+    href: "/platforms/salus",
+    color: "#38bdf8",
+  },
+  societas: {
+    id: "societas",
+    name: "Sapiens Scientia Societas",
+    shortName: "Societas",
+    label: "Human Society Platform",
+    domain: "Society, culture, institutions",
+    href: "/platforms/societas",
+    color: "#818cf8",
+  },
+  terra: {
+    id: "terra",
+    name: "Sapiens Scientia Terra",
+    shortName: "Terra",
+    label: "Environmental Platform",
+    domain: "Earth systems, ecology, environment",
+    href: "/platforms/terra",
+    color: "#34d399",
+  },
+};
+
+export const platformList = [
+  platformDefinitions.salus,
+  platformDefinitions.societas,
+  platformDefinitions.terra,
+];
+
 export type PlatformCoupling = {
   slug: string;
   name: string;
@@ -64,19 +110,19 @@ export const platformCouplingBySlug = Object.fromEntries(
 ) as Record<string, PlatformCoupling>;
 
 export const platformHrefOf: Record<PlatformId, string> = {
-  salus: "/platforms/salus",
-  societas: "/platforms/societas",
-  terra: "/platforms/terra",
+  salus: platformDefinitions.salus.href,
+  societas: platformDefinitions.societas.href,
+  terra: platformDefinitions.terra.href,
 };
 
 export const platformColorOf: Record<PlatformId, string> = {
-  salus: "#38bdf8",
-  societas: "#818cf8",
-  terra: "#34d399",
+  salus: platformDefinitions.salus.color,
+  societas: platformDefinitions.societas.color,
+  terra: platformDefinitions.terra.color,
 };
 
 export const platformShortOf: Record<PlatformId, string> = {
-  salus: "Salus",
-  societas: "Societas",
-  terra: "Terra",
+  salus: platformDefinitions.salus.shortName,
+  societas: platformDefinitions.societas.shortName,
+  terra: platformDefinitions.terra.shortName,
 };

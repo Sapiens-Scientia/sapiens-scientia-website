@@ -88,6 +88,7 @@ function MetricCard({
 
 export function CrossPlatformSimulator() {
   const [inputs, setInputs] = useState<ScenarioInputs>(scenarioInputsFromLocation);
+  const [linkCopied, setLinkCopied] = useState(false);
   const userAdjusted = useRef(false);
 
   const outputs = useMemo(() => computeCrossPlatformScenario(inputs), [inputs]);
@@ -143,6 +144,8 @@ export function CrossPlatformSimulator() {
     const url = `${window.location.origin}${window.location.pathname}#${buildScenarioHash(inputs)}`;
     try {
       await navigator.clipboard.writeText(url);
+      setLinkCopied(true);
+      window.setTimeout(() => setLinkCopied(false), 2000);
     } catch {
       // Clipboard may be unavailable; hash URL still works manually.
     }
@@ -219,7 +222,7 @@ export function CrossPlatformSimulator() {
           onClick={copyScenarioLink}
           className="w-fit cursor-pointer border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400 transition-colors hover:border-emerald-400/35 hover:text-emerald-200"
         >
-          Copy share link
+          {linkCopied ? "Link copied" : "Copy share link"}
         </button>
 
         <div className="flex flex-wrap gap-2">

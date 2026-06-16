@@ -7,45 +7,19 @@ import {
   platformCouplings,
   platformCouplingBySlug,
   platformHrefOf,
+  platformList,
   platformShortOf,
   type PlatformId,
 } from "@/lib/platform-couplings";
 
-type PlatformData = {
-  id: PlatformId;
-  name: string;
-  short: string;
-  domain: string;
-  href: string;
-  color: string;
-};
-
-const platforms: PlatformData[] = [
-  {
-    id: "salus",
-    name: "Sapiens Scientia Salus",
-    short: "Salus",
-    domain: "Health, biology, medicine",
-    href: "/platforms/salus",
-    color: "#38bdf8",
-  },
-  {
-    id: "societas",
-    name: "Sapiens Scientia Societas",
-    short: "Societas",
-    domain: "Society, culture, institutions",
-    href: "/platforms/societas",
-    color: "#818cf8",
-  },
-  {
-    id: "terra",
-    name: "Sapiens Scientia Terra",
-    short: "Terra",
-    domain: "Earth systems, ecology, environment",
-    href: "/platforms/terra",
-    color: "#34d399",
-  },
-];
+const platforms = platformList.map((platform) => ({
+  id: platform.id,
+  name: platform.name,
+  short: platform.shortName,
+  domain: platform.domain,
+  href: platform.href,
+  color: platform.color,
+}));
 
 const couplings = platformCouplings;
 
