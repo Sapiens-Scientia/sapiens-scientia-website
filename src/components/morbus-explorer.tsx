@@ -1,13 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { morbusDiseases, type DiseaseData } from "@/lib/morbus";
+import { morbusDiseases, morbusGroupKinds, type DiseaseData } from "@/lib/morbus";
 
-const diseaseGroups = [
-  "Primary Etiologic Diseases",
-  "Secondary Physiological Diseases",
-  "Hybrid / Multiaxial Diseases",
-] as const;
+const diseaseGroups = morbusGroupKinds;
 
 function diseaseMatchesQuery(disease: DiseaseData, query: string) {
   const normalized = query.trim().toLowerCase();

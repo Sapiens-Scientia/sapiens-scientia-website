@@ -8,7 +8,7 @@ import { CrossPlatformSimulator } from "@/components/cross-platform-simulator";
 export const metadata: Metadata = {
   title: "Platforms | Sapiens Scientia",
   description:
-    "The Sapiens Scientia platform triad: Salus for health, Societas for society, and Terra for Earth systems.",
+    "The Sapiens Scientia platform triad: Salus for health, Societas for society, and Terra for Earth systems — with a coupled scenario simulator and cross-cutting coupling map.",
 };
 
 export default function PlatformsPage() {

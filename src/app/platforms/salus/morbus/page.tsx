@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { MorbusExplorer } from "@/components/morbus-explorer";
-import { morbusDiseases } from "@/lib/morbus";
+import { MorbusOverviewStats } from "@/components/morbus-overview-stats";
+import { morbusDiseaseCount } from "@/lib/morbus";
 
 export const metadata: Metadata = {
   title: "Morbus | Sapiens Scientia",
@@ -119,9 +120,11 @@ export default function MorbusPage() {
             intersecting processes than as single objects.
           </p>
           <p className="mt-4 font-mono text-xs uppercase tracking-[0.16em] text-slate-500">
-            {morbusDiseases.length} interactive exemplars below · shareable via URL hash
+            {morbusDiseaseCount} interactive exemplars below · shareable via URL hash
           </p>
         </header>
+
+        <MorbusOverviewStats />
 
         <section className="flex flex-col gap-7">
           <div className="max-w-3xl">

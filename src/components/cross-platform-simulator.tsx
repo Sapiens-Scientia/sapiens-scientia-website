@@ -109,7 +109,10 @@ export function CrossPlatformSimulator() {
   };
 
   return (
-    <section className="grid gap-8 border border-white/10 bg-white/[0.02] p-6 lg:grid-cols-[0.95fr_1.05fr]">
+    <section
+      id="coupled-scenario"
+      className="grid gap-8 border border-white/10 bg-white/[0.02] p-6 lg:grid-cols-[0.95fr_1.05fr] scroll-mt-24"
+    >
       <div className="flex flex-col gap-6">
         <div>
           <span className="text-[0.62rem] font-bold uppercase tracking-widest text-emerald-400">

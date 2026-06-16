@@ -12,11 +12,26 @@ export type DiseaseCrosswalk = {
 export type DiseaseData = {
   id: string;
   name: string;
-  group: "Primary Etiologic Diseases" | "Secondary Physiological Diseases" | "Hybrid / Multiaxial Diseases";
+  group: DiseaseGroupKind;
   description: string;
   axes: DiseaseAxis[];
   crosswalks: DiseaseCrosswalk[];
 };
+
+export type DiseaseGroupKind =
+  | "Primary Etiologic Diseases"
+  | "Secondary Physiological Diseases"
+  | "Hybrid / Multiaxial Diseases";
+
+export const morbusGroupKinds: DiseaseGroupKind[] = [
+  "Primary Etiologic Diseases",
+  "Secondary Physiological Diseases",
+  "Hybrid / Multiaxial Diseases",
+];
+
+export function morbusDiseasesByGroup(group: DiseaseGroupKind): DiseaseData[] {
+  return morbusDiseases.filter((disease) => disease.group === group);
+}
 
 export const morbusDiseases: DiseaseData[] = [
   {
@@ -350,3 +365,5 @@ export const morbusDiseases: DiseaseData[] = [
     ],
   },
 ];
+
+export const morbusDiseaseCount = morbusDiseases.length;

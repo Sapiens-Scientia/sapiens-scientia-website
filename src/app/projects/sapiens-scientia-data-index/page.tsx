@@ -37,7 +37,7 @@ export default function SapiensScientiaDataIndexPage() {
           <div className="mt-8 flex flex-wrap gap-x-10 gap-y-4 border-y border-white/15 py-5 text-sm uppercase tracking-[0.2em] text-slate-400">
             <span>{dataIndexEntryCount} sources</span>
             <span>{dataIndexSections.length} categories</span>
-            <span>Database subset of the Digital Earth Catalog</span>
+            <span>Filterable · shareable category hashes</span>
           </div>
         </header>
 

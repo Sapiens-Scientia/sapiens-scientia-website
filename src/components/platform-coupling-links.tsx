@@ -28,6 +28,14 @@ export function PlatformCouplingLinks({ platform }: { platform: PlatformId }) {
             </Link>
           </li>
         ))}
+        <li>
+          <Link
+            href="/platforms#coupled-scenario"
+            className="inline-flex border border-emerald-400/25 bg-emerald-400/[0.05] px-3 py-1.5 text-sm text-emerald-200 transition-colors hover:border-emerald-400/45 hover:text-emerald-50"
+          >
+            Coupled scenario simulator
+          </Link>
+        </li>
       </ul>
     </section>
   );
