@@ -1,5 +1,8 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { SiteNav } from "@/components/site-nav";
+import { SiteFooter } from "@/components/site-footer";
+import { PlanetaryBoundariesWheel } from "@/components/planetary-boundaries-wheel";
 
 export const metadata: Metadata = {
   title: "Terra | Sapiens Scientia",
@@ -131,6 +134,13 @@ export default function TerraPage() {
             environment not as a backdrop but as an active, coupled system that
             human life is embedded within.
           </p>
+          <Link
+            href="/scales"
+            className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-emerald-200 transition-colors hover:text-emerald-50"
+          >
+            Terra sits at the planetary scale — see the ladder
+            <span aria-hidden>→</span>
+          </Link>
         </header>
 
         <section className="flex flex-col gap-7">
@@ -148,8 +158,22 @@ export default function TerraPage() {
             </p>
           </div>
 
+          <div className="border border-white/10 bg-white/[0.02] p-4 sm:p-6">
+            <PlanetaryBoundariesWheel boundaries={planetaryBoundaries} />
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-slate-400">
+              <span className="flex items-center gap-2">
+                <span aria-hidden className="h-2.5 w-2.5 rounded-sm bg-emerald-300/60" />
+                Within safe operating space
+              </span>
+              <span className="flex items-center gap-2">
+                <span aria-hidden className="h-2.5 w-2.5 rounded-sm bg-amber-300/60" />
+                Beyond the boundary — breached
+              </span>
+            </div>
+          </div>
+
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {planetaryBoundaries.map((boundary) => {
+            {planetaryBoundaries.map((boundary, index) => {
               const breached = boundary.status === "breached";
 
               return (
@@ -160,7 +184,14 @@ export default function TerraPage() {
                   }`}
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <h3 className="text-base font-semibold text-slate-50">
+                    <h3 className="flex items-baseline gap-2 text-base font-semibold text-slate-50">
+                      <span
+                        className={`font-mono text-xs ${
+                          breached ? "text-amber-300/80" : "text-emerald-300/80"
+                        }`}
+                      >
+                        {index + 1}
+                      </span>
                       {boundary.name}
                     </h3>
                     <span
@@ -267,6 +298,7 @@ export default function TerraPage() {
           </div>
         </section>
       </section>
+      <SiteFooter />
     </main>
   );
 }

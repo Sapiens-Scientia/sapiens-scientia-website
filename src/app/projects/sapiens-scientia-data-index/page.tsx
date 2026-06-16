@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { SiteNav } from "@/components/site-nav";
+import { SiteFooter } from "@/components/site-footer";
 
 export const metadata: Metadata = {
   title: "Sapiens Scientia Data Index | Sapiens Scientia",
@@ -406,6 +407,7 @@ export default function SapiensScientiaDataIndexPage() {
           ))}
         </div>
       </section>
+      <SiteFooter />
     </main>
   );
 }

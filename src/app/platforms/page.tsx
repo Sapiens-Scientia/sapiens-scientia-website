@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { SiteNav } from "@/components/site-nav";
+import { SiteFooter } from "@/components/site-footer";
 
 export const metadata: Metadata = {
   title: "Platforms | Sapiens Scientia",
@@ -310,9 +311,17 @@ export default function PlatformsPage() {
               represents it — they mediate between lived planetary reality and
               organized understanding.
             </p>
+            <Link
+              href="/scales"
+              className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-sky-200 transition-colors hover:text-sky-50"
+            >
+              Climb the full ladder of scale
+              <span aria-hidden>→</span>
+            </Link>
           </div>
         </section>
       </section>
+      <SiteFooter />
     </main>
   );
 }

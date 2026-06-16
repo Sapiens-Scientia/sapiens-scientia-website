@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { SiteNav } from "@/components/site-nav";
+import { SiteFooter } from "@/components/site-footer";
 
 export const metadata: Metadata = {
   title: "Morbus | Sapiens Scientia",
@@ -296,6 +297,7 @@ export default function MorbusPage() {
           </div>
         </section>
       </section>
+      <SiteFooter />
     </main>
   );
 }
