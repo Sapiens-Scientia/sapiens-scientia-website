@@ -2,102 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-
-type PlatformId = "salus" | "societas" | "terra";
-
-type PlatformData = {
-  id: PlatformId;
-  name: string;
-  short: string;
-  domain: string;
-  href: string;
-  color: string;
-};
-
-const platforms: PlatformData[] = [
-  {
-    id: "salus",
-    name: "Sapiens Scientia Salus",
-    short: "Salus",
-    domain: "Health, biology, medicine",
-    href: "/platforms/salus",
-    color: "#38bdf8",
-  },
-  {
-    id: "societas",
-    name: "Sapiens Scientia Societas",
-    short: "Societas",
-    domain: "Society, culture, institutions",
-    href: "/platforms/societas",
-    color: "#818cf8",
-  },
-  {
-    id: "terra",
-    name: "Sapiens Scientia Terra",
-    short: "Terra",
-    domain: "Earth systems, ecology, environment",
-    href: "/platforms/terra",
-    color: "#34d399",
-  },
-];
-
-type CouplingData = {
-  name: string;
-  links: PlatformId[];
-  detail: string;
-  feedbackLoop: string;
-};
-
-const couplings: CouplingData[] = [
-  {
-    name: "Public health",
-    links: ["salus", "societas"],
-    detail: "Disease spread, care access, and population health sit between bodies and institutions.",
-    feedbackLoop: "A bidirectional loop where social structures (income, sanitation, urban density, housing conditions) determine exposure to pathogens and access to medical care (Societas). Concurrently, population-scale disease outbreaks (Salus) stress economic activity, destabilize governance, and force institutional adaptations (e.g., quarantine laws, public vaccine policies).",
-  },
-  {
-    name: "Climate medicine",
-    links: ["salus", "terra"],
-    detail: "Heat, air quality, and shifting disease ranges tie human health to Earth systems.",
-    feedbackLoop: "Planetary-scale energy imbalance and atmospheric warming (Terra) directly affect human cellular biology. Heat stress damages cardiovascular systems, shifting temperature ranges alter vector-borne pathogen habitats, and wildfire smoke/pollutants exacerbate lung/immune dysregulation (Salus). Downstream, human disease increases vulnerabilities to climate disasters.",
-  },
-  {
-    name: "Energy systems",
-    links: ["terra", "societas"],
-    detail: "How societies power themselves drives both economies and planetary boundaries.",
-    feedbackLoop: "Societal metabolism requires power (Societas). Harnessing fossil fuels or transitioning to renewable infrastructure drives carbon cycle changes, habitat fragmentation, and thermodynamic flows (Terra). Conversely, resource scarcity, climate feedback damage, and geographical energy distributions dictate national geopolitics, macroeconomic stability, and technical innovation (Societas).",
-  },
-  {
-    name: "Food systems",
-    links: ["salus", "societas", "terra"],
-    detail: "Nutrition, agriculture, and land use couple health, society, and environment at once.",
-    feedbackLoop: "A central three-way coupling. Agricultural practices and land conversion (Terra) drive global supply chains, economic subsidies, and cultural dietary patterns (Societas). In turn, these processed or natural foods determine metabolic disease incidence, microbiome health, and human physiological capacity (Salus). Finally, population metabolic demands feed back to demand more intensive land and water use, accelerating ecological degradation (Terra).",
-  },
-  {
-    name: "Urbanization",
-    links: ["salus", "societas", "terra"],
-    detail: "Cities concentrate people, reshape institutions, and transform local ecosystems.",
-    feedbackLoop: "Cities concentrate populations (Societas), generating dense micro-climates, urban heat islands, and massive waste streams that alter local ecological and hydrological cycles (Terra). These modified environments shape human health (Salus) through concentrated air pollution, mechanical noise stress, sedentary layouts, and rapid disease transmission networks. Yet, cities also concentrate the financial, healthcare, and educational capital (Societas) needed to develop systemic solutions.",
-  },
-  {
-    name: "Disease ecology",
-    links: ["salus", "societas", "terra"],
-    detail: "Pathogens move through human, social, and environmental systems together.",
-    feedbackLoop: "Pathogens cross species barriers at the interfaces of ecological degradation, deforestation, and climate shifts (Terra). These spillover events are accelerated or suppressed by global trade networks, food production systems, and institutional preparedness (Societas). Once in the human population, the pathogen's molecular biology interacts with host physiology to determine clinical disease courses (Salus), leading back to social shutdowns, regulatory responses, and altered environmental practices.",
-  },
-];
-
-const colorOf: Record<PlatformId, string> = {
-  salus: "#38bdf8",
-  societas: "#818cf8",
-  terra: "#34d399",
-};
-
-const shortOf: Record<PlatformId, string> = {
-  salus: "Salus",
-  societas: "Societas",
-  terra: "Terra",
-};
+import {
+  platformCouplings,
+  platformDefinitions,
+  platformList,
+  type PlatformId,
+} from "@/lib/platforms";
 
 function SystemsMap({
   selectedCoupling,
@@ -112,13 +22,6 @@ function SystemsMap({
     terra: { cx: 660, cy: 440 },
   };
   const hub = { cx: 410, cy: 300 };
-
-  const isCouplingActive = (links: PlatformId[]) => {
-    if (!selectedCoupling) return true;
-    const activeData = couplings.find((c) => c.name === selectedCoupling);
-    if (!activeData) return true;
-    return links.every((link) => activeData.links.includes(link)) && links.length === activeData.links.length;
-  };
 
   const isHubActive = selectedCoupling === "Food systems" || selectedCoupling === "Urbanization" || selectedCoupling === "Disease ecology";
 
@@ -222,9 +125,9 @@ function SystemsMap({
       {/* Platform nodes */}
       {(Object.keys(nodes) as PlatformId[]).map((id) => {
         const { cx, cy } = nodes[id];
-        const color = colorOf[id];
-        const p = platforms.find((pl) => pl.id === id)!;
-        const activeCouplingData = couplings.find((c) => c.name === selectedCoupling);
+        const platform = platformDefinitions[id];
+        const color = platform.color;
+        const activeCouplingData = platformCouplings.find((c) => c.name === selectedCoupling);
         const isLinkedToActive = !selectedCoupling || activeCouplingData?.links.includes(id);
 
         return (
@@ -251,7 +154,7 @@ function SystemsMap({
               opacity={isLinkedToActive ? 1 : 0.25}
               className="transition-all duration-300"
             >
-              {p.short}
+              {platform.shortName}
             </text>
             <text
               x={cx}
@@ -262,7 +165,7 @@ function SystemsMap({
               opacity={isLinkedToActive ? 1 : 0.25}
               className="transition-all duration-300"
             >
-              {p.domain.split(",")[0]}
+              {platform.domain.split(",")[0]}
             </text>
           </g>
         );
@@ -351,7 +254,7 @@ function SystemsMap({
 export function PlatformsExplorer() {
   const [selectedCoupling, setSelectedCoupling] = useState<string | null>(null);
 
-  const activeCoupling = couplings.find((c) => c.name === selectedCoupling) || null;
+  const activeCoupling = platformCouplings.find((c) => c.name === selectedCoupling) || null;
 
   return (
     <div className="flex flex-col gap-10">
@@ -362,7 +265,7 @@ export function PlatformsExplorer() {
         </h2>
 
         <div className="grid gap-4 lg:grid-cols-3">
-          {platforms.map((platform) => (
+          {platformList.map((platform) => (
             <Link
               key={platform.id}
               href={platform.href}
@@ -373,7 +276,7 @@ export function PlatformsExplorer() {
                 className="text-xs font-medium uppercase tracking-[0.18em]"
                 style={{ color: platform.color }}
               >
-                {platform.short}
+                {platform.shortName}
               </span>
               <h3 className="text-xl font-semibold text-slate-50">
                 {platform.name}
@@ -428,9 +331,12 @@ export function PlatformsExplorer() {
                 <span
                   key={id}
                   className="border px-2.5 py-1 text-xs leading-5 text-slate-200"
-                  style={{ borderColor: `${colorOf[id]}55`, color: colorOf[id] }}
+                  style={{
+                    borderColor: `${platformDefinitions[id].color}55`,
+                    color: platformDefinitions[id].color,
+                  }}
                 >
-                  {shortOf[id]}
+                  {platformDefinitions[id].shortName}
                 </span>
               ))}
             </div>
@@ -439,7 +345,7 @@ export function PlatformsExplorer() {
 
         {/* Grid of Coupling cards */}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {couplings.map((coupling) => {
+          {platformCouplings.map((coupling) => {
             const isSelected = selectedCoupling === coupling.name;
             return (
               <article
@@ -465,9 +371,12 @@ export function PlatformsExplorer() {
                     <span
                       key={id}
                       className="border px-2.5 py-1 text-xs leading-5 text-slate-200"
-                      style={{ borderColor: `${colorOf[id]}55`, color: colorOf[id] }}
+                      style={{
+                        borderColor: `${platformDefinitions[id].color}55`,
+                        color: platformDefinitions[id].color,
+                      }}
                     >
-                      {shortOf[id]}
+                      {platformDefinitions[id].shortName}
                     </span>
                   ))}
                 </div>

@@ -26,13 +26,17 @@ export function SiteNav({ links = primaryLinks }: SiteNavProps) {
     // Check local storage or document class on mount
     const savedTheme = localStorage.getItem("sapiens-theme");
     const isLight = savedTheme === "light" || document.documentElement.classList.contains("light-theme");
-    if (isLight) {
+    const nextTheme = isLight ? "light" : "dark";
+
+    if (nextTheme === "light") {
       document.documentElement.classList.add("light-theme");
-      setTheme("light");
     } else {
       document.documentElement.classList.remove("light-theme");
-      setTheme("dark");
     }
+
+    const frameId = window.requestAnimationFrame(() => setTheme(nextTheme));
+
+    return () => window.cancelAnimationFrame(frameId);
   }, []);
 
   const toggleTheme = () => {
@@ -74,4 +78,3 @@ export function SiteNav({ links = primaryLinks }: SiteNavProps) {
     </nav>
   );
 }
-

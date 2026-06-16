@@ -109,7 +109,7 @@ export function SocietasExplorer() {
             </span>
             <h3 className="text-2xl font-bold mt-1 text-white">System Dynamics Simulator</h3>
             <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-              Adjust society's structural inputs below to simulate causal feedback loops. Watch how resource allocation, institutional strength, and connectivity shift civilizational outcomes.
+              Adjust society&apos;s structural inputs below to simulate causal feedback loops. Watch how resource allocation, institutional strength, and connectivity shift civilizational outcomes.
             </p>
           </div>
 

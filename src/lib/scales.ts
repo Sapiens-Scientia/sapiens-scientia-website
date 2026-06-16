@@ -9,19 +9,36 @@
 // not precise measurements. Physical anchors follow NIST/CODATA, NASA planetary
 // fact sheets, and standard cell-biology reference values.
 
+import { platformDefinitions, type PlatformId } from "@/lib/platforms";
+
 export type ScaleTierId = "micro" | "meso" | "macro" | "mega";
 
 export type ScalePlatform = {
-  id: "salus" | "societas" | "terra";
+  id: PlatformId;
   name: string;
   href: string;
   color: string;
 };
 
 export const platforms: Record<ScalePlatform["id"], ScalePlatform> = {
-  salus: { id: "salus", name: "Salus", href: "/platforms/salus", color: "#38bdf8" },
-  societas: { id: "societas", name: "Societas", href: "/platforms/societas", color: "#818cf8" },
-  terra: { id: "terra", name: "Terra", href: "/platforms/terra", color: "#34d399" },
+  salus: {
+    id: "salus",
+    name: platformDefinitions.salus.shortName,
+    href: platformDefinitions.salus.href,
+    color: platformDefinitions.salus.color,
+  },
+  societas: {
+    id: "societas",
+    name: platformDefinitions.societas.shortName,
+    href: platformDefinitions.societas.href,
+    color: platformDefinitions.societas.color,
+  },
+  terra: {
+    id: "terra",
+    name: platformDefinitions.terra.shortName,
+    href: platformDefinitions.terra.href,
+    color: platformDefinitions.terra.color,
+  },
 };
 
 export type ScaleTier = {

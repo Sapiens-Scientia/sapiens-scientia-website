@@ -8,6 +8,13 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import type { RefObject } from "react";
 import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
+import {
+  dataIndexCategories,
+  dataIndexEntries,
+  dataIndexTotalEntries,
+} from "@/lib/data-index";
+import { ORDERS_OF_MAGNITUDE, scaleTiers } from "@/lib/scales";
+import { platformDefinitions, platformList, type PlatformId } from "@/lib/platforms";
 
 const physicalCenter = new THREE.Vector3(-1.9, -0.08, 0);
 const digitalCenter = new THREE.Vector3(1.9, -0.08, 0);
@@ -51,7 +58,7 @@ type HumanPlatformBridge = {
   digitalHighlights: string[];
   earthHighlights: string[];
   href: string;
-  id: "salus" | "societas" | "terra";
+  id: PlatformId;
   subtitle: string;
   title: string;
 };
@@ -68,17 +75,6 @@ type BridgeConnectorAnchor = {
   rightSourceX: number;
   rightSourceY: number;
   y: number;
-};
-
-type DataIndexEntry = {
-  name: string;
-  href: string;
-};
-
-type DataIndexCategory = {
-  color: string;
-  name: string;
-  entries: DataIndexEntry[];
 };
 
 type TimeZoneOption = {
@@ -118,6 +114,20 @@ const timeZoneOptions: TimeZoneOption[] = [
   { label: "Singapore", value: "Asia/Singapore" },
   { label: "Tokyo", value: "Asia/Tokyo" },
   { label: "Sydney", value: "Australia/Sydney" },
+];
+
+const homeNavigationLinks = [
+  { href: "/scales", label: "Scales" },
+  { href: "/platforms", label: "Platforms" },
+  { href: "/projects", label: "Projects" },
+  { href: "/projects/sapiens-scientia-data-index", label: "Data Index" },
+];
+
+const homeSignalStats = [
+  { label: "orders", value: ORDERS_OF_MAGNITUDE.toString() },
+  { label: "tiers", value: scaleTiers.length.toString() },
+  { label: "platforms", value: platformList.length.toString() },
+  { label: "sources", value: dataIndexTotalEntries.toString() },
 ];
 
 function formatClockTime(date: Date | null, timeZone: string) {
@@ -641,19 +651,19 @@ const earthVitalSigns: EarthVitalSign[] = [
 const humanPlatformBridges: HumanPlatformBridge[] = [
   {
     id: "salus",
-    title: "Sapiens Scientia Salus",
-    subtitle: "Human Health Platform",
-    href: "/platforms/salus",
-    color: "#38bdf8",
+    title: platformDefinitions.salus.name,
+    subtitle: platformDefinitions.salus.label,
+    href: platformDefinitions.salus.href,
+    color: platformDefinitions.salus.color,
     earthHighlights: ["Cells", "Microbes", "Bacteria", "Viruses", "Healthcare System", "People", "Homo sapiens"],
     digitalHighlights: ["Life Sciences", "Databases", "Knowledge Graphs", "Decision Support"],
   },
   {
     id: "societas",
-    title: "Sapiens Scientia Societas",
-    subtitle: "Human Society Platform",
-    href: "/platforms/societas",
-    color: "#818cf8",
+    title: platformDefinitions.societas.name,
+    subtitle: platformDefinitions.societas.label,
+    href: platformDefinitions.societas.href,
+    color: platformDefinitions.societas.color,
     earthHighlights: [
       "Nations",
       "Legal System",
@@ -675,10 +685,10 @@ const humanPlatformBridges: HumanPlatformBridge[] = [
   },
   {
     id: "terra",
-    title: "Sapiens Scientia Terra",
-    subtitle: "Environmental Platform",
-    href: "/platforms/terra",
-    color: "#34d399",
+    title: platformDefinitions.terra.name,
+    subtitle: platformDefinitions.terra.label,
+    href: platformDefinitions.terra.href,
+    color: platformDefinitions.terra.color,
     earthHighlights: [
       "The Sun",
       "Atmosphere",
@@ -728,124 +738,6 @@ const digitalSystemNodes: ConceptNode[] = [
   { label: "Autonomous Agents", level: 1 },
 ];
 
-const dataIndexCategories: DataIndexCategory[] = [
-  {
-    name: "General Knowledge",
-    color: "#2dd4bf",
-    entries: [
-      { name: "Wikipedia", href: "https://www.wikipedia.org/" },
-      { name: "Wikidata", href: "https://www.wikidata.org/" },
-      { name: "Internet Archive", href: "https://archive.org/" },
-      { name: "Common Crawl", href: "https://commoncrawl.org/" },
-      { name: "Library of Congress", href: "https://www.loc.gov/" },
-    ],
-  },
-  {
-    name: "Scholarly Indexes",
-    color: "#7dd3fc",
-    entries: [
-      { name: "Google Scholar", href: "https://scholar.google.com/" },
-      { name: "OpenAlex", href: "https://openalex.org/" },
-      { name: "Semantic Scholar", href: "https://www.semanticscholar.org/" },
-      { name: "Crossref", href: "https://www.crossref.org/" },
-      { name: "Scopus", href: "https://www.scopus.com/" },
-      { name: "Web of Science", href: "https://www.webofscience.com/" },
-      { name: "Dimensions", href: "https://www.dimensions.ai/" },
-      { name: "The Lens", href: "https://www.lens.org/" },
-    ],
-  },
-  {
-    name: "Life Sciences",
-    color: "#34d399",
-    entries: [
-      { name: "PubMed", href: "https://pubmed.ncbi.nlm.nih.gov/" },
-      { name: "PubMed Central", href: "https://pmc.ncbi.nlm.nih.gov/" },
-      { name: "Europe PMC", href: "https://europepmc.org/" },
-      { name: "ClinicalTrials.gov", href: "https://clinicaltrials.gov/" },
-      { name: "GenBank", href: "https://www.ncbi.nlm.nih.gov/genbank/" },
-      { name: "UniProt", href: "https://www.uniprot.org/" },
-      { name: "RCSB PDB", href: "https://www.rcsb.org/" },
-      { name: "Ensembl", href: "https://www.ensembl.org/" },
-    ],
-  },
-  {
-    name: "Physical Sciences",
-    color: "#a78bfa",
-    entries: [
-      { name: "arXiv", href: "https://arxiv.org/" },
-      { name: "INSPIRE HEP", href: "https://inspirehep.net/" },
-      { name: "NASA ADS", href: "https://ui.adsabs.harvard.edu/" },
-    ],
-  },
-  {
-    name: "Books & Archives",
-    color: "#fbbf24",
-    entries: [
-      { name: "WorldCat", href: "https://www.worldcat.org/" },
-      { name: "Google Books", href: "https://books.google.com/" },
-      { name: "HathiTrust", href: "https://www.hathitrust.org/" },
-      { name: "JSTOR", href: "https://www.jstor.org/" },
-      { name: "ProQuest", href: "https://www.proquest.com/" },
-      { name: "EBSCOhost", href: "https://www.ebsco.com/products/ebscohost-platform" },
-    ],
-  },
-  {
-    name: "Law & Patents",
-    color: "#fb7185",
-    entries: [
-      { name: "LexisNexis", href: "https://www.lexisnexis.com/" },
-      { name: "Westlaw", href: "https://legal.thomsonreuters.com/en/products/westlaw" },
-      { name: "GovInfo", href: "https://www.govinfo.gov/" },
-      { name: "EUR-Lex", href: "https://eur-lex.europa.eu/" },
-      { name: "CourtListener", href: "https://www.courtlistener.com/" },
-      { name: "Espacenet", href: "https://worldwide.espacenet.com/" },
-      { name: "Google Patents", href: "https://patents.google.com/" },
-      { name: "Derwent Innovation", href: "https://clarivate.com/products/derwent/" },
-    ],
-  },
-  {
-    name: "Public Data",
-    color: "#22d3ee",
-    entries: [
-      { name: "World Bank Data", href: "https://data.worldbank.org/" },
-      { name: "OECD Data", href: "https://data.oecd.org/" },
-      { name: "FRED", href: "https://fred.stlouisfed.org/" },
-      { name: "Data.gov", href: "https://data.gov/" },
-      { name: "Kaggle Datasets", href: "https://www.kaggle.com/datasets" },
-      { name: "GDELT", href: "https://www.gdeltproject.org/" },
-    ],
-  },
-  {
-    name: "Platforms",
-    color: "#f472b6",
-    entries: [
-      { name: "YouTube", href: "https://www.youtube.com/" },
-      { name: "X", href: "https://x.com/" },
-      { name: "Reddit", href: "https://www.reddit.com/" },
-      { name: "Stack Exchange", href: "https://stackexchange.com/" },
-    ],
-  },
-  {
-    name: "Registries",
-    color: "#c4b5fd",
-    entries: [
-      { name: "re3data", href: "https://www.re3data.org/" },
-      { name: "OpenDOAR", href: "https://opendoar.ac.uk/" },
-      { name: "FAIRsharing", href: "https://fairsharing.org/" },
-      { name: "DataCite Repository Finder", href: "https://support.datacite.org/docs/repository-finder" },
-    ],
-  },
-];
-
-const dataIndexEntries = dataIndexCategories.flatMap((category) =>
-  category.entries.map((entry, entryIndex) => ({
-    ...entry,
-    category: category.name,
-    color: category.color,
-    entryIndex,
-    entryTotal: category.entries.length,
-  })),
-);
 
 const earthVitalSignHighlights = earthVitalSigns.flatMap((sign) =>
   (sign.earthSystemLinks ?? []).map((label) => ({
@@ -854,16 +746,15 @@ const earthVitalSignHighlights = earthVitalSigns.flatMap((sign) =>
   })),
 );
 
+const dataIndexPrimaryColor =
+  dataIndexCategories.find((category) => category.name === "Public Data")?.color ?? "#22d3ee";
+
 const digitalDataIndexHighlights: ConceptHighlight[] = [
-  { color: "#22d3ee", labels: ["Databases", "Public Data"] },
-  { color: "#2dd4bf", labels: ["General Knowledge"] },
-  { color: "#7dd3fc", labels: ["Scholarly Indexes"] },
-  { color: "#34d399", labels: ["Life Sciences"] },
-  { color: "#a78bfa", labels: ["Physical Sciences"] },
-  { color: "#fbbf24", labels: ["Books & Archives"] },
-  { color: "#fb7185", labels: ["Law & Patents"] },
-  { color: "#f472b6", labels: ["Platforms"] },
-  { color: "#c4b5fd", labels: ["Registries"] },
+  { color: dataIndexPrimaryColor, labels: ["Databases"] },
+  ...dataIndexCategories.map((category) => ({
+    color: category.color,
+    labels: [category.name],
+  })),
 ];
 
 function platformBridgeHighlights(
@@ -1438,7 +1329,7 @@ function DataIndexSurfaceNodes({
           color={entry.color}
           href={entry.href}
           isInteractive={isInteractive}
-          name={entry.name}
+          name={entry.shortName ?? entry.name}
           position={entry.position}
           theme={theme}
         />
@@ -1997,7 +1888,7 @@ function ConceptColumn({
         "scrollbar-hidden pointer-events-auto overflow-y-auto overscroll-contain py-4",
         "border border-white/15 bg-black/42 text-white shadow-[0_0_28px_rgba(59,130,246,0.16)] backdrop-blur-sm",
         size === "large" ? "w-64" : "w-72",
-        size === "large" ? "h-[72vh] max-lg:h-auto max-lg:max-h-[34vh]" : "max-h-[24vh]",
+        size === "large" ? "h-[72vh] max-lg:h-auto max-lg:max-h-[24vh]" : "max-h-[24vh]",
         "max-lg:w-full max-lg:px-4 max-lg:py-3",
         align === "left" ? "pl-6 pr-4 text-left" : "",
         isRightAligned ? "pl-4 pr-6 text-right max-lg:text-left" : "",
@@ -2142,6 +2033,7 @@ function PopoutToggleButton({
 }
 
 function VitalSignChart({ sign }: { sign: EarthVitalSign }) {
+  const [hoveredPoint, setHoveredPoint] = useState<{ year: number; value: number } | null>(null);
   const data = sign.historicalData;
   if (!data) return null;
 
@@ -2187,9 +2079,6 @@ function VitalSignChart({ sign }: { sign: EarthVitalSign }) {
     const projPoints = [lastHist, ...projection].map((p) => `${getX(p.year)},${getY(p.value)}`);
     projPath = `M ${projPoints.join(" L ")}`;
   }
-
-  // Interactive tooltip tracking state
-  const [hoveredPoint, setHoveredPoint] = useState<{ year: number; value: number } | null>(null);
 
   const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -2912,7 +2801,7 @@ function HumanPlatformsBridgePanel({
   return (
     <aside
       ref={panelRef}
-      className="scrollbar-hidden pointer-events-auto max-h-[24vh] w-72 overflow-y-auto overscroll-contain border border-white/15 bg-black/42 px-6 py-4 text-center text-white shadow-[0_0_28px_rgba(59,130,246,0.16)] backdrop-blur-sm max-lg:w-full max-lg:px-4 max-lg:py-3"
+      className="scrollbar-hidden pointer-events-auto max-h-[24vh] w-72 overflow-y-auto overscroll-contain border border-white/15 bg-black/42 px-6 py-4 text-center text-white shadow-[0_0_28px_rgba(59,130,246,0.16)] backdrop-blur-sm max-lg:max-h-[15vh] max-lg:w-full max-lg:px-4 max-lg:py-3"
       aria-label="Human Platforms"
       onPointerEnter={onPanelPointerEnter}
       onPointerLeave={() => {
@@ -2993,7 +2882,7 @@ function TimeOverlay({
 
   return (
     <aside
-      className="pointer-events-auto w-[min(34rem,calc(100vw-2rem))] border border-white/15 bg-black/48 px-4 py-3 text-center text-white shadow-[0_0_28px_rgba(59,130,246,0.16)] backdrop-blur-sm"
+      className="pointer-events-auto w-[min(34rem,calc(100vw-2rem))] border border-white/15 bg-black/48 px-4 py-3 text-center text-white shadow-[0_0_28px_rgba(59,130,246,0.16)] backdrop-blur-sm max-lg:hidden"
       onPointerEnter={onPanelPointerEnter}
       onPointerLeave={onPanelPointerLeave}
       onWheelCapture={stopPanelScrollPropagation}
@@ -3033,6 +2922,33 @@ function TimeOverlay({
           <p className="font-mono text-2xl leading-none text-white">{formatClockTime(now, selectedTimeZone)}</p>
           <p className="mt-1 text-xs text-slate-300/80">{formatClockDate(now, selectedTimeZone)}</p>
         </div>
+      </div>
+      <nav
+        aria-label="Homepage sections"
+        className="mt-3 grid grid-cols-4 gap-1 border-t border-white/10 pt-2 text-[0.64rem] font-semibold uppercase tracking-[0.12em] text-slate-400 max-lg:hidden"
+      >
+        {homeNavigationLinks.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className="min-h-8 border border-white/8 px-2 py-2 leading-none transition-colors hover:border-sky-200/45 hover:bg-sky-200/10 hover:text-white focus:outline-none focus-visible:border-sky-200/75 focus-visible:text-white"
+          >
+            {link.label}
+          </Link>
+        ))}
+      </nav>
+      <div className="mt-2 grid grid-cols-4 gap-1 text-left max-lg:hidden">
+        {homeSignalStats.map((stat) => (
+          <div
+            key={stat.label}
+            className="border border-white/8 bg-white/[0.025] px-2.5 py-2"
+          >
+            <p className="font-mono text-sm leading-none text-sky-100">{stat.value}</p>
+            <p className="mt-1 text-[0.58rem] font-semibold uppercase tracking-[0.12em] text-slate-500">
+              {stat.label}
+            </p>
+          </div>
+        ))}
       </div>
     </aside>
   );
@@ -3130,13 +3046,17 @@ export function EarthHero() {
   useEffect(() => {
     const savedTheme = localStorage.getItem("sapiens-theme");
     const isLight = savedTheme === "light" || document.documentElement.classList.contains("light-theme");
-    if (isLight) {
+    const nextTheme = isLight ? "light" : "dark";
+
+    if (nextTheme === "light") {
       document.documentElement.classList.add("light-theme");
-      setTheme("light");
     } else {
       document.documentElement.classList.remove("light-theme");
-      setTheme("dark");
     }
+
+    const frameId = window.requestAnimationFrame(() => setTheme(nextTheme));
+
+    return () => window.cancelAnimationFrame(frameId);
   }, []);
 
   const toggleTheme = () => {
