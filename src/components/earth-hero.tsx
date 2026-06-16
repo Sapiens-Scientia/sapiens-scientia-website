@@ -871,14 +871,16 @@ function DataCenterMarker({
   site: DataCenterSite;
 }) {
   const markerRef = useRef<THREE.Mesh>(null);
+  const elapsedRef = useRef(0);
   const surfacePoint = useMemo(() => latLonToSpherePoint(site.lat, site.lon, 1.105), [site.lat, site.lon]);
 
-  useFrame(({ clock }) => {
+  useFrame((_, delta) => {
     if (!markerRef.current) {
       return;
     }
 
-    const pulse = 1 + Math.sin(clock.getElapsedTime() * 3.2 + site.lon * 0.04) * 0.22;
+    elapsedRef.current += delta;
+    const pulse = 1 + Math.sin(elapsedRef.current * 3.2 + site.lon * 0.04) * 0.22;
     markerRef.current.scale.setScalar(pulse);
   });
 
@@ -1190,6 +1192,7 @@ function DigitalEarth({
   const shellRef = useRef<THREE.Mesh>(null);
   const networkRef = useRef<THREE.Group>(null);
   const hasPositionedRef = useRef(false);
+  const elapsedRef = useRef(0);
 
   const { nodePositions, linkPositions } = useMemo(() => {
     const nodes: number[] = [];
@@ -1220,7 +1223,9 @@ function DigitalEarth({
     };
   }, []);
 
-  useFrame(({ clock }, delta) => {
+  useFrame((_, delta) => {
+    elapsedRef.current += delta;
+
     if (groupRef.current) {
       if (!hasPositionedRef.current) {
         groupRef.current.position.copy(targetPosition);
@@ -1232,7 +1237,7 @@ function DigitalEarth({
 
     if (shellRef.current) {
       shellRef.current.rotation.y += delta * 0.08;
-      shellRef.current.rotation.x = Math.sin(clock.getElapsedTime() * 0.35) * 0.04;
+      shellRef.current.rotation.x = Math.sin(elapsedRef.current * 0.35) * 0.04;
     }
 
     if (networkRef.current) {
@@ -1356,6 +1361,7 @@ function DataIndexSurfaceNode({
   const [isHovered, setIsHovered] = useState(false);
   const nodeRef = useRef<THREE.Mesh>(null);
   const labelRef = useRef<THREE.Mesh>(null);
+  const elapsedRef = useRef(0);
   const labelFrame = useMemo(() => {
     const normal = new THREE.Vector3(...position).normalize();
     const worldUp = new THREE.Vector3(0, 1, 0);
@@ -1379,9 +1385,11 @@ function DataIndexSurfaceNode({
     };
   }, [position]);
 
-  useFrame(({ clock }) => {
+  useFrame((_, delta) => {
+    elapsedRef.current += delta;
+
     if (nodeRef.current) {
-      const pulse = 1 + Math.sin(clock.getElapsedTime() * 2.8 + position[0] * 2.1) * 0.12;
+      const pulse = 1 + Math.sin(elapsedRef.current * 2.8 + position[0] * 2.1) * 0.12;
       nodeRef.current.scale.setScalar(isHovered ? pulse * 1.65 : pulse);
     }
 
@@ -1459,14 +1467,16 @@ function FeaturedDigitalNode({ isInteractive }: { isInteractive: boolean }) {
   const [isHovered, setIsHovered] = useState(false);
   const nodeRef = useRef<THREE.Mesh>(null);
   const labelRef = useRef<THREE.Mesh>(null);
+  const elapsedRef = useRef(0);
   const position: [number, number, number] = [0, 1.21, 0];
 
-  useFrame(({ clock }) => {
+  useFrame((_, delta) => {
     if (!nodeRef.current) {
       return;
     }
 
-    const pulse = 1 + Math.sin(clock.getElapsedTime() * 3.4) * 0.16;
+    elapsedRef.current += delta;
+    const pulse = 1 + Math.sin(elapsedRef.current * 3.4) * 0.16;
     nodeRef.current.scale.setScalar(isHovered ? pulse * 1.65 : pulse);
 
     const material = labelRef.current?.material;
@@ -1550,6 +1560,7 @@ function FeaturedDigitalNode({ isInteractive }: { isInteractive: boolean }) {
 
 function DataConnectors() {
   const pulsesRef = useRef<THREE.Group>(null);
+  const elapsedRef = useRef(0);
 
   const arcs = useMemo<ArcPath[]>(() => {
     const random = seededRandom(42);
@@ -1582,12 +1593,13 @@ function DataConnectors() {
     return paths;
   }, []);
 
-  useFrame(({ clock }) => {
+  useFrame((_, delta) => {
     if (!pulsesRef.current) {
       return;
     }
 
-    const elapsed = clock.getElapsedTime();
+    elapsedRef.current += delta;
+    const elapsed = elapsedRef.current;
 
     pulsesRef.current.children.forEach((pulse, index) => {
       const arc = arcs[index % arcs.length];

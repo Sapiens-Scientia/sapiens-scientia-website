@@ -1,8 +1,7 @@
 import Link from "next/link";
 
-// Sitewide footer for content pages. The cinematic homepage keeps its own
-// full-screen navigation model, so this is rendered on the content pages via
-// PageShell and the platform/project pages directly.
+// Sitewide footer for content surfaces, rendered by PageShell and by pages that
+// compose their own shell around richer interactive sections.
 
 type FooterLink = { href: string; label: string; external?: boolean };
 
