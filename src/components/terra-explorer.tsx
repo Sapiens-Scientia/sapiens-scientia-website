@@ -149,8 +149,51 @@ export function TerraExplorer() {
   const [selectedName, setSelectedName] = useState<string | null>("Climate change");
   const [hoveredName, setHoveredName] = useState<string | null>(null);
 
+  // Policy input sliders (0-100)
+  const [decarbonization, setDecarbonization] = useState(0); // 0 = Business as usual (Default)
+  const [deforestationControl, setDeforestationControl] = useState(0); // 0 = Business as usual (Default)
+
+  // Calculate dynamic boundaries based on policy values
+  const simBoundaries = planetaryBoundaries.map((b) => {
+    let val = b.radialValue;
+    if (b.name === "Climate change") {
+      val = Math.max(0.32, 0.82 - (decarbonization * 0.5) / 100);
+    } else if (b.name === "Ocean acidification") {
+      val = Math.max(0.30, 0.68 - (decarbonization * 0.38) / 100);
+    } else if (b.name === "Biosphere integrity") {
+      val = Math.max(0.38, 0.98 - (deforestationControl * 0.45 + decarbonization * 0.15) / 100);
+    } else if (b.name === "Land-system change") {
+      val = Math.max(0.32, 0.78 - (deforestationControl * 0.46) / 100);
+    } else if (b.name === "Freshwater change") {
+      val = Math.max(0.30, 0.74 - (deforestationControl * 0.32 + decarbonization * 0.12) / 100);
+    } else if (b.name === "Biogeochemical flows") {
+      val = Math.max(0.32, 0.92 - (deforestationControl * 0.35 + decarbonization * 0.20) / 100);
+    } else if (b.name === "Novel entities") {
+      val = Math.max(0.35, 0.95 - (deforestationControl * 0.15 + decarbonization * 0.35) / 100);
+    }
+
+    // A boundary is considered breached if its radial value is greater than the safe limit (0.5)
+    const status = val > 0.5 ? "breached" : "safe";
+
+    // Format current states dynamically
+    let currentState = b.currentState;
+    if (b.name === "Climate change") {
+      const ppm = Math.round(430 - (decarbonization * 80) / 100);
+      const forcing = (2.91 - (decarbonization * 1.91) / 100).toFixed(2);
+      currentState = `${ppm} ppm / ${forcing} W/m²`;
+    } else if (b.name === "Land-system change") {
+      const remaining = Math.round(60 + (deforestationControl * 15) / 100);
+      currentState = `~${remaining}% global forest remaining`;
+    } else if (b.name === "Ocean acidification") {
+      const ph = (2.80 + (decarbonization * 0.10) / 100).toFixed(2);
+      currentState = `${ph} Ω`;
+    }
+
+    return { ...b, radialValue: val, status, currentState };
+  });
+
   const activeName = hoveredName || selectedName;
-  const activeBoundary = planetaryBoundaries.find((b) => b.name === activeName) || planetaryBoundaries[0];
+  const activeBoundary = simBoundaries.find((b) => b.name === activeName) || simBoundaries[0];
 
   // SVG Radar setup
   const cx = 200;
@@ -159,7 +202,6 @@ export function TerraExplorer() {
   const numSectors = 9;
   const anglePerSector = 360 / numSectors;
 
-  // Polar helper coordinates
   const getCoordinatesForPercent = (angleInDegrees: number, radius: number) => {
     const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0;
     return {
@@ -171,10 +213,11 @@ export function TerraExplorer() {
   return (
     <div className="flex flex-col gap-10">
       {/* Interactive Systems Coupling Radar Chart */}
-      <section className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] border border-white/10 bg-white/[0.02] p-6 rounded items-center">
-        {/* Radar SVG */}
-        <div className="flex flex-col items-center justify-center relative select-none">
-          <div className="w-full max-w-[340px] md:max-w-[380px]">
+      <section className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] border border-white/10 bg-white/[0.02] p-6 rounded-xl items-center">
+        
+        {/* Radar SVG and Policy Inputs Column */}
+        <div className="flex flex-col gap-6 items-center justify-center relative select-none">
+          <div className="w-full max-w-[320px] md:max-w-[350px]">
             <svg viewBox="0 0 400 400" className="w-full h-auto overflow-visible">
               {/* Polar Grid Circles */}
               <circle cx={cx} cy={cy} r={50} fill="none" stroke="#334155" strokeWidth="0.75" strokeDasharray="3 3" opacity="0.6" />
@@ -200,7 +243,7 @@ export function TerraExplorer() {
               })}
 
               {/* Radial sector slices */}
-              {planetaryBoundaries.map((boundary, i) => {
+              {simBoundaries.map((boundary, i) => {
                 const angleStart = i * anglePerSector;
                 const angleEnd = (i + 1) * anglePerSector;
 
@@ -245,7 +288,7 @@ export function TerraExplorer() {
                       fillOpacity={fillOpacity}
                       stroke={color}
                       strokeWidth={strokeWidth}
-                      className="transition-all duration-300"
+                      className="transition-all duration-500"
                     />
                   </g>
                 );
@@ -270,19 +313,59 @@ export function TerraExplorer() {
               </text>
             </svg>
           </div>
+
           {/* Quick HUD guide */}
-          <div className="mt-4 flex gap-4 text-xs justify-center font-mono text-slate-400">
+          <div className="flex gap-4 text-[10px] justify-center font-mono text-slate-400">
             <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-emerald-400" /> Safe Threshold
+              <span className="h-2 w-2 rounded-full bg-emerald-400" /> Safe Zone
             </span>
             <span className="flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-orange-400" /> Breached Boundary
             </span>
           </div>
+
+          {/* Policy sliders */}
+          <div className="w-full flex flex-col gap-4 border-t border-white/5 pt-4">
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between text-xs font-mono">
+                <span className="text-slate-300 font-semibold">Decarbonization Rate</span>
+                <span className="text-emerald-400 font-bold">{decarbonization}%</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={decarbonization}
+                onChange={(e) => setDecarbonization(Number(e.target.value))}
+                className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-400"
+              />
+              <p className="text-[9px] text-slate-500 leading-normal">
+                Simulates transition to clean energy. Contracts climate, acidification, and aerosol boundaries.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between text-xs font-mono">
+                <span className="text-slate-300 font-semibold">Deforestation Control</span>
+                <span className="text-emerald-400 font-bold">{deforestationControl}%</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={deforestationControl}
+                onChange={(e) => setDeforestationControl(Number(e.target.value))}
+                className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-400"
+              />
+              <p className="text-[9px] text-slate-500 leading-normal">
+                Simulates rewilding and zero deforestation. Contracts land-system, biosphere, and water boundaries.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Selected Boundary Description Panel */}
-        <article className="border border-white/5 bg-white/[0.015] p-5 rounded flex flex-col gap-4 min-h-[320px]">
+        <article className="border border-white/5 bg-white/[0.015] p-5 rounded-lg flex flex-col gap-4 min-h-[360px]">
           <div>
             <span
               className={[
@@ -307,8 +390,8 @@ export function TerraExplorer() {
               <p className="text-slate-200 mt-1 font-semibold">
                 <span className="text-emerald-400">{activeBoundary.safeLimit.split(" / ")[0]}</span>
                 <span className="text-slate-500"> / </span>
-                <span className={activeBoundary.status === "breached" ? "text-orange-400" : "text-emerald-400"}>
-                  {activeBoundary.safeLimit.split(" / ")[1] || activeBoundary.currentState}
+                <span className={activeBoundary.status === "breached" ? "text-orange-400 font-bold" : "text-emerald-400"}>
+                  {activeBoundary.safeLimit.split(" / ")[1] ? activeBoundary.currentState : activeBoundary.currentState}
                 </span>
               </p>
             </div>
@@ -323,8 +406,14 @@ export function TerraExplorer() {
           </div>
 
           {activeBoundary.status === "breached" && (
-            <div className="mt-auto border border-orange-500/20 bg-orange-500/[0.02] p-3 text-xs leading-relaxed text-orange-300/90 rounded">
+            <div className="mt-auto border border-orange-500/20 bg-orange-500/[0.02] p-3 text-xs leading-relaxed text-orange-300/90 rounded-md">
               <span className="font-bold">WARNING:</span> This boundary has been breached. Ecosystem stability is actively compromised.
+            </div>
+          )}
+
+          {activeBoundary.status === "safe" && (
+            <div className="mt-auto border border-emerald-500/20 bg-emerald-500/[0.02] p-3 text-xs leading-relaxed text-emerald-300/90 rounded-md">
+              <span className="font-bold">STABLE:</span> Boundary lies within safe margins. Sustainable operating envelope verified.
             </div>
           )}
         </article>
@@ -334,7 +423,7 @@ export function TerraExplorer() {
       <section className="flex flex-col gap-6">
         <h3 className="text-xl font-semibold text-slate-100">Planetary Boundaries Inventory</h3>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {planetaryBoundaries.map((boundary) => {
+          {simBoundaries.map((boundary) => {
             const isBreached = boundary.status === "breached";
             const isSelected = selectedName === boundary.name;
 
@@ -343,7 +432,7 @@ export function TerraExplorer() {
                 key={boundary.name}
                 onClick={() => setSelectedName(boundary.name)}
                 className={[
-                  "flex flex-col gap-3 border p-4 transition-all cursor-pointer select-none rounded",
+                  "flex flex-col gap-3 border p-4 transition-all cursor-pointer select-none rounded-lg",
                   isSelected
                     ? isBreached
                       ? "border-orange-400 bg-orange-400/[0.03]"
@@ -362,7 +451,7 @@ export function TerraExplorer() {
                     {isBreached ? "Breached" : "Safe Zone"}
                   </span>
                 </div>
-                <p className="text-sm leading-6 text-slate-400">{boundary.control}</p>
+                <p className="text-sm leading-6 text-slate-400 font-mono text-[11px]">{boundary.currentState}</p>
               </article>
             );
           })}
@@ -380,7 +469,7 @@ export function TerraExplorer() {
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {planetarySignals.map((signal) => (
-            <article key={signal.label} className="border border-white/10 bg-white/[0.035] p-5 shadow-[0_0_28px_rgba(15,23,42,0.22)] rounded">
+            <article key={signal.label} className="border border-white/10 bg-white/[0.035] p-5 shadow-[0_0_28px_rgba(15,23,42,0.22)] rounded-lg">
               <div className="flex items-baseline justify-between gap-4">
                 <p className="text-4xl font-semibold tracking-normal text-white">{signal.value}</p>
                 <p className="text-xs font-medium uppercase tracking-[0.16em] text-emerald-200/70">{signal.source}</p>

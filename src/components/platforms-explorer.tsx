@@ -41,6 +41,18 @@ const platforms: PlatformData[] = [
   },
 ];
 
+const platformCards = [
+  ...platforms,
+  {
+    id: "morbus",
+    name: "Sapiens Scientia Morbus",
+    short: "Morbus",
+    domain: "Disease ontology & multi-axial model",
+    href: "/platforms/salus/morbus",
+    color: "#2dd4bf", // teal accent
+  },
+];
+
 type CouplingData = {
   name: string;
   links: PlatformId[];
@@ -113,12 +125,6 @@ function SystemsMap({
   };
   const hub = { cx: 410, cy: 300 };
 
-  const isCouplingActive = (links: PlatformId[]) => {
-    if (!selectedCoupling) return true;
-    const activeData = couplings.find((c) => c.name === selectedCoupling);
-    if (!activeData) return true;
-    return links.every((link) => activeData.links.includes(link)) && links.length === activeData.links.length;
-  };
 
   const isHubActive = selectedCoupling === "Food systems" || selectedCoupling === "Urbanization" || selectedCoupling === "Disease ecology";
 
@@ -358,15 +364,15 @@ export function PlatformsExplorer() {
       {/* Platform Triad Section */}
       <section className="flex flex-col gap-7">
         <h2 className="text-3xl font-semibold tracking-normal text-white sm:text-4xl">
-          The Triad
+          The Platforms
         </h2>
 
-        <div className="grid gap-4 lg:grid-cols-3">
-          {platforms.map((platform) => (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {platformCards.map((platform) => (
             <Link
-              key={platform.id}
+              key={platform.name}
               href={platform.href}
-              className="group flex flex-col gap-2 border bg-white/[0.025] p-5 transition-colors hover:bg-white/[0.05]"
+              className="group flex flex-col gap-2 border bg-white/[0.025] p-5 transition-colors hover:bg-white/[0.05] rounded-lg"
               style={{ borderColor: `${platform.color}33` }}
             >
               <span
@@ -379,7 +385,7 @@ export function PlatformsExplorer() {
                 {platform.name}
               </h3>
               <p className="text-sm leading-6 text-slate-400">{platform.domain}</p>
-              <span className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-slate-300 transition-colors group-hover:text-white">
+              <span className="mt-auto pt-3 inline-flex items-center gap-2 text-sm font-medium text-slate-300 transition-colors group-hover:text-white">
                 Open platform <span aria-hidden>→</span>
               </span>
             </Link>

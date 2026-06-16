@@ -73,19 +73,6 @@ const distinctionSet = [
   { term: "Lived experience", detail: "The condition as felt and narrated by the person living it." },
 ];
 
-// The axes a single condition can be cross-indexed along — the plural-classification
-// principle, illustrated for inflammatory bowel disease.
-const axes = [
-  { axis: "Anatomical", value: "Gastrointestinal tract, ileum and colon" },
-  { axis: "Etiologic", value: "Polygenic risk plus environmental triggers" },
-  { axis: "Molecular", value: "NOD2, IL-23 / Th17 signalling" },
-  { axis: "Immunological", value: "Dysregulated mucosal immune response" },
-  { axis: "Barrier", value: "Compromised intestinal epithelial barrier" },
-  { axis: "Ecological", value: "Altered gut microbiome (dysbiosis)" },
-  { axis: "Developmental", value: "Onset often in adolescence / young adulthood" },
-  { axis: "Social", value: "Diet, urbanization, antibiotic exposure" },
-  { axis: "Experiential", value: "Relapsing-remitting course, fatigue, stigma" },
-];
 
 const crosswalks = [
   { name: "ICD-11", role: "Public nosology and reporting crosswalk", href: "https://icd.who.int/browse/2025-01/mms/en" },

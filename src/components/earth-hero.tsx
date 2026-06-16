@@ -2142,6 +2142,7 @@ function PopoutToggleButton({
 }
 
 function VitalSignChart({ sign }: { sign: EarthVitalSign }) {
+  const [hoveredPoint, setHoveredPoint] = useState<{ year: number; value: number } | null>(null);
   const data = sign.historicalData;
   if (!data) return null;
 
@@ -2188,8 +2189,7 @@ function VitalSignChart({ sign }: { sign: EarthVitalSign }) {
     projPath = `M ${projPoints.join(" L ")}`;
   }
 
-  // Interactive tooltip tracking state
-  const [hoveredPoint, setHoveredPoint] = useState<{ year: number; value: number } | null>(null);
+  // Interactive tooltip tracking state (moved to top of sub-component)
 
   const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -3132,10 +3132,10 @@ export function EarthHero() {
     const isLight = savedTheme === "light" || document.documentElement.classList.contains("light-theme");
     if (isLight) {
       document.documentElement.classList.add("light-theme");
-      setTheme("light");
+      setTimeout(() => setTheme("light"), 0);
     } else {
       document.documentElement.classList.remove("light-theme");
-      setTheme("dark");
+      setTimeout(() => setTheme("dark"), 0);
     }
   }, []);
 

@@ -5,7 +5,7 @@ import { PlatformsExplorer } from "@/components/platforms-explorer";
 export const metadata: Metadata = {
   title: "Platforms | Sapiens Scientia",
   description:
-    "The Sapiens Scientia platform triad: Salus for health, Societas for society, and Terra for Earth systems.",
+    "Sapiens Scientia platforms: Salus for health, Societas for society, Terra for Earth systems, and Morbus for disease ontology.",
 };
 
 export default function PlatformsPage() {
@@ -23,8 +23,8 @@ export default function PlatformsPage() {
           </h1>
 
           <p className="mt-8 max-w-2xl text-lg leading-8 text-slate-300">
-            Sapiens Scientia is organized as a triad of human-centered platforms —
-            Salus, Societas, and Terra. The platforms are deliberately not silos:
+            Sapiens Scientia is organized as a family of human-centered platforms —
+            Salus, Societas, Terra, and Morbus. The platforms are deliberately not silos:
             many of the most important questions are cross-cutting, living in the
             couplings between health, society, and Earth.
           </p>

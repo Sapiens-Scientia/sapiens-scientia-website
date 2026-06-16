@@ -17,6 +17,9 @@
   --accent-amber: #fbbf24;
   --accent-emerald: #34d399;
   --accent-indigo: #818cf8;
+  
+  --grid-line: rgba(255, 255, 255, 0.035);
+  --grid-glow: rgba(56, 189, 248, 0.05);
 }
 
 .light-theme {
@@ -36,6 +39,9 @@
   --accent-amber: #b45309;
   --accent-emerald: #047857;
   --accent-indigo: #4f46e5;
+  
+  --grid-line: rgba(28, 25, 23, 0.025);
+  --grid-glow: rgba(2, 132, 199, 0.03);
 }
 
 @theme inline {
@@ -54,6 +60,21 @@ body {
 
 body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  background-image: 
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-attachment: fixed;
+  position: relative;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 30%, var(--grid-glow), transparent 70%);
+  z-index: 0;
 }
 
 * {
