@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { SiteNav } from "@/components/site-nav";
+import { SiteFooter } from "@/components/site-footer";
 import { MorbusExplorer } from "@/components/morbus-explorer";
 
 export const metadata: Metadata = {
@@ -72,7 +73,6 @@ const distinctionSet = [
   { term: "Iatrogenic harm", detail: "Harm caused by medical care itself." },
   { term: "Lived experience", detail: "The condition as felt and narrated by the person living it." },
 ];
-
 
 const crosswalks = [
   { name: "ICD-11", role: "Public nosology and reporting crosswalk", href: "https://icd.who.int/browse/2025-01/mms/en" },
@@ -270,6 +270,7 @@ export default function MorbusPage() {
           </div>
         </section>
       </section>
+      <SiteFooter />
     </main>
   );
 }

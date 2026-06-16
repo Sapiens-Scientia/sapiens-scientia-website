@@ -1,5 +1,7 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { SiteNav } from "@/components/site-nav";
+import { SiteFooter } from "@/components/site-footer";
 import { SocietasExplorer } from "@/components/societas-explorer";
 
 export const metadata: Metadata = {
@@ -39,6 +41,13 @@ export default function SocietasPage() {
             institutions, governance, economics, technology, and the cooperation
             and conflict through which populations organize themselves at scale.
           </p>
+          <Link
+            href="/scales"
+            className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-indigo-200 transition-colors hover:text-indigo-50"
+          >
+            Societas sits at the collective scale — see the ladder
+            <span aria-hidden>→</span>
+          </Link>
         </header>
 
         <SocietasExplorer />
@@ -67,6 +76,7 @@ export default function SocietasPage() {
           </div>
         </section>
       </section>
+      <SiteFooter />
     </main>
   );
 }

@@ -1,5 +1,7 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { SiteNav } from "@/components/site-nav";
+import { SiteFooter } from "@/components/site-footer";
 import { TerraExplorer } from "@/components/terra-explorer";
 
 export const metadata: Metadata = {
@@ -40,6 +42,13 @@ export default function TerraPage() {
             environment not as a backdrop but as an active, coupled system that
             human life is embedded within.
           </p>
+          <Link
+            href="/scales"
+            className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-emerald-200 transition-colors hover:text-emerald-50"
+          >
+            Terra sits at the planetary scale — see the ladder
+            <span aria-hidden>→</span>
+          </Link>
         </header>
 
         <TerraExplorer />
@@ -68,6 +77,7 @@ export default function TerraPage() {
           </div>
         </section>
       </section>
+      <SiteFooter />
     </main>
   );
 }

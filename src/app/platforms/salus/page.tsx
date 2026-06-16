@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { SalusPopulationGlobe } from "@/components/salus-population-globe";
 import { SiteNav } from "@/components/site-nav";
+import { SiteFooter } from "@/components/site-footer";
 
 export const metadata: Metadata = {
   title: "Salus | Sapiens Scientia",
@@ -134,6 +135,13 @@ export default function SalusPage() {
             A platform for human biology, medicine, physiology, disease, care,
             and the lived experience of health.
           </p>
+          <Link
+            href="/scales"
+            className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-sky-200 transition-colors hover:text-sky-50"
+          >
+            Salus spans cells to the whole body — see the ladder
+            <span aria-hidden>→</span>
+          </Link>
         </header>
 
         <div className="flex flex-col gap-8">
@@ -304,6 +312,7 @@ export default function SalusPage() {
           </div>
         </section>
       </section>
+      <SiteFooter />
     </main>
   );
 }

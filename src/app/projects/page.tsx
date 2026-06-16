@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { SiteNav } from "@/components/site-nav";
+import { SiteFooter } from "@/components/site-footer";
 
 export const metadata: Metadata = {
   title: "Projects | Sapiens Scientia",
@@ -51,6 +52,7 @@ export default function ProjectsPage() {
           ))}
         </div>
       </section>
+      <SiteFooter />
     </main>
   );
 }
