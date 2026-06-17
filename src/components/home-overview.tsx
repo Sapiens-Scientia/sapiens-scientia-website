@@ -1,9 +1,15 @@
 import Link from "next/link";
 import {
   dataIndexCategories,
-  dataIndexTotalEntries,
+  dataIndexCategoryHref,
+  dataIndexEntryCount,
 } from "@/lib/data-index";
-import { platformCouplings, platformList } from "@/lib/platforms";
+import {
+  platformColorOf,
+  platformCouplings,
+  platformList,
+  platformShortOf,
+} from "@/lib/platform-couplings";
 import { ORDERS_OF_MAGNITUDE, scaleTiers } from "@/lib/scales";
 
 const systemSignals = [
@@ -23,7 +29,7 @@ const systemSignals = [
   },
   {
     label: "Data Index",
-    value: `${dataIndexTotalEntries}`,
+    value: `${dataIndexEntryCount}`,
     unit: "sources",
     href: "/projects/sapiens-scientia-data-index",
     detail: "Public repositories, indexes, archives, and registries.",
@@ -74,7 +80,7 @@ export function HomeOverview() {
                   {signal.detail}
                 </p>
                 <span className="mt-5 inline-flex text-sm font-medium text-sky-200 transition-colors group-hover:text-sky-50">
-                  Explore <span aria-hidden="true" className="ml-1">-&gt;</span>
+                  Explore <span aria-hidden="true" className="ml-1">→</span>
                 </span>
               </Link>
             ))}
@@ -91,13 +97,20 @@ export function HomeOverview() {
               couplings are the bridgework between health, society, and Earth
               systems.
             </p>
+            <Link
+              href="/platforms#coupled-scenario"
+              className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-emerald-200 transition-colors hover:text-emerald-50"
+            >
+              Try the coupled scenario simulator
+              <span aria-hidden="true">→</span>
+            </Link>
           </div>
 
           <div className="divide-y divide-white/10 border-y border-white/10">
             {featuredCouplings.map((coupling) => (
               <Link
-                key={coupling.name}
-                href="/platforms"
+                key={coupling.slug}
+                href={`/platforms#${coupling.slug}`}
                 aria-label={`Explore the ${coupling.name} platform coupling`}
                 className="grid gap-3 py-5 transition-colors hover:text-sky-100 sm:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)]"
               >
@@ -106,21 +119,18 @@ export function HomeOverview() {
                     {coupling.name}
                   </h3>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    {coupling.links.map((id) => {
-                      const platform = platformList.find((item) => item.id === id);
-                      return platform ? (
-                        <span
-                          key={id}
-                          className="border px-2.5 py-1 text-xs font-medium"
-                          style={{
-                            borderColor: `${platform.color}55`,
-                            color: platform.color,
-                          }}
-                        >
-                          {platform.shortName}
-                        </span>
-                      ) : null;
-                    })}
+                    {coupling.links.map((id) => (
+                      <span
+                        key={id}
+                        className="border px-2.5 py-1 text-xs font-medium"
+                        style={{
+                          borderColor: `${platformColorOf[id]}55`,
+                          color: platformColorOf[id],
+                        }}
+                      >
+                        {platformShortOf[id]}
+                      </span>
+                    ))}
                   </div>
                 </div>
                 <p className="text-sm leading-6 text-slate-400">
@@ -146,7 +156,7 @@ export function HomeOverview() {
               className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-sky-200 transition-colors hover:text-sky-50"
             >
               View current projects
-              <span aria-hidden="true">-&gt;</span>
+              <span aria-hidden="true">→</span>
             </Link>
           </div>
 
@@ -182,7 +192,7 @@ export function HomeOverview() {
               {featuredCategories.map((category) => (
                 <Link
                   key={category.name}
-                  href="/projects/sapiens-scientia-data-index"
+                  href={dataIndexCategoryHref(category.name)}
                   aria-label={`Explore ${category.name} in the Sapiens Scientia Data Index`}
                   className="border border-white/10 bg-white/[0.025] p-4 transition-colors hover:bg-white/[0.05]"
                 >

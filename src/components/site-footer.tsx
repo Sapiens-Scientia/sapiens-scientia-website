@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EARTHVIEW_PAGE_PATH } from "@/lib/projects";
 
 // Sitewide footer for content surfaces, rendered by PageShell and by pages that
 // compose their own shell around richer interactive sections.
@@ -30,7 +31,7 @@ const columns: { title: string; links: FooterLink[] }[] = [
     title: "Project",
     links: [
       { href: "https://github.com/Sapiens-Scientia/sapiens-scientia-docs", label: "Documentation", external: true },
-      { href: "https://earthview3d.vercel.app/", label: "EarthView 3D", external: true },
+      { href: EARTHVIEW_PAGE_PATH, label: "EarthView 3D" },
     ],
   },
 ];

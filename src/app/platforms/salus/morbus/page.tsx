@@ -2,86 +2,20 @@ import type { Metadata } from "next";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { MorbusExplorer } from "@/components/morbus-explorer";
+import { MorbusAxisMatrix } from "@/components/morbus-axis-matrix";
+import { MorbusOverviewStats } from "@/components/morbus-overview-stats";
+import {
+  morbusCrosswalks,
+  morbusDiseaseCount,
+  morbusDiseaseGroups,
+  morbusDistinctionSet,
+} from "@/lib/morbus";
 
 export const metadata: Metadata = {
   title: "Morbus | Sapiens Scientia",
   description:
     "Sapiens Scientia Morbus: the disease ontology inside Salus for plural classification of human disease.",
 };
-
-type DiseaseGroup = {
-  kind: string;
-  principle: string;
-  subtypes: { name: string; examples: string[] }[];
-};
-
-const diseaseGroups: DiseaseGroup[] = [
-  {
-    kind: "Primary Etiologic Diseases",
-    principle:
-      "Pathology is chiefly organized around a relatively identifiable initiating cause.",
-    subtypes: [
-      { name: "Physical injury", examples: ["trauma", "burns", "frostbite"] },
-      { name: "Deficiency", examples: ["scurvy", "iron-deficiency anaemia", "iodine deficiency"] },
-      { name: "Chemical exposure", examples: ["asbestosis", "silicosis", "alcohol-related liver disease"] },
-      { name: "Infectious disease", examples: ["influenza", "tuberculosis", "HIV disease"] },
-      { name: "Hereditary disease", examples: ["cystic fibrosis", "sickle cell disease", "Huntington disease"] },
-    ],
-  },
-  {
-    kind: "Secondary Physiological Diseases",
-    principle:
-      "Pathology emerges from complex dysregulation of physiological systems over time.",
-    subtypes: [
-      { name: "Cardiovascular", examples: ["hypertension", "atherosclerosis", "heart failure"] },
-      { name: "Metabolic / endocrine", examples: ["type 2 diabetes", "obesity", "PCOS"] },
-      { name: "Neurological", examples: ["Alzheimer disease", "Parkinson disease", "epilepsy"] },
-      { name: "Degenerative", examples: ["osteoarthritis", "sarcopenia", "macular degeneration"] },
-      { name: "Neoplastic", examples: ["cancer", "leukaemia", "lymphoma"] },
-      { name: "Immunological / inflammatory", examples: ["Crohn disease", "lupus", "asthma", "allergy"] },
-    ],
-  },
-  {
-    kind: "Hybrid / Multiaxial Diseases",
-    principle:
-      "Cause and physiology are both essential; one disease may belong to multiple explanatory layers.",
-    subtypes: [
-      { name: "Infection plus host response", examples: ["sepsis", "long COVID", "post-infectious syndromes"] },
-      { name: "Gene plus physiology", examples: ["familial hypercholesterolaemia", "haemochromatosis", "BRCA-associated cancer risk"] },
-      { name: "Environment plus regulation", examples: ["COPD", "occupational asthma", "non-alcoholic fatty liver disease"] },
-      { name: "Immune plus tissue ecology", examples: ["inflammatory bowel disease", "rheumatoid arthritis", "psoriasis"] },
-      { name: "Treatment effect", examples: ["iatrogenic harm", "adverse drug reaction", "post-surgical adhesions"] },
-    ],
-  },
-];
-
-// The early distinction set from platforms/salus/MORBUS.md — the primitives a
-// Morbus condition is decomposed into, beneath the three top-level groups.
-const distinctionSet = [
-  { term: "Disease entity", detail: "A condition treated as a recognizable, nameable whole." },
-  { term: "Syndrome", detail: "A co-occurring cluster of features without a single settled cause." },
-  { term: "Pathophysiological process", detail: "The unfolding mechanism by which function is disrupted." },
-  { term: "Etiology", detail: "The initiating cause or causes that set the process in motion." },
-  { term: "Risk state", detail: "A predisposing condition that raises the probability of disease." },
-  { term: "Tissue lesion", detail: "The structural change visible at the level of tissue." },
-  { term: "Molecular mechanism", detail: "The pathway, mutation, or signalling change underneath." },
-  { term: "Immune pattern", detail: "The characteristic immune response or dysregulation involved." },
-  { term: "Barrier dysfunction", detail: "Failure of epithelial, vascular, or other protective barriers." },
-  { term: "Microbial ecology", detail: "The microbial community whose shifts shape the condition." },
-  { term: "Complication", detail: "A downstream condition arising from the primary disease." },
-  { term: "Treatment effect", detail: "Change in the disease produced by intervention." },
-  { term: "Iatrogenic harm", detail: "Harm caused by medical care itself." },
-  { term: "Lived experience", detail: "The condition as felt and narrated by the person living it." },
-];
-
-const crosswalks = [
-  { name: "ICD-11", role: "Public nosology and reporting crosswalk", href: "https://icd.who.int/browse/2025-01/mms/en" },
-  { name: "SNOMED CT", role: "Clinical terminology for records", href: "https://www.snomed.org/" },
-  { name: "MeSH", role: "Literature indexing vocabulary", href: "https://www.nlm.nih.gov/mesh/meshhome.html" },
-  { name: "MONDO", role: "Harmonized disease ontology", href: "https://mondo.monarchinitiative.org/" },
-  { name: "DOID", role: "Human Disease Ontology", href: "https://disease-ontology.org/" },
-  { name: "HPO", role: "Human Phenotype Ontology", href: "https://hpo.jax.org/" },
-];
 
 const morbusSources = [
   { label: "WHO ICD-11 MMS Browser", href: "https://icd.who.int/browse/2025-01/mms/en" },
@@ -117,7 +51,12 @@ export default function MorbusPage() {
             the hypothesis that many diseases are better understood as
             intersecting processes than as single objects.
           </p>
+          <p className="mt-4 font-mono text-xs uppercase tracking-[0.16em] text-slate-500">
+            {morbusDiseaseCount} interactive exemplars below · shareable via URL hash
+          </p>
         </header>
+
+        <MorbusOverviewStats />
 
         <section className="flex flex-col gap-7">
           <div className="max-w-3xl">
@@ -133,7 +72,7 @@ export default function MorbusPage() {
           </div>
 
           <div className="grid gap-4 lg:grid-cols-3">
-            {diseaseGroups.map((group) => (
+            {morbusDiseaseGroups.map((group) => (
               <article
                 key={group.kind}
                 className="flex flex-col border border-white/10 bg-white/[0.03] p-5"
@@ -181,7 +120,7 @@ export default function MorbusPage() {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {distinctionSet.map((item) => (
+            {morbusDistinctionSet.map((item) => (
               <article
                 key={item.term}
                 className="flex flex-col gap-1.5 border border-white/10 bg-white/[0.025] p-4"
@@ -208,6 +147,8 @@ export default function MorbusPage() {
             </p>
           </div>
 
+          <MorbusAxisMatrix />
+
           <MorbusExplorer />
         </section>
 
@@ -225,7 +166,7 @@ export default function MorbusPage() {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {crosswalks.map((cw) => (
+            {morbusCrosswalks.map((cw) => (
               <a
                 key={cw.name}
                 href={cw.href}

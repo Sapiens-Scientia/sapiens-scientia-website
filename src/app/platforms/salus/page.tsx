@@ -4,6 +4,9 @@ import type { Metadata } from "next";
 import { SalusPopulationGlobe } from "@/components/salus-population-globe";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
+import { PlatformCouplingLinks } from "@/components/platform-coupling-links";
+import { ScaleRungLinks } from "@/components/scale-rung-links";
+import { morbusDiseaseGroups, morbusDiseases } from "@/lib/morbus";
 
 export const metadata: Metadata = {
   title: "Salus | Sapiens Scientia",
@@ -62,43 +65,6 @@ const burdenSources = [
   {
     label: "WHO / World Bank Tracking Universal Health Coverage 2025",
     href: "https://cdn.who.int/media/docs/default-source/gho-documents/tracking-universal-health-coverage-global-report-2025.pdf?download=true&sfvrsn=f8cf10f6_11",
-  },
-];
-
-const morbusDiseaseGroups = [
-  {
-    kind: "Primary Etiologic Diseases",
-    principle: "Pathology is chiefly organized around a relatively identifiable initiating cause.",
-    subtypes: [
-      { name: "Physical injury", examples: ["trauma", "burns", "frostbite"] },
-      { name: "Deficiency", examples: ["scurvy", "iron-deficiency anaemia", "iodine deficiency"] },
-      { name: "Chemical exposure", examples: ["asbestosis", "silicosis", "alcohol-related liver disease"] },
-      { name: "Infectious disease", examples: ["influenza", "tuberculosis", "HIV disease"] },
-      { name: "Hereditary disease", examples: ["cystic fibrosis", "sickle cell disease", "Huntington disease"] },
-    ],
-  },
-  {
-    kind: "Secondary Physiological Diseases",
-    principle: "Pathology emerges from complex dysregulation of physiological systems over time.",
-    subtypes: [
-      { name: "Cardiovascular", examples: ["hypertension", "atherosclerosis", "heart failure"] },
-      { name: "Metabolic / endocrine", examples: ["type 2 diabetes", "obesity", "PCOS"] },
-      { name: "Neurological", examples: ["Alzheimer disease", "Parkinson disease", "epilepsy"] },
-      { name: "Degenerative", examples: ["osteoarthritis", "sarcopenia", "macular degeneration"] },
-      { name: "Neoplastic", examples: ["cancer", "leukaemia", "lymphoma"] },
-      { name: "Immunological / inflammatory", examples: ["Crohn disease", "lupus", "asthma", "allergy"] },
-    ],
-  },
-  {
-    kind: "Hybrid / Multiaxial Diseases",
-    principle: "Cause and physiology are both essential; one disease may belong to multiple explanatory layers.",
-    subtypes: [
-      { name: "Infection plus host response", examples: ["sepsis", "long COVID", "post-infectious syndromes"] },
-      { name: "Gene plus physiology", examples: ["familial hypercholesterolaemia", "haemochromatosis", "BRCA-associated cancer risk"] },
-      { name: "Environment plus regulation", examples: ["COPD", "occupational asthma", "non-alcoholic fatty liver disease"] },
-      { name: "Immune plus tissue ecology", examples: ["inflammatory bowel disease", "rheumatoid arthritis", "psoriasis"] },
-      { name: "Treatment effect", examples: ["iatrogenic harm", "adverse drug reaction", "post-surgical adhesions"] },
-    ],
   },
 ];
 
@@ -232,6 +198,24 @@ export default function SalusPage() {
               Explore the Morbus ontology
               <span aria-hidden>→</span>
             </Link>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {(["ibd", "t2d", "covid19", "malaria", "hiv", "mdd"] as const).map((id) => {
+                const disease = morbusDiseases.find((entry) => entry.id === id);
+                if (!disease) {
+                  return null;
+                }
+
+                return (
+                  <Link
+                    key={id}
+                    href={`/platforms/salus/morbus#${id}`}
+                    className="border border-emerald-200/15 bg-emerald-200/[0.05] px-2.5 py-1 text-xs leading-5 text-emerald-100 transition-colors hover:border-emerald-200/35 hover:text-emerald-50"
+                  >
+                    {disease.name.replace(/ \(.*\)/, "")}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
 
           <div className="relative h-[min(68vw,40rem)] min-h-[24rem] overflow-hidden border border-white/10 bg-black">
@@ -311,6 +295,10 @@ export default function SalusPage() {
             ))}
           </div>
         </section>
+
+        <PlatformCouplingLinks platform="salus" />
+
+        <ScaleRungLinks platform="salus" />
       </section>
       <SiteFooter />
     </main>

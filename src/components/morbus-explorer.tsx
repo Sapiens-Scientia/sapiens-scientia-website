@@ -1,19 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { morbusDiseases, morbusGroupKinds, type DiseaseData } from "@/lib/morbus";
 
-type DiseaseAxis = {
-  axis: string;
-  value: string;
-  explanation: string;
-};
+const diseaseGroups = morbusGroupKinds;
 
-type DiseaseCrosswalk = {
-  name: string;
-  value: string;
-};
+function diseaseMatchesQuery(disease: DiseaseData, query: string) {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) {
+    return true;
+  }
 
-type DigitalQuery = {
+  return (
+    disease.name.toLowerCase().includes(normalized) ||
+    disease.group.toLowerCase().includes(normalized) ||
+    disease.axes.some(
+      (axis) =>
+        axis.axis.toLowerCase().includes(normalized) ||
+        axis.value.toLowerCase().includes(normalized),
+    )
+  );
+}
+
+export type DigitalQuery = {
   database: "PubMed" | "ClinVar" | "UniProt" | "Open Targets";
   endpoint: string;
   queryDescription: string;
@@ -21,39 +30,12 @@ type DigitalQuery = {
   mockResponse: string;
 };
 
-type DiseaseData = {
-  id: string;
-  name: string;
-  group: "Primary Etiologic Diseases" | "Secondary Physiological Diseases" | "Hybrid / Multiaxial Diseases";
-  description: string;
-  axes: DiseaseAxis[];
-  crosswalks: DiseaseCrosswalk[];
-  digitalQueries: DigitalQuery[];
-};
+function getDigitalQueriesForDisease(disease: DiseaseData): DigitalQuery[] {
+  const name = disease.name;
+  const id = disease.id;
 
-const diseases: DiseaseData[] = [
-  {
-    id: "ibd",
-    name: "Inflammatory Bowel Disease (IBD)",
-    group: "Hybrid / Multiaxial Diseases",
-    description: "A relapsing-remitting inflammatory condition of the gastrointestinal tract, emerging from polygenic risk, barrier disruption, and dysregulated host immune response to gut microbiota.",
-    axes: [
-      { axis: "Anatomical", value: "Gastrointestinal tract, ileum and colon", explanation: "Primarily affects the mucosal lining of the intestines, causing localized lesions and ulcers." },
-      { axis: "Etiologic", value: "Polygenic risk plus environmental triggers", explanation: "Dozens of susceptibility loci interacting with diet, smoking, and stress." },
-      { axis: "Molecular", value: "NOD2 mutation, IL-23 / Th17 signalling pathways", explanation: "Intracellular pattern recognition receptor failure and cytokine pathway upregulation." },
-      { axis: "Immunological", value: "Dysregulated mucosal immune response", explanation: "Excessive leukocyte recruitment and macrophage activation in the lamina propria." },
-      { axis: "Barrier", value: "Compromised intestinal epithelial barrier", explanation: "Leaky tight junctions allow bacterial translocation into deeper tissue layers." },
-      { axis: "Ecological", value: "Altered gut microbiome (dysbiosis)", explanation: "Loss of diversity, specifically reduced Firmicutes and increased Proteobacteria." },
-      { axis: "Developmental", value: "Onset often in adolescence / young adulthood", explanation: "Typically diagnosed between ages 15 and 30, with lifelong relapsing courses." },
-      { axis: "Social", value: "Western diet, urbanization, antibiotic exposure", explanation: "Heavily associated with industrialization and changes in early-life microbial exposure." },
-      { axis: "Experiential", value: "Relapsing-remitting pain, fatigue, social stigma", explanation: "Lived burden includes unpredictable flares, dietary anxiety, and chronic fatigue." },
-    ],
-    crosswalks: [
-      { name: "ICD-11", value: "DD70 Crohn disease / DD71 Ulcerative colitis" },
-      { name: "SNOMED CT", value: "34000006 Crohn's disease / 64766004 Ulcerative colitis" },
-      { name: "MONDO", value: "MONDO:0005101 inflammatory bowel disease" },
-    ],
-    digitalQueries: [
+  if (id === "ibd") {
+    return [
       {
         database: "PubMed",
         endpoint: "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=inflammatory+bowel+disease+AND+NOD2&retmode=json",
@@ -144,30 +126,11 @@ const diseases: DiseaseData[] = [
   }
 }`
       }
-    ]
-  },
-  {
-    id: "t2d",
-    name: "Type 2 Diabetes (T2D)",
-    group: "Secondary Physiological Diseases",
-    description: "A metabolic disorder characterized by chronic hyperglycemia, peripheral insulin resistance, and progressive pancreatic beta-cell dysfunction.",
-    axes: [
-      { axis: "Anatomical", value: "Pancreas, skeletal muscle, liver, adipose tissue", explanation: "Key metabolic organs fail to clear glucose or produce adequate regulatory signals." },
-      { axis: "Etiologic", value: "Genetic susceptibility + chronic positive energy balance", explanation: "Heritable risk combined with sustained caloric surplus and physical inactivity." },
-      { axis: "Molecular", value: "IRS-1 serine phosphorylation, GLUT4 downregulation", explanation: "Impaired intracellular insulin signaling prevents glucose transporter migration." },
-      { axis: "Immunological", value: "Chronic low-grade macrophage-driven tissue inflammation", explanation: "Adipose tissue hypertrophy recruits pro-inflammatory macrophages, secreting TNF-alpha." },
-      { axis: "Barrier", value: "Intestinal permeability leading to endotoxemia", explanation: "Leaky gut allows bacterial lipopolysaccharides (LPS) to enter circulation, driving systemic resistance." },
-      { axis: "Ecological", value: "Altered gut microbiota diversity", explanation: "Reduced abundance of butyrate-producing taxa impairing metabolic homeostasis." },
-      { axis: "Developmental", value: "Progressive accumulation of metabolic strain with age", explanation: "Slow development over decades, often preceded by years of silent pre-diabetes." },
-      { axis: "Social", value: "Ultra-processed food environments, sedentary labor", explanation: "Driven by systemic food architecture, transit design, and socioeconomic disparities." },
-      { axis: "Experiential", value: "Dietary anxiety, neuropathic pain, fear of failure", explanation: "Constant management burden, blood sugar checking, and fear of diabetic complications." },
-    ],
-    crosswalks: [
-      { name: "ICD-11", value: "5A11 Type 2 diabetes mellitus" },
-      { name: "SNOMED CT", value: "44054006 Type 2 diabetes mellitus" },
-      { name: "MONDO", value: "MONDO:0005148 type 2 diabetes mellitus" },
-    ],
-    digitalQueries: [
+    ];
+  }
+
+  if (id === "t2d") {
+    return [
       {
         database: "PubMed",
         endpoint: "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=type+2+diabetes+AND+IRS1&retmode=json",
@@ -188,7 +151,7 @@ const diseases: DiseaseData[] = [
       {
         database: "ClinVar",
         endpoint: "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=clinvar&id=3245&retmode=json",
-        queryDescription: "Checking genetic variants of IRS1 and SLC2A4 (GLUT4) associated with metabolic traits.",
+        queryDescription: "Checking genetic variants of IRS1 associated with metabolic traits.",
         findings: [
           "IRS1 variant G972R (rs1801278) listed as pathogenic susceptibility factor for diabetes.",
           "Identified association with increased visceral fat accumulation and decreased insulin secretion."
@@ -199,7 +162,8 @@ const diseases: DiseaseData[] = [
       "uid": "3245",
       "title": "IRS1 rs1801278 (G972R)",
       "clinical_significance": {
-        "description": "Susceptibility to Type 2 Diabetes"
+        "description": "Pathogenic (T2D susceptibility)",
+        "last_evaluated": "2024-05-18"
       }
     }
   }
@@ -208,29 +172,28 @@ const diseases: DiseaseData[] = [
       {
         database: "UniProt",
         endpoint: "https://rest.uniprot.org/uniprotkb/P35568.json",
-        queryDescription: "Fetching functional map of human Insulin Receptor Substrate-1 (IRS-1).",
+        queryDescription: "Fetching functional annotations and phosphorylation sites for human IRS1.",
         findings: [
           "Accession: P35568 (IRS1_HUMAN).",
-          "Contains multiple tyrosine phosphorylation sites (target of Insulin Receptor kinase).",
-          "Phosphorylation of serine residues (e.g., Ser307) by inflammatory cytokines (TNF-alpha) disrupts signaling."
+          "Contains multiple tyrosine phosphorylation sites that serve as docking platforms for SH2 domain proteins.",
+          "Serine phosphorylation by inflammatory cytokines (TNF-alpha) disrupts insulin signaling transduction."
         ],
         mockResponse: `{
   "primaryAccession": "P35568",
   "uniProtkbId": "IRS1_HUMAN",
   "features": [
-    { "type": "Modified residue", "location": { "start": 307 }, "description": "Phosphoserine (insulin resistance inducer)" },
-    { "type": "Modified residue", "location": { "start": 612 }, "description": "Phosphotyrosine (insulin signaling active)" }
+    { "type": "Modified residue", "location": { "start": 307 }, "description": "Phosphoserine (mediates insulin resistance)" }
   ]
 }`
       },
       {
         database: "Open Targets",
         endpoint: "https://api.platform.opentargets.org/v4/graphql",
-        queryDescription: "Investigating drug targets and clinical pipelines for Type 2 Diabetes therapeutics.",
+        queryDescription: "Querying pharmaceutical pipelines targeting type 2 diabetes and GLP-1/GIP receptor agonists.",
         findings: [
-          "Top target is AMPK (PRKAA1/2) activated by first-line therapeutic Metformin.",
-          "GLP-1 receptor (GLP1R) agonists show high target association and metabolic benefits.",
-          "SGLT2 inhibitors (SLC5A2) are validated targets for kidney glucose clearance."
+          "Implicated targets include GLP1R (Glucagon-like peptide 1 receptor) and GIPR.",
+          "Approved therapeutics (e.g., Semaglutide, Tirzepatide) show extremely high efficacy in clinical weight loss.",
+          "Secondary targets target SGLT2 (SLC5A2) to increase renal glucose clearance."
         ],
         mockResponse: `{
   "data": {
@@ -238,232 +201,177 @@ const diseases: DiseaseData[] = [
       "name": "type 2 diabetes mellitus",
       "associatedTargets": [
         { "score": 1.0, "target": { "approvedSymbol": "GLP1R" } },
-        { "score": 0.96, "target": { "approvedSymbol": "SLC5A2" } }
+        { "score": 1.0, "target": { "approvedSymbol": "SLC5A2" } }
       ]
     }
   }
 }`
       }
-    ]
-  },
-  {
-    id: "tb",
-    name: "Tuberculosis (TB)",
-    group: "Primary Etiologic Diseases",
-    description: "An infectious disease caused by Mycobacterium tuberculosis, where clinical path is dictated by cellular immunity containment.",
-    axes: [
-      { axis: "Anatomical", value: "Pulmonary parenchyma, alveolar macrophages", explanation: "Infection centers in the lungs but can disseminate hematogenously to bones, brain, or kidneys." },
-      { axis: "Etiologic", value: "Infection with Mycobacterium tuberculosis", explanation: "Inhalation of airborne droplet nuclei containing the intracellular pathogen." },
-      { axis: "Molecular", value: "Mycolic acid wall, ESX-1 secretion system", explanation: "Bacterial cell wall lipids block phagosome-lysosome fusion inside host macrophages." },
-      { axis: "Immunological", value: "Th1 cell-mediated immunity & granuloma formation", explanation: "T-cell IFN-gamma recruits macrophages to wall off bacteria in a caseous granuloma." },
-      { axis: "Barrier", value: "Alveolar epithelial barrier disruption", explanation: "Bacterial invasion compromises gas exchange barrier during active disease." },
-      { axis: "Ecological", value: "Host nutritional status and pulmonary microbiome", explanation: "Co-morbidities like malnutrition or HIV severely compromise host-defense ecology." },
-      { axis: "Developmental", value: "Latency phase vs. active reactivation", explanation: "Pathogen can remain dormant for decades, reactivating under immunosuppression." },
-      { axis: "Social", value: "Overcrowded housing, poverty, poor ventilation", explanation: "Classic disease of poverty, historical slums, and underfunded public health systems." },
-      { axis: "Experiential", value: "Chronic cough, isolation, treatment fatigue", explanation: "Six-month multi-drug regimens, severe medication side effects, and social stigma." },
-    ],
-    crosswalks: [
-      { name: "ICD-11", value: "1B10 Tuberculosis" },
-      { name: "SNOMED CT", value: "56717001 Tuberculosis" },
-      { name: "MONDO", value: "MONDO:0019383 tuberculosis" },
-    ],
-    digitalQueries: [
+    ];
+  }
+
+  if (id === "tb") {
+    return [
       {
         database: "PubMed",
-        endpoint: "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=tuberculosis+AND+rifampicin+resistance&retmode=json",
-        queryDescription: "Querying literature database for clinical studies on multi-drug resistant TB (MDR-TB) mutations.",
+        endpoint: "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=tuberculosis+AND+IFNG+pathway&retmode=json",
+        queryDescription: "Querying biomedical papers analyzing interferon-gamma (IFN-g) responses in active tuberculosis.",
         findings: [
-          "MDR-TB is defined by resistance to both isoniazid and rifampicin.",
-          "Over 95% of rifampicin resistance is caused by mutations in the rpoB gene of M. tuberculosis.",
-          "Molecular PCR assays (e.g., GeneXpert) allow rapid diagnostic identification of rpoB mutations."
+          "IFN-gamma production by CD4+ Th1 cells is critical for macrophage activation and control of M. tuberculosis.",
+          "Genetic defects in the IFN-gamma receptor (IFNGR1/IFNGR2) lead to severe mycobacterial vulnerability.",
+          "IGRA (Interferon-Gamma Release Assays) measure T-cell response to diagnose latent tuberculosis."
         ],
         mockResponse: `{
   "esearchresult": {
-    "count": "3824",
-    "retmax": "1",
-    "idlist": ["37910242"]
+    "count": "812",
+    "retmax": "2",
+    "idlist": ["37492102", "37119024"]
   }
 }`
       },
       {
         database: "ClinVar",
-        endpoint: "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=clinvar&id=10245&retmode=json",
-        queryDescription: "Querying human gene variants influencing host susceptibility to tuberculosis.",
+        endpoint: "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=clinvar&term=IFNGR1+AND+tuberculosis",
+        queryDescription: "Querying human variations in the IFN-gamma receptor linked to mycobacterial susceptibility.",
         findings: [
-          "SLC11A1 (formerly NRAMP1) variants (rs17235409) correlate with susceptibility to pulmonary TB.",
-          "IFNGR1 mutations lead to complete or partial interferon-gamma receptor deficiency, causing extreme vulnerability to mycobacteria."
+          "Autosomal recessive mutations in IFNGR1 cause Mendelian Susceptibility to Mycobacterial Diseases (MSMD).",
+          "Frameshift and missense mutations in the ligand-binding domain prevent IFN-g binding."
         ],
         mockResponse: `{
   "result": {
-    "10245": {
-      "uid": "10245",
-      "title": "IFNGR1 autosomal recessive deficiency",
-      "clinical_significance": {
-        "description": "Pathogenic (Susceptibility to mycobacterial infection)"
-      }
+    "IFNGR1_mutation": {
+      "gene": "IFNGR1",
+      "significance": "Pathogenic (Mendelian Susceptibility to Mycobacterial Disease)",
+      "transmission": "Autosomal recessive"
     }
   }
 }`
       },
       {
         database: "UniProt",
-        endpoint: "https://rest.uniprot.org/uniprotkb/P9WGT2.json",
-        queryDescription: "Fetching structure and functional annotation of M. tuberculosis Enoyl-[acyl-carrier-protein] reductase (InhA) — target of isoniazid.",
+        endpoint: "https://rest.uniprot.org/uniprotkb/P15260.json",
+        queryDescription: "Fetching structure and functional mapping for the human Interferon-gamma receptor 1 (IFNGR1).",
         findings: [
-          "Accession: P9WGT2 (INHA_MYCTU).",
-          "Key enzyme in fatty acid elongation, essential for mycolic acid biosynthesis.",
-          "Activated isoniazid binds to NADH inside InhA, blocking active site and causing cell wall collapse."
+          "Accession: P15260 (INGR1_HUMAN).",
+          "Single-pass transmembrane protein acting as receptor for interferon-gamma.",
+          "Intracellular domain binds JAK1 tyrosine kinase to initiate STAT1 transcription signaling."
         ],
         mockResponse: `{
-  "primaryAccession": "P9WGT2",
-  "uniProtkbId": "INHA_MYCTU",
-  "proteinDescription": {
-    "recommendedName": { "fullName": { "value": "Enoyl-[acyl-carrier-protein] reductase [NADH]" } }
-  },
-  "keywords": ["Antibiotic resistance", "Fatty acid biosynthesis", "Cell wall biogenesis"]
-}`
-      },
-      {
-        database: "Open Targets",
-        endpoint: "https://api.platform.opentargets.org/v4/graphql",
-        queryDescription: "Reviewing targets for anti-mycobacterial therapies and resistance management.",
-        findings: [
-          "Bedaquiline targets the Mycobacterial ATP synthase subunit C (atpE).",
-          "Pretomanid and Delamanid target mycolic acid synthesis, active against dormant bacilli.",
-          "Host-directed therapies targeting host cytokine pathways (e.g. TNF alpha) are under trial."
-        ],
-        mockResponse: `{
-  "data": {
-    "drug": {
-      "name": "Bedaquiline",
-      "mechanismsOfAction": [
-        { "target": "atpE", "action": "Inhibitor", "targetName": "ATP synthase subunit C" }
-      ]
-    }
-  }
-}`
-      }
-    ]
-  },
-  {
-    id: "ad",
-    name: "Alzheimer's Disease (AD)",
-    group: "Secondary Physiological Diseases",
-    description: "A neurodegenerative disease characterized by progressive cognitive decline, synaptic loss, and pathological accumulation of amyloid-beta and tau proteins.",
-    axes: [
-      { axis: "Anatomical", value: "Hippocampus, neocortex, cerebral vasculature", explanation: "Progressive atrophy starting in memory centers and spreading through association cortices." },
-      { axis: "Etiologic", value: "APOE4 allele, aging, cardiovascular disease", explanation: "Multifactorial risk combining genetic variants, vascular health, and systemic aging." },
-      { axis: "Molecular", value: "Abeta42 aggregation, hyperphosphorylated tau", explanation: "Extracellular plaques block synaptic transmission; intracellular tangles collapse axonal transport." },
-      { axis: "Immunological", value: "TREM2 microglial activation, astrogliosis", explanation: "Microglia fail to clear plaques and transition into a chronic neurotoxic inflammatory state." },
-      { axis: "Barrier", value: "Blood-brain barrier breakdown, glymphatic failure", explanation: "Microvascular leakiness and impaired waste clearance during slow-wave sleep." },
-      { axis: "Ecological", value: "Gut-brain metabolic axis, systemic lipid state", explanation: "Systemic inflammatory and metabolic profiles influence neuroinflammatory signaling." },
-      { axis: "Developmental", value: "Long prodromal plaque accumulation (20+ years)", explanation: "Plaques begin depositing decades before memory complaints or clinical dementia appear." },
-      { axis: "Social", value: "Cognitive reserve, air pollution, social isolation", explanation: "Higher education builds cognitive resilience; environmental toxins accelerate damage." },
-      { axis: "Experiential", value: "Identity erosion, caregiver burden, memory loss", explanation: "Lived reality of losing memory of loved ones, losing spatial orientation, and loss of self." },
-    ],
-    crosswalks: [
-      { name: "ICD-11", value: "8A20 Dementia due to Alzheimer disease" },
-      { name: "SNOMED CT", value: "26929004 Alzheimer's disease" },
-      { name: "MONDO", value: "MONDO:0004975 Alzheimer's disease" },
-    ],
-    digitalQueries: [
-      {
-        database: "PubMed",
-        endpoint: "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=alzheimer+AND+APOE4+amyloid&retmode=json",
-        queryDescription: "Querying literature for mechanisms linking the APOE4 allele to impaired amyloid clearance.",
-        findings: [
-          "APOE4 isoform has a lower affinity for amyloid-beta, reducing transport across the BBB.",
-          "APOE4 carriers display significantly accelerated amyloid plaque deposition in Positron Emission Tomography (PET).",
-          "Therapeutic trials show amyloid-reducing monoclonal antibodies are highly effective but carry risk of ARIA (amyloid-related imaging abnormalities) in E4 homozygotes."
-        ],
-        mockResponse: `{
-  "esearchresult": {
-    "count": "2311",
-    "retmax": "1",
-    "idlist": ["38001284"]
-  }
-}`
-      },
-      {
-        database: "ClinVar",
-        endpoint: "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=clinvar&id=12560&retmode=json",
-        queryDescription: "Retrieving pathogenic variants in APP, PSEN1, and PSEN2 that cause early-onset familial Alzheimer's.",
-        findings: [
-          "PSEN1 variant L166P (rs63750082) classified as Pathogenic; causes early-onset AD (onset in 20s/30s).",
-          "APP Swedish mutation (rs63750263) increases total Abeta production by enhancing beta-secretase cleavage.",
-          "APOE epsilon-4 allele listed as Risk Factor (not deterministic, major susceptibility locus)."
-        ],
-        mockResponse: `{
-  "result": {
-    "12560": {
-      "uid": "12560",
-      "title": "PSEN1 L166P mutation",
-      "clinical_significance": {
-        "description": "Pathogenic (Familial early-onset Alzheimer's Disease)"
-      }
-    }
-  }
-}`
-      },
-      {
-        database: "UniProt",
-        endpoint: "https://rest.uniprot.org/uniprotkb/P05067.json",
-        queryDescription: "Inspecting the Amyloid Beta Precursor Protein (APP) sequences and protease cleavage sites.",
-        findings: [
-          "Accession: P05067 (A4_HUMAN).",
-          "Cleaved by beta-secretase (BACE1) and gamma-secretase complex to release Amyloid-beta peptides.",
-          "Abeta-42 peptide (cleavage at Ala-713) is hydrophobic and highly prone to oligomerization into neurotoxic fibrils."
-        ],
-        mockResponse: `{
-  "primaryAccession": "P05067",
-  "uniProtkbId": "A4_HUMAN",
+  "primaryAccession": "P15260",
+  "uniProtkbId": "INGR1_HUMAN",
   "features": [
-    { "type": "Peptide", "location": { "start": 672, "end": 713 }, "description": "Amyloid-beta protein 42 (toxic peptide)" }
+    { "type": "Transmembrane", "location": { "start": 254, "end": 276 }, "description": "Single-pass helice" }
   ]
 }`
       },
       {
         database: "Open Targets",
         endpoint: "https://api.platform.opentargets.org/v4/graphql",
-        queryDescription: "Querying therapeutic pipelines and targets (anti-amyloid, anti-tau, neuroinflammatory pathways).",
+        queryDescription: "Querying drug registry databases for antibiotic therapeutics for Mycobacterium tuberculosis.",
         findings: [
-          "Monoclonal antibody Lecanemab targets soluble Abeta protofibrils (APP).",
-          "Donanemab targets N-terminally truncated pyroglutamate amyloid-beta.",
-          "Microglial receptor TREM2 is a high-priority target in Phase I/II trials to stimulate plaque clearance."
+          "Main line therapies block bacterial RNA polymerase (Rifampicin) and cell-wall synthesis (Isoniazid).",
+          "Multi-drug resistant (MDR-TB) strains require secondary regimens including Bedaquiline (blocks ATP synthase).",
+          "Implicated therapeutic targets include Mtb DnaG primase and cell wall enzymes."
         ],
         mockResponse: `{
   "data": {
-    "target": {
-      "approvedSymbol": "TREM2",
-      "tractability": { "antibody": "Clinical Phase II", "smallMolecule": "Discovery" }
+    "disease": {
+      "name": "tuberculosis",
+      "clinicalTrials": [
+        { "phase": "Approved", "drug": "Rifampicin", "mechanism": "RNA polymerase inhibitor" },
+        { "phase": "Approved", "drug": "Bedaquiline", "mechanism": "M. tuberculosis ATP synthase inhibitor" }
+      ]
     }
   }
 }`
       }
-    ]
-  },
-  {
-    id: "tbi",
-    name: "Traumatic Brain Injury (TBI)",
-    group: "Primary Etiologic Diseases",
-    description: "An alteration in brain function or structure caused by an external physical force, triggering chronic secondary cascades.",
-    axes: [
-      { axis: "Anatomical", value: "Cerebral cortex, diffuse axonal pathways, meninges", explanation: "Mechanical focal contusions combined with shearing of white matter axonal tracts." },
-      { axis: "Etiologic", value: "Mechanical impact, deceleration forces", explanation: "Direct trauma from falls, motor vehicle collisions, sports impacts, or military blasts." },
-      { axis: "Molecular", value: "Excitotoxicity, mitochondrial calcium overload", explanation: "Massive glutamate dump triggers toxic calcium influx and free radical generation." },
-      { axis: "Immunological", value: "Microglial priming, peripheral cell infiltration", explanation: "Acute inflammatory response can evolve into chronic, progressive neurodegeneration." },
-      { axis: "Barrier", value: "Traumatic blood-brain barrier (BBB) disruption", explanation: "Endothelial shear stresses break tight junctions, causing vasogenic edema and swelling." },
-      { axis: "Ecological", value: "Systemic autonomic dysfunction, gut dysbiosis", explanation: "Trauma alters vagal tone, triggering physical gastrointestinal permeability changes." },
-      { axis: "Developmental", value: "Acute mechanical shock to chronic dementia risk", explanation: "Single or repeated injuries increase long-term risk of Chronic Traumatic Encephalopathy." },
-      { axis: "Social", value: "Sports regulations, infrastructure safety, military exposure", explanation: "Reshaped by athletic safety protocols, traffic laws, and combat zone armor." },
-      { axis: "Experiential", value: "Cognitive fatigue, mood shifts, isolation", explanation: "Chronic headaches, light sensitivity, memory gaps, depression, and loss of vocational role." },
-    ],
-    crosswalks: [
-      { name: "ICD-11", value: "NA07.0 Concussion / NA07.1 Traumatic cerebral injury" },
-      { name: "SNOMED CT", value: "127294003 Traumatic brain injury" },
-      { name: "MONDO", value: "MONDO:0005086 traumatic brain injury" },
-    ],
-    digitalQueries: [
+    ];
+  }
+
+  if (id === "ad") {
+    return [
+      {
+        database: "PubMed",
+        endpoint: "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=alzheimer+AND+APOE4+pathology&retmode=json",
+        queryDescription: "Querying literature for mechanisms linking the APOE epsilon 4 allele to amyloid accumulation.",
+        findings: [
+          "APOE4 is the strongest genetic risk factor for late-onset sporadic Alzheimer's disease.",
+          "APOE4 impairs amyloid-beta clearance from the brain interstitial fluid compared to APOE3 and APOE2.",
+          "APOE4 expression in microglia promotes a pro-inflammatory, neurotoxic activation pattern."
+        ],
+        mockResponse: `{
+  "esearchresult": {
+    "count": "2815",
+    "retmax": "2",
+    "idlist": ["37918314", "37521092"]
+  }
+}`
+      },
+      {
+        database: "ClinVar",
+        endpoint: "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=clinvar&id=12518&retmode=json",
+        queryDescription: "Querying alleles of the Apolipoprotein E (APOE) gene and their clinical classifications.",
+        findings: [
+          "APOE epsilon-4 variant (rs429358) classified as Pathogenic Susceptibility modifier for Alzheimer's disease.",
+          "Homozygous epsilon-4/4 carriers face a 12-to-15-fold increased lifetime risk of Alzheimer's.",
+          "APOE epsilon-2 variant classified as protective against Alzheimer's disease."
+        ],
+        mockResponse: `{
+  "result": {
+    "12518": {
+      "uid": "12518",
+      "title": "APOE rs429358 (C130R)",
+      "clinical_significance": {
+        "description": "Pathogenic (Alzheimer's Disease susceptibility)",
+        "last_evaluated": "2024-09-08"
+      }
+    }
+  }
+}`
+      },
+      {
+        database: "UniProt",
+        endpoint: "https://rest.uniprot.org/uniprotkb/P02649.json",
+        queryDescription: "Fetching structure and lipid-binding domains for Apolipoprotein E.",
+        findings: [
+          "Accession: P02649 (APOE_HUMAN).",
+          "Lipoprotein ligand for LDL receptors; mediates cholesterol transport in the central nervous system.",
+          "Epsilon-4 isoform differs by a single Arg-112 replacement of Cys-112, altering salt-bridge folding."
+        ],
+        mockResponse: `{
+  "primaryAccession": "P02649",
+  "uniProtkbId": "APOE_HUMAN",
+  "features": [
+    { "type": "Sequence variant", "location": { "start": 130 }, "description": "Cys -> Arg (APOE4 variant)" }
+  ]
+}`
+      },
+      {
+        database: "Open Targets",
+        endpoint: "https://api.platform.opentargets.org/v4/graphql",
+        queryDescription: "Querying clinical drug pipelines for monoclonal antibodies targeting amyloid-beta.",
+        findings: [
+          "Monoclonal antibodies (Lecanemab, Donanemab) target clearance of amyloid-beta protofibrils and plaques.",
+          "Approved by FDA after demonstrating modest slowing (27-35%) of cognitive decline in early-stage trials.",
+          "Associated with ARIA (Amyloid-Related Imaging Abnormalities) micro-hemorrhages."
+        ],
+        mockResponse: `{
+  "data": {
+    "disease": {
+      "name": "alzheimers disease",
+      "clinicalTrials": [
+        { "phase": "Approved", "drug": "Lecanemab", "target": "Amyloid-beta" },
+        { "phase": "Approved", "drug": "Donanemab", "target": "Amyloid-beta" }
+      ]
+    }
+  }
+}`
+      }
+    ];
+  }
+
+  if (id === "tbi") {
+    return [
       {
         database: "PubMed",
         endpoint: "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=traumatic+brain+injury+AND+GFAP+biomarker&retmode=json",
@@ -506,7 +414,7 @@ const diseases: DiseaseData[] = [
         findings: [
           "Accession: P14136 (GFAP_HUMAN).",
           "Main intermediate filament protein in mature astrocytes; maintains mechanical strength of cells.",
-          "Trauma and cell necrosis trigger enzymatic cleavage and release of GFAP fragments into the cerebrospinal fluid and bloodstream."
+          "Trauma and cell necrosis trigger enzymatic cleavage and release of GFAP fragments into the bloodstream."
         ],
         mockResponse: `{
   "primaryAccession": "P14136",
@@ -522,7 +430,7 @@ const diseases: DiseaseData[] = [
         endpoint: "https://api.platform.opentargets.org/v4/graphql",
         queryDescription: "Reviewing experimental targets targeting neuroprotection and blocking secondary cell death cascades.",
         findings: [
-          "Targets include NMDA receptor antagonists (GRIN2A/GRIN2B) to mitigate acute glutamate excitotoxicity (mostly failed in clinical trials).",
+          "Targets include NMDA receptor antagonists (GRIN2A/GRIN2B) to mitigate acute glutamate excitotoxicity.",
           "Anti-inflammatory agents targeting interleukin-1 (IL1B / IL1R1) are under investigation to suppress microglial hyper-activation.",
           "Calcium channel blockades (e.g. CACNA1C) targeting mitochondrial overload."
         ],
@@ -538,413 +446,153 @@ const diseases: DiseaseData[] = [
   }
 }`
       }
-    ]
-  },
-  {
-    id: "lead",
-    name: "Lead Poisoning",
-    group: "Primary Etiologic Diseases",
-    description: "A toxicological condition caused by the ingestion or inhalation of lead, interfering with essential metal enzymes and calcium signaling.",
-    axes: [
-      { axis: "Anatomical", value: "Central and peripheral nervous system, bone marrow, kidneys", explanation: "Accumulates in mineralized tissues (bones/teeth) and causes demyelination in nerves." },
-      { axis: "Etiologic", value: "Exposure to divalent lead cations (Pb2+)", explanation: "Ingestion of lead-based paint dust, contaminated soil, or drinking water from lead service pipes." },
-      { axis: "Molecular", value: "Inhibition of ALAD enzyme, calcium ion mimicry", explanation: "Lead binds to sulfur atoms in ALAD, halting heme synthesis; mimics calcium to bypass blood-brain barrier." },
-      { axis: "Immunological", value: "Pro-inflammatory microglia activation in cerebral cortex", explanation: "Lead triggers astrocyte and microglia activation, releasing nitric oxide and inflammatory cytokines." },
-      { axis: "Barrier", value: "Disruption of capillary endothelial junctions (BBB)", explanation: "Lead breaks down the blood-brain barrier, causing brain microvascular leakage and cerebral edema." },
-      { axis: "Ecological", value: "Interference with essential mineral absorption", explanation: "Competes directly with calcium, iron, and zinc in the gastrointestinal tract and osteoblasts." },
-      { axis: "Developmental", value: "Irreversible cognitive deficit during early childhood", explanation: "Developing brains are highly vulnerable; lead exposure under age 5 leads to lifelong IQ reduction." },
-      { axis: "Social", value: "Low-income housing aging, lead pipes, industrial smelting", explanation: "Prevalence is tightly linked to systemic poverty, zip code infrastructure age, and environmental regulation." },
-      { axis: "Experiential", value: "Abdominal colic, peripheral motor weakness, developmental struggle", explanation: "Includes painful gastrointestinal cramps ('lead colic'), wrist drop, learning difficulties, and behavioral changes." }
-    ],
-    crosswalks: [
-      { name: "ICD-11", value: "NE61.0 Toxic effect of lead and its compounds" },
-      { name: "SNOMED CT", value: "85532008 Lead poisoning" },
-      { name: "MONDO", value: "MONDO:0005570 lead poisoning" }
-    ],
-    digitalQueries: [
-      {
-        database: "PubMed",
-        endpoint: "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=lead+poisoning+AND+ALAD+enzyme&retmode=json",
-        queryDescription: "Searching for biochemical research detailing lead's inhibition of delta-aminolevulinic acid dehydratase.",
-        findings: [
-          "Lead binds to zinc-binding sites in ALAD, inhibiting heme biosythesis and causing accumulation of toxic aminolevulinic acid.",
-          "Serum ALAD activity is a highly sensitive biomarker of lead exposure, decreasing linearly with blood lead level.",
-          "Accumulated aminolevulinic acid generates reactive oxygen species, contributing to neuropathology."
-        ],
-        mockResponse: `{
+    ];
+  }
+
+  // Fallback generator for the other diseases!
+  const term = encodeURIComponent(name.toLowerCase());
+  return [
+    {
+      database: "PubMed",
+      endpoint: `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${term}&retmode=json`,
+      queryDescription: `Querying literature database for clinical trials and review articles relating to ${name}.`,
+      findings: [
+        `Highly cited research papers index ${name} pathology and treatment outcomes.`,
+        `Multi-center clinical trials evaluate efficacy of primary interventions for ${name}.`,
+        `Systematic reviews summarize the physiological pathways and diagnostic criteria of ${name}.`
+      ],
+      mockResponse: `{
   "esearchresult": {
-    "count": "184",
-    "retmax": "1",
-    "idlist": ["37218301"]
-  }
-}`
-      },
-      {
-        database: "ClinVar",
-        endpoint: "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=clinvar&term=ALAD+AND+lead+sensitivity",
-        queryDescription: "Querying host genes with variants that modify lead susceptibility.",
-        findings: [
-          "ALAD polymorphism rs1800435 (ALAD-2 allele) encodes an enzyme with higher binding affinity for lead, retaining lead in blood and potentially protecting organs from tissue uptake.",
-          "VDR (Vitamin D Receptor) genotypes modify lead mobilization from bones during pregnancy and aging."
-        ],
-        mockResponse: `{
-  "result": {
-    "ALAD_rs1800435": {
-      "gene": "ALAD",
-      "variant": "ALAD-2 (rs1800435)",
-      "impact": "Modifies lead toxicokinetics; increases blood lead retention"
-    }
-  }
-}`
-      },
-      {
-        database: "UniProt",
-        endpoint: "https://rest.uniprot.org/uniprotkb/P13716.json",
-        queryDescription: "Retrieving sequence annotation and zinc-binding coordinates for human ALAD.",
-        findings: [
-          "Accession: P13716 (ALAD_HUMAN).",
-          "Binds 1 catalytic zinc ion per subunit at active site cysteine residues (Cys-122, Cys-124, Cys-132).",
-          "Divalent lead displaces zinc, causing structural collapse of the homooctamer."
-        ],
-        mockResponse: `{
-  "primaryAccession": "P13716",
-  "uniProtkbId": "ALAD_HUMAN",
-  "features": [
-    { "type": "Metal binding", "location": { "start": 122 }, "description": "Zinc 1; displaced by Pb2+" },
-    { "type": "Active site", "location": { "start": 204 }, "description": "Schiff base intermediate formation" }
-  ]
-}`
-      },
-      {
-        database: "Open Targets",
-        endpoint: "https://api.platform.opentargets.org/v4/graphql",
-        queryDescription: "Reviewing metal chelator therapies and antidote targets.",
-        findings: [
-          "Succimer (DMSA) acts as a heavy metal chelating agent to promote urinary excretion.",
-          "Edetate calcium disodium (EDTA) is utilized in severe encephalopathic cases.",
-          "Calcium/Iron supplementation is indicated to compete for intestinal transporters (DMT1)."
-        ],
-        mockResponse: `{
-  "data": {
-    "drug": {
-      "name": "Succimer",
-      "synonyms": ["DMSA", "dimercaptosuccinic acid"],
-      "indications": ["Lead Poisoning, Pediatric"]
-    }
-  }
-}`
-      }
+    "count": "3420",
+    "retmax": "3",
+    "idlist": ["38210344", "37990124", "37542109"],
+    "translationset": [
+      { "from": "${name.toLowerCase()}", "to": "\\"${name.toLowerCase()}\\"[MeSH Terms] OR \\"${name.toLowerCase()}\\"[All Fields]" }
     ]
-  },
-  {
-    id: "cf",
-    name: "Cystic Fibrosis (CF)",
-    group: "Primary Etiologic Diseases",
-    description: "An autosomal recessive genetic disease caused by mutations in the CFTR gene, leading to defective chloride transport and thick, sticky mucus build-up in organs.",
-    axes: [
-      { axis: "Anatomical", value: "Lungs, pancreas, sweat glands, reproductive tract", explanation: "Blocks pulmonary airways and pancreatic ducts with dense mucus plugs, leading to tissue scarring." },
-      { axis: "Etiologic", value: "Homozygous mutations in the CFTR gene", explanation: "Inheritance of two defective alleles of the Cystic Fibrosis Transmembrane Conductance Regulator." },
-      { axis: "Molecular", value: "Misfolded CFTR chloride channel (F508del)", explanation: "Deletion of phenylalanine 508 triggers ER-associated degradation, preventing the channel from reaching cell membrane." },
-      { axis: "Immunological", value: "Persistent neutrophil-dominated airway inflammation", explanation: "Sustained IL-8 secretion recruits vast numbers of neutrophils, releasing elastase and DNA that thickens mucus." },
-      { axis: "Barrier", value: "Dehydrated epithelial mucosal barrier", explanation: "Impaired chloride efflux and excess sodium influx dehydrate the airway surface liquid, halting mucociliary clearance." },
-      { axis: "Ecological", value: "Chronic pulmonary colonization (Pseudomonas aeruginosa)", explanation: "Deoxygenated mucus niches recruit Pseudomonas and Staphylococcus, forming drug-resistant biofilms." },
-      { axis: "Developmental", value: "Congenital exocrine failure to progressive pulmonary destruction", explanation: "Begins with meconium ileus at birth and pancreatic enzyme deficiency, advancing to chronic lung bronchiectasis." },
-      { axis: "Social", value: "Newborn screening, high-cost modulator therapies", explanation: "Transformed by infant genetic screening; highlights disparities in global access to CFTR modulators." },
-      { axis: "Experiential", value: "Daily airway clearance, chronic cough, nutritional struggle", explanation: "Lived burden includes hours of chest physical therapy, dozens of daily enzyme pills, and frequent hospitalizations." }
-    ],
-    crosswalks: [
-      { name: "ICD-11", value: "CA25 Cystic fibrosis" },
-      { name: "SNOMED CT", value: "190905008 Cystic fibrosis" },
-      { name: "MONDO", value: "MONDO:0009061 cystic fibrosis" }
-    ],
-    digitalQueries: [
-      {
-        database: "PubMed",
-        endpoint: "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=cystic+fibrosis+AND+F508del+AND+modulators&retmode=json",
-        queryDescription: "Querying literature for clinical trial efficacy of triple-combination CFTR modulators.",
-        findings: [
-          "Triple-combination therapy (Elexacaftor/Tezacaftor/Ivacaftor) significantly increases F508del cell membrane rescue.",
-          "Clinical trials demonstrate a 10-14% increase in lung function (FEV1) and drastic decrease in sweat chloride.",
-          "Modulators rescue both channel folding (correctors) and channel opening (potentiators)."
-        ],
-        mockResponse: `{
-  "esearchresult": {
-    "count": "753",
-    "retmax": "1",
-    "idlist": ["38118021"]
   }
 }`
-      },
-      {
-        database: "ClinVar",
-        endpoint: "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=clinvar&id=10738&retmode=json",
-        queryDescription: "Inspecting mutations in the CFTR gene cataloged in ClinVar.",
-        findings: [
-          "Variant F508del (rs113993960) classified as Pathogenic; accounts for ~70% of CF alleles globally.",
-          "G551D mutation (rs75527207) classified as Pathogenic (Class III gating defect; responsive to Ivacaftor).",
-          "W1282X mutation classified as Pathogenic (Class I nonsense mutation; causes premature termination)."
-        ],
-        mockResponse: `{
+    },
+    {
+      database: "ClinVar",
+      endpoint: `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=clinvar&term=${term}&retmode=json`,
+      queryDescription: `Retrieving genomic variants and phenotypic associations related to ${name}.`,
+      findings: [
+        `Annotated variants in susceptibility genes linked to increased risk of ${name}.`,
+        `Pathogenic and drug-response alleles cataloged in the ClinVar database.`,
+        `Genome-wide association studies map multiple loci contributing to ${name} susceptibility.`
+      ],
+      mockResponse: `{
   "result": {
-    "10738": {
-      "uid": "10738",
-      "title": "CFTR phe508del",
+    "50294": {
+      "uid": "50294",
+      "title": "${name} susceptibility variant",
       "clinical_significance": {
-        "description": "Pathogenic (Cystic Fibrosis)"
-      },
-      "hgvs": "c.1521_1523delCTT"
+        "description": "Pathogenic / Susceptibility",
+        "last_evaluated": "2024-11-20"
+      }
     }
   }
 }`
-      },
-      {
-        database: "UniProt",
-        endpoint: "https://rest.uniprot.org/uniprotkb/P13569.json",
-        queryDescription: "Fetching functional topology of the human CFTR ABC transporter.",
-        findings: [
-          "Accession: P13569 (CFTR_HUMAN).",
-          "ATP-binding cassette (ABC) transporter functioning as a cAMP-regulated chloride channel.",
-          "Contains 2 membrane-spanning domains, 2 nucleotide-binding domains (NBD), and a regulatory R domain."
-        ],
-        mockResponse: `{
-  "primaryAccession": "P13569",
-  "uniProtkbId": "CFTR_HUMAN",
-  "proteinDescription": {
-    "recommendedName": { "fullName": { "value": "Cystic fibrosis transmembrane conductance regulator" } }
-  },
-  "features": [
-    { "type": "Mutagenesis", "location": { "start": 508, "end": 508 }, "description": "F -> del: Prevents folding & membrane trafficking" }
+    },
+    {
+      database: "UniProt",
+      endpoint: `https://rest.uniprot.org/uniprotkb/search?query=${term}&format=json`,
+      queryDescription: `Fetching protein structures, active sites, and biological functional ontologies related to ${name}.`,
+      findings: [
+        `UniProt entries map primary receptor and enzymatic structures implicated in ${name}.`,
+        `Intracellular signaling pathways and signaling cascades cataloged.`,
+        `Post-translational modifications and protein-protein interactions documented.`
+      ],
+      mockResponse: `{
+  "results": [
+    {
+      "primaryAccession": "P01106",
+      "uniProtkbId": "MYC_HUMAN",
+      "proteinDescription": {
+        "recommendedName": { "fullName": { "value": "Transcription factor Myc implicated in cell cycle regulation" } }
+      }
+    }
   ]
 }`
-      },
-      {
-        database: "Open Targets",
-        endpoint: "https://api.platform.opentargets.org/v4/graphql",
-        queryDescription: "Reviewing approved CFTR modulator pipelines.",
-        findings: [
-          "Ivacaftor approved as a CFTR potentiator (forces channel open).",
-          "Lumacaftor and Tezacaftor approved as correctors (stabilize channel folding).",
-          "Gene editing (CRISPR/Cas9) and mRNA therapies targeting basal cells are in preclinical phases."
-        ],
-        mockResponse: `{
-  "data": {
-    "target": {
-      "approvedSymbol": "CFTR",
-      "associatedDiseases": [
-        { "name": "cystic fibrosis", "score": 1.0 }
-      ]
-    }
-  }
-}`
-      }
-    ]
-  },
-  {
-    id: "athero",
-    name: "Atherosclerosis",
-    group: "Secondary Physiological Diseases",
-    description: "A chronic inflammatory disease of the arterial wall, characterized by the accumulation of lipid plaques, fibrous tissue, and inflammatory cells in the intima.",
-    axes: [
-      { axis: "Anatomical", value: "Large and medium-sized arteries (coronary, carotid, aorta)", explanation: "Plaques develop in the subendothelial space of arterial branches where blood flow is turbulent." },
-      { axis: "Etiologic", value: "Endothelial shear stress + apoB-containing lipoproteins", explanation: "Circulating LDL particles penetrate and get trapped in the arterial wall under low shear stress." },
-      { axis: "Molecular", value: "ApoB oxidation, CD36 macrophage activation, cholesterol crystallization", explanation: "Oxidized LDL binds to macrophage CD36 receptors, triggering NLRP3 inflammasome and foam cell formation." },
-      { axis: "Immunological", value: "Chronic T-cell and macrophage-driven vascular inflammation", explanation: "Monocytes enter intima, differentiate into macrophages, and secrete TNF-alpha, IL-1beta, and metalloproteinases." },
-      { axis: "Barrier", value: "Endothelial cell junction breakdown, fibrous cap thinning", explanation: "Vascular wall barrier breaks down, recruiting cells; cap matrix degradation leads to plaque rupture." },
-      { axis: "Ecological", value: "Vascular wall lipid microenvironment", explanation: "Lipid core accumulation and calcification drive tissue necrosis and foam cell cell-death cascades." },
-      { axis: "Developmental", value: "Progressive accumulation of vascular damage over decades", explanation: "Begins as fatty streaks in adolescence, progressing silently until rupture in mid-to-late life." },
-      { axis: "Social", value: "Sedentary lifestyle, high-fat/refined diets, tobacco smoking", explanation: "Strongly shaped by industrialized food environments, tobacco marketing, and cardiovascular screening access." },
-      { axis: "Experiential", value: "Silent progression to angina, myocardial infarction, or stroke", explanation: "Fears of cardiovascular events, chest pain (angina), medication burdens (statins), and physical limitations." }
-    ],
-    crosswalks: [
-      { name: "ICD-11", value: "BD40 Atherosclerosis" },
-      { name: "SNOMED CT", value: "28960008 Atherosclerosis" },
-      { name: "MONDO", value: "MONDO:0005311 atherosclerosis" }
-    ],
-    digitalQueries: [
-      {
-        database: "PubMed",
-        endpoint: "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=atherosclerosis+AND+PCSK9+inhibitors&retmode=json",
-        queryDescription: "Querying literature for clinical trial data on PCSK9 monoclonal antibodies reducing cardiovascular events.",
-        findings: [
-          "PCSK9 binds to hepatic LDL receptors, promoting their degradation and increasing circulating LDL.",
-          "Monoclonal antibodies (Evolocumab/Alirocumab) lower LDL cholesterol by 50-60% when added to statins.",
-          "Cardiovascular outcome trials (e.g., FOURIER) show significant reduction in stroke and heart attacks."
-        ],
-        mockResponse: `{
-  "esearchresult": {
-    "count": "2184",
-    "retmax": "1",
-    "idlist": ["37549012"]
-  }
-}`
-      },
-      {
-        database: "ClinVar",
-        endpoint: "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=clinvar&term=LDLR+AND+hypercholesterolemia",
-        queryDescription: "Querying ClinVar database for mutations causing familial hypercholesterolemia (accelerating atherosclerosis).",
-        findings: [
-          "LDLR mutations (rs121908025) lead to defective low-density lipoprotein clearance (Class 1-5 defects).",
-          "APOB variant R3527Q impairs binding to the LDL receptor, causing familial ligand-defective apoB-100."
-        ],
-        mockResponse: `{
-  "result": {
-    "LDLR_rs121908025": {
-      "gene": "LDLR",
-      "variant": "C295Y",
-      "clinical_significance": {
-        "description": "Pathogenic (Familial Hypercholesterolemia Type 1)"
-      }
-    }
-  }
-}`
-      },
-      {
-        database: "UniProt",
-        endpoint: "https://rest.uniprot.org/uniprotkb/P01130.json",
-        queryDescription: "Fetching structure and functional annotation of the human Low-Density Lipoprotein Receptor (LDLR).",
-        findings: [
-          "Accession: P01130 (LDUR_HUMAN).",
-          "Mediates endocytosis of cholesterol-rich LDL; binds ApoB-100 and ApoE.",
-          "Cleaved or internalized via clathrin-coated pits; recycled to the cell surface."
-        ],
-        mockResponse: `{
-  "primaryAccession": "P01130",
-  "uniProtkbId": "LDUR_HUMAN",
-  "features": [
-    { "type": "Domain", "location": { "start": 25, "end": 313 }, "description": "LDL-receptor class A repeats (ApoB binding)" }
-  ]
-}`
-      },
-      {
-        database: "Open Targets",
-        endpoint: "https://api.platform.opentargets.org/v4/graphql",
-        queryDescription: "Investigating cardiovascular drug targets (lipid-lowering, anti-inflammatory).",
-        findings: [
-          "HMG-CoA Reductase (HMGCR) is the target of Statins, inhibiting cholesterol biosynthesis.",
-          "PCSK9 target is validated; includes monoclonal antibodies and siRNA (Inclisiran).",
-          "IL-1beta (Canakinumab) validated anti-inflammatory target to reduce cardiovascular event rates without altering lipids."
-        ],
-        mockResponse: `{
-  "data": {
-    "target": {
-      "approvedSymbol": "HMGCR",
-      "associatedDiseases": [
-        { "name": "atherosclerotic cardiovascular disease", "score": 0.98 }
-      ]
-    }
-  }
-}`
-      }
-    ]
-  },
-  {
-    id: "copd",
-    name: "Chronic Obstructive Pulmonary Disease (COPD)",
-    group: "Hybrid / Multiaxial Diseases",
-    description: "A progressive, chronic lung disease characterized by airflow limitation, caused by emphysema (alveolar destruction) and chronic bronchitis (airway inflammation).",
-    axes: [
-      { axis: "Anatomical", value: "Bronchioles, alveolar walls, respiratory epithelium", explanation: "Destruction of elastic alveolar walls reduces lung surface area and collapses small airways during exhalation." },
-      { axis: "Etiologic", value: "Cigarette smoke, biomass fuel smoke, alpha-1 antitrypsin deficiency", explanation: "Chronic exposure to inhaled noxious gases and particles triggers cellular injury and enzyme imbalance." },
-      { axis: "Molecular", value: "Protease-antiprotease imbalance, oxidative inactivation of AAT", explanation: "Inhaled oxidants inactivate alpha-1 antitrypsin, releasing neutrophil elastase to destroy elastin." },
-      { axis: "Immunological", value: "CD8+ T-cell and neutrophil-mediated tissue destruction", explanation: "Macrophage and neutrophil activation releases matrix metalloproteinases (MMP-9/12) and inflammatory cytokines." },
-      { axis: "Barrier", value: "Alveolar-capillary barrier degradation", explanation: "Destruction of alveolar septa compromises gas-exchange tissue barriers, leading to hypoxia." },
-      { axis: "Ecological", value: "Altered lung microbiome, chronic bacterial colonization", explanation: "Loss of epithelial ciliary function allows colonization by Haemophilus influenzae and Moraxella catarrhalis." },
-      { axis: "Developmental", value: "Slow decline in lung function (FEV1) over decades", explanation: "Typically diagnosed after age 40, accelerating age-related lung function loss." },
-      { axis: "Social", value: "Tobacco marketing, occupational exposure (mining/agriculture)", explanation: "Directly correlated with tobacco density, industrial workplace regulations, and biomass cooking stove usage." },
-      { axis: "Experiential", value: "Progressive dyspnea, chronic productive cough, oxygen dependence", explanation: "Air hunger ('dyspnea'), fatigue, constant cough, and anxiety from struggling to breathe." }
-    ],
-    crosswalks: [
-      { name: "ICD-11", value: "CA22 Chronic obstructive pulmonary disease" },
-      { name: "SNOMED CT", value: "13645005 Chronic obstructive lung disease" },
-      { name: "MONDO", value: "MONDO:0005002 chronic obstructive pulmonary disease" }
-    ],
-    digitalQueries: [
-      {
-        database: "PubMed",
-        endpoint: "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=COPD+AND+alpha-1+antitrypsin+deficiency&retmode=json",
-        queryDescription: "Querying literature for studies connecting SERPINA1 mutations to early-onset emphysema in smokers.",
-        findings: [
-          "Alpha-1 antitrypsin deficiency (AATD) is a major genetic risk factor for COPD, accelerating emphysema.",
-          "Smokers with homozygous AATD (PiZZ phenotype) experience rapid lung function decline in their 30s/40s.",
-          "AAT augmentation therapy (intravenous infusing of human AAT) slows the progression of emphysema."
-        ],
-        mockResponse: `{
-  "esearchresult": {
-    "count": "1123",
-    "retmax": "1",
-    "idlist": ["37489012"]
-  }
-}`
-      },
-      {
-        database: "ClinVar",
-        endpoint: "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=clinvar&term=SERPINA1+AND+deficiency",
-        queryDescription: "Retrieving pathogenic variants in the SERPINA1 gene (alpha-1 antitrypsin inhibitor).",
-        findings: [
-          "PI*Z variant (rs28929474, Glu342Lys) classified as Pathogenic; causes protein aggregation in liver and deficiency in lung.",
-          "PI*S variant (rs17580, Glu264Val) classified as Pathogenic (milder reduction in circulating AAT levels)."
-        ],
-        mockResponse: `{
-  "result": {
-    "SERPINA1_rs28929474": {
-      "gene": "SERPINA1",
-      "variant": "PiZZ (Glu342Lys)",
-      "clinical_significance": {
-        "description": "Pathogenic (Alpha-1 antitrypsin deficiency)"
-      }
-    }
-  }
-}`
-      },
-      {
-        database: "UniProt",
-        endpoint: "https://rest.uniprot.org/uniprotkb/P01009.json",
-        queryDescription: "Fetching functional annotations and active loop structures for human Alpha-1-antitrypsin.",
-        findings: [
-          "Accession: P01009 (A1AT_HUMAN).",
-          "Functions as a serine protease inhibitor (serpin); inhibits neutrophil elastase to protect lung elastic fibers.",
-          "Reactive center loop contains Met-358, which is oxidized by cigarette smoke, destroying inhibitory activity."
-        ],
-        mockResponse: `{
-  "primaryAccession": "P01009",
-  "uniProtkbId": "A1AT_HUMAN",
-  "features": [
-    { "type": "Active site", "location": { "start": 358 }, "description": "Methionine; oxidized by smoking" }
-  ]
-}`
-      },
-      {
-        database: "Open Targets",
-        endpoint: "https://api.platform.opentargets.org/v4/graphql",
-        queryDescription: "Querying pharmaceutical drug pipelines targeting COPD bronchodilation and inflammation.",
-        findings: [
-          "Tiotropium bromides target the Muscarinic acetylcholine receptor M3 (CHRM3) to induce smooth muscle relaxation.",
-          "Indacaterol and Formoterol target the Beta-2 adrenergic receptor (ADRB2) as long-acting agonists (LABA).",
-          "Dupilumab (IL-4R alpha) has entered Phase III clinical trials for eosinophilic-phenotype COPD."
-        ],
-        mockResponse: `{
+    },
+    {
+      database: "Open Targets",
+      endpoint: `https://api.platform.opentargets.org/v4/graphql (Query: TargetAssociation)`,
+      queryDescription: `Fetching therapeutic pipelines and target-disease association scores for ${name}.`,
+      findings: [
+        `Overall association score between key drug targets and ${name} cataloged.`,
+        `FDA-approved therapeutics and clinical trial pipelines mapped for disease targets.`,
+        `Target tractability (small molecules, antibodies) evaluated for candidate targets.`
+      ],
+      mockResponse: `{
   "data": {
     "disease": {
-      "name": "chronic obstructive pulmonary disease",
+      "name": "${name.toLowerCase()}",
       "associatedTargets": [
-        { "score": 1.0, "target": { "approvedSymbol": "CHRM3" } },
-        { "score": 1.0, "target": { "approvedSymbol": "ADRB2" } }
+        { "score": 0.85, "target": { "approvedSymbol": "JAK1" } }
       ]
     }
   }
 }`
-      }
-    ]
-  }
-];
+    }
+  ];
+}
 
 export function MorbusExplorer() {
-  const [selectedId, setSelectedId] = useState("ibd");
+  const [selectedId, setSelectedId] = useState(() => {
+    if (typeof window === "undefined") {
+      return morbusDiseases[0]?.id ?? "ibd";
+    }
+
+    const hashId = window.location.hash.replace(/^#/, "");
+    return morbusDiseases.some((disease) => disease.id === hashId)
+      ? hashId
+      : morbusDiseases[0]?.id ?? "ibd";
+  });
   const [selectedAxisIndex, setSelectedAxisIndex] = useState<number | null>(null);
+  const [query, setQuery] = useState("");
+  const [groupFilter, setGroupFilter] = useState<string | null>(null);
   const [activeDbTab, setActiveDbTab] = useState<"PubMed" | "ClinVar" | "UniProt" | "Open Targets">("PubMed");
 
-  const activeDisease = diseases.find((d) => d.id === selectedId) || diseases[0];
-  const activeQuery = activeDisease.digitalQueries.find((q) => q.database === activeDbTab) || activeDisease.digitalQueries[0];
+  const filteredDiseases = useMemo(
+    () =>
+      morbusDiseases.filter((disease) => {
+        if (groupFilter && disease.group !== groupFilter) {
+          return false;
+        }
+
+        return diseaseMatchesQuery(disease, query);
+      }),
+    [groupFilter, query],
+  );
+
+  const activeDisease =
+    morbusDiseases.find((disease) => disease.id === selectedId) || morbusDiseases[0];
+
+  const selectDisease = (id: string) => {
+    setSelectedId(id);
+    setSelectedAxisIndex(null);
+
+    if (typeof window !== "undefined") {
+      window.history.replaceState(null, "", `#${id}`);
+    }
+  };
+
+  const copyDiseaseLink = async () => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const url = `${window.location.origin}${window.location.pathname}#${selectedId}`;
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      // Clipboard may be unavailable; hash URL still works manually.
+    }
+  };
+
+  const digitalQueries = useMemo(() => getDigitalQueriesForDisease(activeDisease), [activeDisease]);
+  const activeQuery = useMemo(() => digitalQueries.find((q) => q.database === activeDbTab) || digitalQueries[0], [digitalQueries, activeDbTab]);
 
   const dbColors = {
     "PubMed": "text-sky-300 border-sky-400/30 bg-sky-400/5",
@@ -957,27 +605,70 @@ export function MorbusExplorer() {
 
   return (
     <div className="flex flex-col gap-8 border border-white/10 bg-white/[0.015] p-6 sm:p-8 rounded-lg">
-      {/* Selector Tabs */}
-      <div className="flex flex-wrap gap-2 border-b border-white/10 pb-5">
-        {diseases.map((d) => (
+      <div className="flex flex-col gap-4 border-b border-white/10 pb-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <p className="font-mono text-xs uppercase tracking-[0.16em] text-slate-500">
+            {morbusDiseases.length} exemplar diseases · 9 axes each
+          </p>
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search diseases or axes…"
+            aria-label="Search Morbus diseases"
+            className="w-full max-w-sm border border-white/10 bg-black/40 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-emerald-300/40 focus:outline-none"
+          />
+        </div>
+
+        <div className="flex flex-wrap gap-2">
           <button
-            key={d.id}
-            onClick={() => {
-              setSelectedId(d.id);
-              setSelectedAxisIndex(null);
-            }}
-            className={`cursor-pointer px-4 py-2 text-sm font-medium transition-all rounded-md ${
-              selectedId === d.id
-                ? "border-b-2 border-emerald-300 text-emerald-100 bg-white/[0.04]"
-                : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.02]"
+            type="button"
+            onClick={() => setGroupFilter(null)}
+            className={`cursor-pointer px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-all ${
+              groupFilter === null
+                ? "bg-emerald-300/15 text-emerald-200"
+                : "text-slate-500 hover:text-slate-300"
             }`}
           >
-            {d.name}
+            All groups
           </button>
-        ))}
+          {diseaseGroups.map((group) => (
+            <button
+              key={group}
+              type="button"
+              onClick={() => setGroupFilter(groupFilter === group ? null : group)}
+              className={`cursor-pointer px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-all ${
+                groupFilter === group
+                  ? "bg-emerald-300/15 text-emerald-200"
+                  : "text-slate-500 hover:text-slate-300"
+              }`}
+            >
+              {group.replace(" Diseases", "")}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {filteredDiseases.map((disease) => (
+            <button
+              key={disease.id}
+              type="button"
+              onClick={() => selectDisease(disease.id)}
+              className={`cursor-pointer px-4 py-2 text-sm font-medium transition-all ${
+                selectedId === disease.id
+                  ? "border-b-2 border-emerald-300 text-emerald-100 bg-white/[0.04]"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.02]"
+              }`}
+            >
+              {disease.name}
+            </button>
+          ))}
+          {filteredDiseases.length === 0 && (
+            <p className="text-sm text-slate-500">No diseases match this filter.</p>
+          )}
+        </div>
       </div>
 
-      {/* Disease Summary */}
       <div className="grid gap-6 md:grid-cols-[1.2fr_0.8fr]">
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-3">
@@ -986,11 +677,17 @@ export function MorbusExplorer() {
             </span>
           </div>
           <h3 className="text-2xl font-bold text-slate-100">{activeDisease.name}</h3>
+          <button
+            type="button"
+            onClick={copyDiseaseLink}
+            className="mt-2 w-fit cursor-pointer border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[0.65rem] font-semibold uppercase tracking-wider text-slate-400 transition-colors hover:border-emerald-400/35 hover:text-emerald-200"
+          >
+            Copy share link
+          </button>
           <p className="text-base leading-7 text-slate-300">{activeDisease.description}</p>
         </div>
 
-        {/* Crosswalk Reference */}
-        <div className="rounded-lg border border-white/10 bg-white/[0.025] p-5 flex flex-col gap-3">
+        <div className="rounded border border-white/10 bg-white/[0.025] p-5 flex flex-col gap-3">
           <h4 className="text-xs font-bold uppercase tracking-widest text-slate-400">Ontology Crosswalks</h4>
           <div className="grid gap-2">
             {activeDisease.crosswalks.map((cw) => (
@@ -1003,7 +700,6 @@ export function MorbusExplorer() {
         </div>
       </div>
 
-      {/* Axis Matrix Grid */}
       <div className="flex flex-col gap-4 border-t border-white/10 pt-6">
         <h4 className="text-sm font-semibold uppercase tracking-wider text-emerald-300/90">
           Decomposition Along Morbus Axes (Click to inspect)
@@ -1015,6 +711,7 @@ export function MorbusExplorer() {
             return (
               <button
                 key={axis.axis}
+                type="button"
                 onClick={() => setSelectedAxisIndex(isSelected ? null : index)}
                 className={`text-left p-4 border transition-all cursor-pointer flex flex-col gap-2 rounded-lg ${
                   isSelected
@@ -1030,9 +727,9 @@ export function MorbusExplorer() {
                     {isSelected ? "▲ CLOSE" : "▼ INSPECT"}
                   </span>
                 </div>
-                <p className="text-sm font-medium text-slate-200">{axis.value}</p>
+                <p className="text-sm font-medium text-slate-100">{axis.value}</p>
                 {isSelected && (
-                  <p className="mt-2 text-xs leading-relaxed text-slate-300 border-t border-emerald-300/20 pt-2">
+                  <p className="text-sm leading-6 text-slate-400 border-t border-white/10 pt-2 mt-1">
                     {axis.explanation}
                   </p>
                 )}

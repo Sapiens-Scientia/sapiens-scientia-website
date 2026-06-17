@@ -3,11 +3,42 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
+  platformColorOf,
   platformCouplings,
-  platformDefinitions,
+  platformCouplingBySlug,
+  platformHrefOf,
   platformList,
+  platformShortOf,
   type PlatformId,
-} from "@/lib/platforms";
+} from "@/lib/platform-couplings";
+
+const platforms = platformList.map((platform) => ({
+  id: platform.id,
+  name: platform.name,
+  short: platform.shortName,
+  domain: platform.domain,
+  href: platform.href,
+  color: platform.color,
+}));
+
+const couplings = platformCouplings;
+
+const colorOf = platformColorOf;
+const shortOf = platformShortOf;
+const hrefOf = platformHrefOf;
+
+function PlatformLink({ id }: { id: PlatformId }) {
+  return (
+    <Link
+      href={hrefOf[id]}
+      className="border px-2.5 py-1 text-xs leading-5 text-slate-200 transition-colors hover:bg-white/[0.06] hover:text-white"
+      style={{ borderColor: `${colorOf[id]}55`, color: colorOf[id] }}
+      onClick={(event) => event.stopPropagation()}
+    >
+      {shortOf[id]}
+    </Link>
+  );
+}
 
 function SystemsMap({
   selectedCoupling,
@@ -125,9 +156,9 @@ function SystemsMap({
       {/* Platform nodes */}
       {(Object.keys(nodes) as PlatformId[]).map((id) => {
         const { cx, cy } = nodes[id];
-        const platform = platformDefinitions[id];
-        const color = platform.color;
-        const activeCouplingData = platformCouplings.find((c) => c.name === selectedCoupling);
+        const color = colorOf[id];
+        const p = platforms.find((pl) => pl.id === id)!;
+        const activeCouplingData = couplings.find((c) => c.name === selectedCoupling);
         const isLinkedToActive = !selectedCoupling || activeCouplingData?.links.includes(id);
 
         return (
@@ -154,7 +185,7 @@ function SystemsMap({
               opacity={isLinkedToActive ? 1 : 0.25}
               className="transition-all duration-300"
             >
-              {platform.shortName}
+              {p.short}
             </text>
             <text
               x={cx}
@@ -165,7 +196,7 @@ function SystemsMap({
               opacity={isLinkedToActive ? 1 : 0.25}
               className="transition-all duration-300"
             >
-              {platform.domain.split(",")[0]}
+              {p.domain.split(",")[0]}
             </text>
           </g>
         );
@@ -252,9 +283,33 @@ function SystemsMap({
 }
 
 export function PlatformsExplorer() {
-  const [selectedCoupling, setSelectedCoupling] = useState<string | null>(null);
+  const [selectedCoupling, setSelectedCoupling] = useState<string | null>(() => {
+    if (typeof window === "undefined") {
+      return null;
+    }
 
-  const activeCoupling = platformCouplings.find((c) => c.name === selectedCoupling) || null;
+    const slug = window.location.hash.replace(/^#/, "");
+    return platformCouplingBySlug[slug]?.name ?? null;
+  });
+
+  const selectCoupling = (name: string | null) => {
+    setSelectedCoupling(name);
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if (name) {
+      const coupling = couplings.find((entry) => entry.name === name);
+      if (coupling) {
+        window.history.replaceState(null, "", `#${coupling.slug}`);
+      }
+    } else {
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+  };
+
+  const activeCoupling = couplings.find((c) => c.name === selectedCoupling) || null;
 
   return (
     <div className="flex flex-col gap-10">
@@ -265,7 +320,7 @@ export function PlatformsExplorer() {
         </h2>
 
         <div className="grid gap-4 lg:grid-cols-3">
-          {platformList.map((platform) => (
+          {platforms.map((platform) => (
             <Link
               key={platform.id}
               href={platform.href}
@@ -276,7 +331,7 @@ export function PlatformsExplorer() {
                 className="text-xs font-medium uppercase tracking-[0.18em]"
                 style={{ color: platform.color }}
               >
-                {platform.shortName}
+                {platform.short}
               </span>
               <h3 className="text-xl font-semibold text-slate-50">
                 {platform.name}
@@ -305,7 +360,7 @@ export function PlatformsExplorer() {
 
         {/* SVG Systems Map */}
         <div className="border border-white/10 bg-white/[0.02] p-4 sm:p-6 rounded">
-          <SystemsMap selectedCoupling={selectedCoupling} onSelectCoupling={setSelectedCoupling} />
+          <SystemsMap selectedCoupling={selectedCoupling} onSelectCoupling={selectCoupling} />
         </div>
 
         {/* Detailed Feedback Loop Card (Targeted Expanded view) */}
@@ -317,9 +372,12 @@ export function PlatformsExplorer() {
                   Detailed Feedback Loop Analysis
                 </span>
                 <h3 className="text-2xl font-bold text-slate-50 mt-1">{activeCoupling.name}</h3>
+                <p className="mt-1 font-mono text-[0.65rem] text-slate-500">
+                  /platforms#{activeCoupling.slug}
+                </p>
               </div>
               <button
-                onClick={() => setSelectedCoupling(null)}
+                onClick={() => selectCoupling(null)}
                 className="cursor-pointer border border-white/10 bg-white/[0.02] text-slate-300 hover:bg-white/[0.08] hover:text-white text-xs px-2.5 py-1 transition-all"
               >
                 ✕ CLOSE
@@ -328,16 +386,7 @@ export function PlatformsExplorer() {
             <p className="text-base leading-7 text-slate-200">{activeCoupling.feedbackLoop}</p>
             <div className="flex gap-2 pt-2">
               {activeCoupling.links.map((id) => (
-                <span
-                  key={id}
-                  className="border px-2.5 py-1 text-xs leading-5 text-slate-200"
-                  style={{
-                    borderColor: `${platformDefinitions[id].color}55`,
-                    color: platformDefinitions[id].color,
-                  }}
-                >
-                  {platformDefinitions[id].shortName}
-                </span>
+                <PlatformLink key={id} id={id} />
               ))}
             </div>
           </article>
@@ -345,12 +394,12 @@ export function PlatformsExplorer() {
 
         {/* Grid of Coupling cards */}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {platformCouplings.map((coupling) => {
+          {couplings.map((coupling) => {
             const isSelected = selectedCoupling === coupling.name;
             return (
               <article
                 key={coupling.name}
-                onClick={() => setSelectedCoupling(isSelected ? null : coupling.name)}
+                onClick={() => selectCoupling(isSelected ? null : coupling.name)}
                 className={`flex flex-col gap-3 border p-4 transition-all cursor-pointer select-none ${
                   isSelected
                     ? "border-emerald-300 bg-emerald-300/[0.04]"
@@ -368,16 +417,7 @@ export function PlatformsExplorer() {
                 <p className="text-sm leading-6 text-slate-400">{coupling.detail}</p>
                 <div className="mt-auto flex flex-wrap gap-2 pt-1">
                   {coupling.links.map((id) => (
-                    <span
-                      key={id}
-                      className="border px-2.5 py-1 text-xs leading-5 text-slate-200"
-                      style={{
-                        borderColor: `${platformDefinitions[id].color}55`,
-                        color: platformDefinitions[id].color,
-                      }}
-                    >
-                      {platformDefinitions[id].shortName}
-                    </span>
+                    <PlatformLink key={id} id={id} />
                   ))}
                 </div>
               </article>

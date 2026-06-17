@@ -156,31 +156,44 @@ export type ScaleRung = {
   note: string;
   /** Marks the human reference rung. */
   here?: boolean;
+  /** Platform affinity for this rung; falls back to tier defaults when omitted. */
+  platforms?: ScalePlatform["id"][];
 };
 
 // Representative entities plotted by characteristic physical size — the rungs of
 // the ladder. Ordered small to large.
 export const scaleRungs: ScaleRung[] = [
-  { name: "Elementary particles", log: -18, sizeLabel: "< 10⁻¹⁸ m", tier: "micro", note: "Quarks and electrons carry no measured size — point-like, the floor of the ladder." },
-  { name: "Atoms", log: -10, sizeLabel: "~0.1 nm", tier: "micro", note: "A nucleus wrapped in an electron cloud; the smallest unit of a chemical element." },
-  { name: "Molecules", log: -9, sizeLabel: "~1 nm", tier: "micro", note: "Bonded atoms — water, proteins, the DNA double helix two nanometres wide." },
-  { name: "Viruses", log: -7, sizeLabel: "~100 nm", tier: "micro", note: "Genetic packages that borrow living cells to replicate; smaller than the cells they infect." },
-  { name: "Bacteria", log: -6, sizeLabel: "~1 µm", tier: "micro", note: "Single-celled microbes; trillions live within and upon the human body." },
-  { name: "Human cells", log: -5, sizeLabel: "~10 µm", tier: "micro", note: "The basic unit of the body — roughly thirty trillion of them per person." },
-  { name: "Mammals", log: 0, sizeLabel: "~1 m", tier: "meso", note: "Multicellular animals; the lineage Homo sapiens belongs to." },
-  { name: "Homo sapiens", log: 0.23, sizeLabel: "~1.7 m", tier: "meso", note: "You are here. The scale that reads every other rung on the ladder.", here: true },
-  { name: "Buildings", log: 2, sizeLabel: "~100 m", tier: "macro", note: "The built environment — where most human life is now spent." },
-  { name: "Cities", log: 4, sizeLabel: "~10 km", tier: "macro", note: "Dense concentrations of people, institutions, and infrastructure." },
-  { name: "Nations", log: 6, sizeLabel: "~1,000 km", tier: "macro", note: "Legal, economic, and political systems spanning continents." },
-  { name: "The Earth", log: 7.1, sizeLabel: "~12,700 km", tier: "mega", note: "The planet and its coupled spheres — atmosphere, ocean, crust, biosphere." },
-  { name: "The Sun", log: 9.1, sizeLabel: "~1.4M km", tier: "mega", note: "The star that supplies almost all the energy driving Earth's systems." },
-  { name: "Earth–Sun distance", log: 11.2, sizeLabel: "~150M km (1 AU)", tier: "mega", note: "One astronomical unit — the orbital radius that sets Earth's climate." },
+  { name: "Elementary particles", log: -18, sizeLabel: "< 10⁻¹⁸ m", tier: "micro", note: "Quarks and electrons carry no measured size — point-like, the floor of the ladder.", platforms: ["salus"] },
+  { name: "Atoms", log: -10, sizeLabel: "~0.1 nm", tier: "micro", note: "A nucleus wrapped in an electron cloud; the smallest unit of a chemical element.", platforms: ["salus"] },
+  { name: "Molecules", log: -9, sizeLabel: "~1 nm", tier: "micro", note: "Bonded atoms — water, proteins, the DNA double helix two nanometres wide.", platforms: ["salus"] },
+  { name: "Viruses", log: -7, sizeLabel: "~100 nm", tier: "micro", note: "Genetic packages that borrow living cells to replicate; smaller than the cells they infect.", platforms: ["salus"] },
+  { name: "Bacteria", log: -6, sizeLabel: "~1 µm", tier: "micro", note: "Single-celled microbes; trillions live within and upon the human body.", platforms: ["salus"] },
+  { name: "Human cells", log: -5, sizeLabel: "~10 µm", tier: "micro", note: "The basic unit of the body — roughly thirty trillion of them per person.", platforms: ["salus"] },
+  { name: "Mammals", log: 0, sizeLabel: "~1 m", tier: "meso", note: "Multicellular animals; the lineage Homo sapiens belongs to.", platforms: ["salus"] },
+  { name: "Homo sapiens", log: 0.23, sizeLabel: "~1.7 m", tier: "meso", note: "You are here. The scale that reads every other rung on the ladder.", here: true, platforms: ["salus"] },
+  { name: "Buildings", log: 2, sizeLabel: "~100 m", tier: "macro", note: "The built environment — where most human life is now spent.", platforms: ["societas", "salus"] },
+  { name: "Cities", log: 4, sizeLabel: "~10 km", tier: "macro", note: "Dense concentrations of people, institutions, and infrastructure.", platforms: ["societas"] },
+  { name: "Nations", log: 6, sizeLabel: "~1,000 km", tier: "macro", note: "Legal, economic, and political systems spanning continents.", platforms: ["societas"] },
+  { name: "The Earth", log: 7.1, sizeLabel: "~12,700 km", tier: "mega", note: "The planet and its coupled spheres — atmosphere, ocean, crust, biosphere.", platforms: ["terra"] },
+  { name: "The Sun", log: 9.1, sizeLabel: "~1.4M km", tier: "mega", note: "The star that supplies almost all the energy driving Earth's systems.", platforms: ["terra"] },
+  { name: "Earth–Sun distance", log: 11.2, sizeLabel: "~150M km (1 AU)", tier: "mega", note: "One astronomical unit — the orbital radius that sets Earth's climate.", platforms: ["terra"] },
 ];
 
 export const LADDER_LOG_MIN = -18;
 export const LADDER_LOG_MAX = 11.2;
 /** Orders of magnitude spanned from the smallest to the largest rung. */
 export const ORDERS_OF_MAGNITUDE = Math.round(LADDER_LOG_MAX - LADDER_LOG_MIN);
+
+export function rungSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+export function findRungIndexBySlug(slug: string): number {
+  return scaleRungs.findIndex((rung) => rungSlug(rung.name) === slug);
+}
 
 export const scaleSources = [
   { label: "NIST — CODATA Fundamental Physical Constants", href: "https://physics.nist.gov/cuu/Constants/" },

@@ -2,25 +2,13 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
+import { projectLinks } from "@/lib/projects";
 
 export const metadata: Metadata = {
   title: "Projects | Sapiens Scientia",
   description:
     "Public Sapiens Scientia projects, including the data index and EarthView 3D.",
 };
-
-const projectLinks = [
-  {
-    href: "/projects/sapiens-scientia-data-index",
-    label: "Sapiens Scientia Data Index",
-    external: false,
-  },
-  {
-    href: "https://earthview3d.vercel.app/",
-    label: "EarthView 3D",
-    external: true,
-  },
-];
 
 export default function ProjectsPage() {
   return (
@@ -33,6 +21,10 @@ export default function ProjectsPage() {
             Sapiens Scientia
           </p>
           <h1 className="text-5xl font-semibold tracking-normal sm:text-7xl">Projects</h1>
+          <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300">
+            Public tools and indexes that extend the homepage — curated knowledge infrastructure
+            and immersive Earth exploration.
+          </p>
         </div>
 
         <div className="divide-y divide-white/15 border-y border-white/15">
@@ -40,14 +32,13 @@ export default function ProjectsPage() {
             <Link
               key={project.href}
               href={project.href}
-              target={project.external ? "_blank" : undefined}
-              rel={project.external ? "noreferrer" : undefined}
-              className="flex items-center justify-between gap-6 py-6 text-xl font-medium text-slate-100 transition-colors hover:text-blue-300 sm:text-2xl"
+              className="flex flex-col gap-2 py-6 transition-colors hover:text-blue-300 sm:gap-3"
             >
-              <span>{project.label}</span>
-              <span className="text-sm uppercase tracking-[0.2em] text-blue-400">
-                {project.external ? "Open" : "View"}
-              </span>
+              <div className="flex items-center justify-between gap-6">
+                <span className="text-xl font-medium text-slate-100 sm:text-2xl">{project.label}</span>
+                <span className="shrink-0 text-sm uppercase tracking-[0.2em] text-blue-400">View</span>
+              </div>
+              <p className="max-w-2xl text-base leading-7 text-slate-400">{project.description}</p>
             </Link>
           ))}
         </div>

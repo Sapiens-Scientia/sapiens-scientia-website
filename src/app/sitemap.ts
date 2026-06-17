@@ -15,6 +15,7 @@ const routes = [
   "/platforms/terra",
   "/projects",
   "/projects/sapiens-scientia-data-index",
+  "/projects/earthview",
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

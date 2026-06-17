@@ -44,7 +44,8 @@ export default function ScalesPage() {
             then biology, then society, then a planet. The ladder below plots
             characteristic sizes on a logarithmic axis; each rung is a kind of
             system the platforms study. Homo sapiens sits near the middle —
-            the scale from which every other rung is read.
+            the scale from which every other rung is read. Click a rung to pin it
+            and share via URL hash (e.g. <code className="text-sky-200">/scales#homo-sapiens</code>).
           </p>
         </div>
 

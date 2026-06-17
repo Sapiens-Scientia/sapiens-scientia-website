@@ -66,6 +66,7 @@ export const vitalSignDomains: VitalSignDomain[] = [
 ];
 
 export type EarthVitalSign = {
+  id: string;
   accent: string;
   domain: VitalSignDomainId;
   earthSystemLinks?: string[];
@@ -81,6 +82,7 @@ export type EarthVitalSign = {
   };
   updated: string;
   value: string;
+  liveChartPoint?: { year: number; value: number };
   historicalData?: {
     points: { year: number; value: number }[];
     projection?: { year: number; value: number }[];
@@ -90,6 +92,7 @@ export type EarthVitalSign = {
 
 export const earthVitalSigns: EarthVitalSign[] = [
   {
+    id: "human-population",
     accent: "#facc15",
     domain: "human",
     earthSystemLinks: ["People", "Homo sapiens"],
@@ -118,6 +121,7 @@ export const earthVitalSigns: EarthVitalSign[] = [
     },
   },
   {
+    id: "global-oil-stock",
     accent: "#fb923c",
     domain: "human",
     earthSystemLinks: ["Fossil Fuels", "Energy Generation System", "Transportation, Pipes, & Cables"],
@@ -152,6 +156,7 @@ export const earthVitalSigns: EarthVitalSign[] = [
     },
   },
   {
+    id: "global-gdp",
     accent: "#86efac",
     domain: "human",
     earthSystemLinks: ["Economic System", "Financial System", "Business & Industrial System"],
@@ -180,6 +185,7 @@ export const earthVitalSigns: EarthVitalSign[] = [
     },
   },
   {
+    id: "primary-energy-use",
     accent: "#fbbf24",
     domain: "human",
     earthSystemLinks: ["Energy Generation System", "Fossil Fuels", "Economic System", "Technology"],
@@ -208,6 +214,7 @@ export const earthVitalSigns: EarthVitalSign[] = [
     },
   },
   {
+    id: "freshwater-withdrawals",
     accent: "#06b6d4",
     domain: "land",
     earthSystemLinks: ["Freshwater", "Agricultural Systems", "People", "Ecosystems"],
@@ -236,6 +243,7 @@ export const earthVitalSigns: EarthVitalSign[] = [
     },
   },
   {
+    id: "municipal-waste",
     accent: "#c084fc",
     domain: "waste",
     earthSystemLinks: ["Anthropogenic Waste", "Waste Management System", "People", "Economic System"],
@@ -261,6 +269,7 @@ export const earthVitalSigns: EarthVitalSign[] = [
     },
   },
   {
+    id: "plastic-waste",
     accent: "#fb7185",
     domain: "waste",
     earthSystemLinks: ["Anthropogenic Waste", "Waste Management System", "Business & Industrial System"],
@@ -288,6 +297,7 @@ export const earthVitalSigns: EarthVitalSign[] = [
     },
   },
   {
+    id: "land-degradation",
     accent: "#a3e635",
     domain: "land",
     earthSystemLinks: ["Soil System", "Agricultural Systems", "Ecosystems", "Biosphere"],
@@ -313,6 +323,7 @@ export const earthVitalSigns: EarthVitalSign[] = [
     },
   },
   {
+    id: "global-temperature",
     accent: "#f97316",
     domain: "atmosphere",
     earthSystemLinks: ["Atmosphere", "Climate System"],
@@ -341,6 +352,7 @@ export const earthVitalSigns: EarthVitalSign[] = [
     },
   },
   {
+    id: "atmospheric-co2",
     accent: "#38bdf8",
     domain: "atmosphere",
     earthSystemLinks: ["Atmosphere", "Climate System", "Fossil Fuels"],
@@ -369,6 +381,7 @@ export const earthVitalSigns: EarthVitalSign[] = [
     },
   },
   {
+    id: "atmospheric-methane",
     accent: "#a78bfa",
     domain: "atmosphere",
     earthSystemLinks: ["Atmosphere", "Climate System", "Agricultural Systems"],
@@ -396,6 +409,7 @@ export const earthVitalSigns: EarthVitalSign[] = [
     },
   },
   {
+    id: "ocean-heat",
     accent: "#22d3ee",
     domain: "ocean",
     earthSystemLinks: ["Hydrosphere", "Climate System"],
@@ -424,6 +438,7 @@ export const earthVitalSigns: EarthVitalSign[] = [
     },
   },
   {
+    id: "sea-level",
     accent: "#60a5fa",
     domain: "ocean",
     earthSystemLinks: ["Hydrosphere", "Climate System"],
@@ -450,6 +465,7 @@ export const earthVitalSigns: EarthVitalSign[] = [
     },
   },
   {
+    id: "arctic-sea-ice",
     accent: "#93c5fd",
     domain: "ocean",
     earthSystemLinks: ["Hydrosphere", "Climate System"],
@@ -477,6 +493,7 @@ export const earthVitalSigns: EarthVitalSign[] = [
     },
   },
   {
+    id: "tropical-primary-forest",
     accent: "#34d399",
     domain: "land",
     earthSystemLinks: ["Ecosystems", "Biosphere", "Agricultural Systems"],
@@ -509,6 +526,7 @@ export const earthVitalSigns: EarthVitalSign[] = [
     },
   },
   {
+    id: "wildlife-populations",
     accent: "#bef264",
     domain: "land",
     earthSystemLinks: ["Ecosystems", "Biosphere", "Multicellular Life Forms", "Mammals"],
@@ -595,3 +613,10 @@ export const vitalSignYearSpan = (() => {
 
   return { min: Math.min(...years), max: Math.max(...years) };
 })();
+
+export const earthVitalSignHighlights = earthVitalSigns.flatMap((sign) =>
+  (sign.earthSystemLinks ?? []).map((label) => ({
+    color: sign.accent,
+    label,
+  })),
+);

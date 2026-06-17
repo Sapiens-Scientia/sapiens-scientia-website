@@ -159,6 +159,42 @@ export const dataIndexCategories: DataIndexCategory[] = [
   },
 ];
 
+export const DATA_INDEX_PAGE = "/projects/sapiens-scientia-data-index";
+
+export const dataIndexCatalog = dataIndexCategories.map((category) => ({
+  name: category.name,
+  title: category.title,
+  color: category.color,
+  description: category.description,
+  items: category.entries,
+}));
+
+export function dataIndexCategorySlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+export const dataIndexCategoryBySlug = Object.fromEntries(
+  dataIndexCatalog.map((section) => [dataIndexCategorySlug(section.name), section]),
+);
+
+export function dataIndexCategoryHref(name: string): string {
+  return `${DATA_INDEX_PAGE}#${dataIndexCategorySlug(name)}`;
+}
+
+export function dataIndexTitleForSlug(slug: string): string | null {
+  return dataIndexCategoryBySlug[slug]?.title ?? null;
+}
+
+export const dataIndexSections = dataIndexCatalog.map((section) => ({
+  title: section.title,
+  slug: dataIndexCategorySlug(section.name),
+  description: section.description,
+  items: section.items,
+}));
+
 export const dataIndexEntries = dataIndexCategories.flatMap((category) =>
   category.entries.map((entry, entryIndex) => ({
     ...entry,
@@ -170,3 +206,4 @@ export const dataIndexEntries = dataIndexCategories.flatMap((category) =>
 );
 
 export const dataIndexTotalEntries = dataIndexEntries.length;
+export const dataIndexEntryCount = dataIndexEntries.length;

@@ -3,11 +3,12 @@ import type { Metadata } from "next";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { PlatformsExplorer } from "@/components/platforms-explorer";
+import { CrossPlatformSimulator } from "@/components/cross-platform-simulator";
 
 export const metadata: Metadata = {
   title: "Platforms | Sapiens Scientia",
   description:
-    "Sapiens Scientia platforms: Salus for health, Societas for society, Terra for Earth systems, and Morbus for disease ontology.",
+    "The Sapiens Scientia platform triad: Salus for health, Societas for society, and Terra for Earth systems — with a coupled scenario simulator, cross-cutting coupling map, and Morbus for disease ontology.",
 };
 
 export default function PlatformsPage() {
@@ -31,6 +32,8 @@ export default function PlatformsPage() {
             couplings between health, society, and Earth.
           </p>
         </header>
+
+        <CrossPlatformSimulator />
 
         <PlatformsExplorer />
 
