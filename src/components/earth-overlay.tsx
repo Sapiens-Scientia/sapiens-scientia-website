@@ -984,7 +984,14 @@ function HumanPlatformsBridgePanel({
       onWheelCapture={stopPanelScrollPropagation}
       onTouchMoveCapture={stopPanelScrollPropagation}
     >
-      <h2 className="mb-3 text-2xl font-semibold leading-none text-white max-lg:text-xl">Human Platforms</h2>
+      <h2 className="mb-3 text-2xl font-semibold leading-none text-white max-lg:text-xl">
+        <Link
+          href="/platforms"
+          className="rounded-sm transition-colors hover:text-sky-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300"
+        >
+          Human Platforms
+        </Link>
+      </h2>
       <ol className="space-y-1.5">
         {humanPlatformBridges.map((bridge) => {
           const isActive = activeBridgeId === bridge.id;

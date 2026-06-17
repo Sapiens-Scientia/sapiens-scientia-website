@@ -2,12 +2,7 @@
 
 import Link from "next/link";
 
-const links = [
-  { href: "/scales", label: "Scales" },
-  { href: "/platforms", label: "Platforms" },
-  { href: "/platforms/salus/morbus", label: "Morbus" },
-  { href: "/projects", label: "Projects" },
-];
+const links: { href: string; label: string }[] = [];
 
 export function HomeNav() {
   return (

@@ -55,6 +55,27 @@ export default function TerraPage() {
 
         <TerraExplorer />
 
+        <section className="flex flex-col gap-6 border-t border-emerald-200/15 pt-10">
+          <div className="max-w-3xl">
+            <h2 className="text-3xl font-semibold tracking-normal text-white sm:text-4xl">
+              The Earth&apos;s Vital Signs
+            </h2>
+            <p className="mt-4 text-base leading-7 text-slate-300">
+              A patient is read through their vital signs; so is a planet. Terra&apos;s
+              live dashboard charts the measured trends of the Earth system —
+              population, climate, ocean, land, and waste — each from the 1970s with a
+              projection toward 2050, linked back to the body that publishes it.
+            </p>
+          </div>
+          <Link
+            href="/vitals"
+            className="inline-flex w-fit items-center gap-2 border border-emerald-200/20 bg-emerald-200/[0.05] px-4 py-2.5 text-sm font-medium text-emerald-100 transition-colors hover:border-emerald-200/40 hover:text-emerald-50"
+          >
+            Open the planetary vital signs dashboard
+            <span aria-hidden>→</span>
+          </Link>
+        </section>
+
         <PlatformCouplingLinks platform="terra" />
 
         <ScaleRungLinks platform="terra" />

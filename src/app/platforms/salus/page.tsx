@@ -7,6 +7,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { PlatformCouplingLinks } from "@/components/platform-coupling-links";
 import { ScaleRungLinks } from "@/components/scale-rung-links";
 import { morbusDiseaseGroups, morbusDiseases } from "@/lib/morbus";
+import { somaSystems } from "@/lib/soma";
 
 export const metadata: Metadata = {
   title: "Salus | Sapiens Scientia",
@@ -176,6 +177,46 @@ export default function SalusPage() {
                 {source.label}
               </a>
             ))}
+          </div>
+        </section>
+
+        <section className="flex flex-col gap-7 border-t border-sky-200/15 pt-10">
+          <div className="max-w-4xl">
+            <h2 className="text-3xl font-semibold tracking-normal text-white sm:text-4xl">
+              Sapiens Scientia Soma
+            </h2>
+            <p className="mt-4 max-w-3xl text-base leading-7 text-slate-300">
+              Soma is the human body module inside Salus: an independent model of
+              the healthy body across anatomy, physiology, and histology, organized
+              by organ system and the nested levels of structural organization. It
+              couples to Morbus, where each system&apos;s failure modes live, without
+              inheriting the disease ontology&apos;s structure.
+            </p>
+            <Link
+              href="/platforms/salus/soma"
+              className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-rose-200 transition-colors hover:text-rose-50"
+            >
+              Explore the Soma body module
+              <span aria-hidden>→</span>
+            </Link>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {(["nervous", "cardiovascular", "respiratory", "digestive", "immune", "musculoskeletal"] as const).map((id) => {
+                const system = somaSystems.find((entry) => entry.id === id);
+                if (!system) {
+                  return null;
+                }
+
+                return (
+                  <Link
+                    key={id}
+                    href={`/platforms/salus/soma#${id}`}
+                    className="border border-rose-200/15 bg-rose-200/[0.05] px-2.5 py-1 text-xs leading-5 text-rose-100 transition-colors hover:border-rose-200/35 hover:text-rose-50"
+                  >
+                    {system.name.replace(/ System| & Lymphatic System/, "")}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         </section>
 

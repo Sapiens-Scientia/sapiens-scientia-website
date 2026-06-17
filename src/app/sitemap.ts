@@ -10,6 +10,7 @@ const routes = [
   "/vitals",
   "/platforms",
   "/platforms/salus",
+  "/platforms/salus/soma",
   "/platforms/salus/morbus",
   "/platforms/societas",
   "/platforms/terra",
