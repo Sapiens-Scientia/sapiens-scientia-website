@@ -1,23 +1,61 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { EarthOverlay } from "@/components/earth-overlay";
 import { EarthScene } from "@/components/earth-scene";
 import { HomeNav } from "@/components/home-nav";
 import { useTheme } from "@/lib/use-theme";
 
+// Fraction of the hero, centred, where wheel events drive the 3D zoom.
+// Outside this rectangle, the wheel scrolls the page as normal.
+const ZOOM_ZONE_WIDTH = 0.5;
+const ZOOM_ZONE_HEIGHT = 0.55;
+
 export function EarthHero() {
   const [isPanelPointerActive, setIsPanelPointerActive] = useState(false);
   const [isMetaEarthMerged, setIsMetaEarthMerged] = useState(false);
-  
+  const sceneRef = useRef<HTMLDivElement>(null);
+
   const { theme, toggleTheme } = useTheme();
 
   const toggleMetaEarth = () => setIsMetaEarthMerged((value) => !value);
 
+  // Confine the scene's wheel-to-zoom to a central rectangle. A capture-phase
+  // listener stops wheel events from reaching OrbitControls when the cursor is
+  // outside that zone, so the page scrolls instead of the globe zooming.
+  useEffect(() => {
+    const el = sceneRef.current;
+    if (!el) {
+      return;
+    }
+
+    const onWheelCapture = (event: WheelEvent) => {
+      const rect = el.getBoundingClientRect();
+      const halfZoneWidth = (rect.width * ZOOM_ZONE_WIDTH) / 2;
+      const halfZoneHeight = (rect.height * ZOOM_ZONE_HEIGHT) / 2;
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+
+      const insideZone =
+        Math.abs(event.clientX - centerX) <= halfZoneWidth &&
+        Math.abs(event.clientY - centerY) <= halfZoneHeight;
+
+      if (!insideZone) {
+        // Keep the event away from OrbitControls and let the page scroll.
+        event.stopPropagation();
+      }
+    };
+
+    el.addEventListener("wheel", onWheelCapture, { capture: true });
+    return () => {
+      el.removeEventListener("wheel", onWheelCapture, { capture: true });
+    };
+  }, []);
+
   return (
     <section className="relative h-screen min-h-[48rem] overflow-hidden bg-black">
-      <div className="absolute inset-0 h-full w-full">
+      <div ref={sceneRef} className="absolute inset-0 h-full w-full">
         <Canvas
           camera={{ position: [0, 0.28, 9.99], fov: 45 }}
           dpr={[1, 1.8]}

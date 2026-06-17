@@ -1020,7 +1020,7 @@ function ConstrainedOrbitControls({ enableZoom }: { enableZoom: boolean }) {
       enablePan
       enableZoom={enableZoom}
       minDistance={3.4}
-      maxDistance={10}
+      maxDistance={18}
       minPolarAngle={Math.PI / 2.7}
       maxPolarAngle={Math.PI / 1.75}
       panSpeed={0.55}

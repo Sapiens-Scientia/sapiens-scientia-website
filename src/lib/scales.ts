@@ -80,6 +80,20 @@ export const scaleTiers: ScaleTier[] = [
         name: "Multicellular life",
         members: ["Multicellular Life Forms", "Mammals", "Homo sapiens"],
       },
+      {
+        name: "Lived environments",
+        members: [
+          "Homes",
+          "Buildings",
+          "Schools",
+          "Hospitals",
+          "Workplaces",
+          "Farms",
+          "Neighborhoods",
+          "Local ecosystems",
+          "Watersheds",
+        ],
+      },
     ],
     platforms: ["salus"],
   },
@@ -115,7 +129,7 @@ export const scaleTiers: ScaleTier[] = [
       {
         name: "Built & digital fabric",
         members: [
-          "Buildings",
+          "Infrastructure",
           "Transportation, Pipes, & Cables",
           "Technology",
           "Information Systems",

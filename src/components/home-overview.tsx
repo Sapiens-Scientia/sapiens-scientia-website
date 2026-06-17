@@ -4,12 +4,7 @@ import {
   dataIndexCategoryHref,
   dataIndexEntryCount,
 } from "@/lib/data-index";
-import {
-  platformColorOf,
-  platformCouplings,
-  platformList,
-  platformShortOf,
-} from "@/lib/platform-couplings";
+import { platformList } from "@/lib/platform-couplings";
 import { ORDERS_OF_MAGNITUDE, scaleTiers } from "@/lib/scales";
 
 const systemSignals = [
@@ -37,7 +32,6 @@ const systemSignals = [
 ];
 
 export function HomeOverview() {
-  const featuredCouplings = platformCouplings.slice(0, 4);
   const featuredCategories = dataIndexCategories.slice(0, 6);
 
   return (
@@ -82,60 +76,6 @@ export function HomeOverview() {
                 <span className="mt-5 inline-flex text-sm font-medium text-sky-200 transition-colors group-hover:text-sky-50">
                   Explore <span aria-hidden="true" className="ml-1">→</span>
                 </span>
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        <section className="grid gap-8 border-t border-white/10 pt-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <div>
-            <h2 className="text-3xl font-semibold tracking-normal text-white sm:text-4xl">
-              Platform Couplings
-            </h2>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-slate-300">
-              The important questions rarely stay inside one platform. These
-              couplings are the bridgework between health, society, and Earth
-              systems.
-            </p>
-            <Link
-              href="/platforms#coupled-scenario"
-              className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-emerald-200 transition-colors hover:text-emerald-50"
-            >
-              Try the coupled scenario simulator
-              <span aria-hidden="true">→</span>
-            </Link>
-          </div>
-
-          <div className="divide-y divide-white/10 border-y border-white/10">
-            {featuredCouplings.map((coupling) => (
-              <Link
-                key={coupling.slug}
-                href={`/platforms#${coupling.slug}`}
-                aria-label={`Explore the ${coupling.name} platform coupling`}
-                className="grid gap-3 py-5 transition-colors hover:text-sky-100 sm:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)]"
-              >
-                <div>
-                  <h3 className="text-xl font-semibold text-white">
-                    {coupling.name}
-                  </h3>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {coupling.links.map((id) => (
-                      <span
-                        key={id}
-                        className="border px-2.5 py-1 text-xs font-medium"
-                        style={{
-                          borderColor: `${platformColorOf[id]}55`,
-                          color: platformColorOf[id],
-                        }}
-                      >
-                        {platformShortOf[id]}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <p className="text-sm leading-6 text-slate-400">
-                  {coupling.detail}
-                </p>
               </Link>
             ))}
           </div>
