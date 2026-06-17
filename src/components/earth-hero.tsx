@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import { EarthOverlay } from "@/components/earth-overlay";
 import { EarthScene } from "@/components/earth-scene";
 import { HomeNav } from "@/components/home-nav";
@@ -12,35 +12,8 @@ export function EarthHero() {
   const [isMetaEarthMerged, setIsMetaEarthMerged] = useState(false);
   
   const { theme, toggleTheme } = useTheme();
-  const [timelineYear, setTimelineYear] = useState(2026);
-  const [isPlayMode, setIsPlayMode] = useState(false);
 
   const toggleMetaEarth = () => setIsMetaEarthMerged((value) => !value);
-
-  useEffect(() => {
-    if (!isPlayMode) return;
-
-    let lastTime = performance.now();
-    let frameId: number;
-
-    const update = (time: number) => {
-      const delta = (time - lastTime) / 1000;
-      lastTime = time;
-
-      setTimelineYear((prev) => {
-        let next = prev + delta * 2.0; // Advance 2 years per second
-        if (next > 2050) {
-          next = 1970;
-        }
-        return next;
-      });
-
-      frameId = requestAnimationFrame(update);
-    };
-
-    frameId = requestAnimationFrame(update);
-    return () => cancelAnimationFrame(frameId);
-  }, [isPlayMode]);
 
   return (
     <section className="relative h-screen min-h-[48rem] overflow-hidden bg-black">
@@ -58,7 +31,6 @@ export function EarthHero() {
               isMerged={isMetaEarthMerged}
               onToggleMerged={toggleMetaEarth}
               theme={theme}
-              timelineYear={timelineYear}
             />
           </Suspense>
         </Canvas>
@@ -81,10 +53,6 @@ export function EarthHero() {
         onMetaEarthToggle={toggleMetaEarth}
         onPanelPointerEnter={() => setIsPanelPointerActive(true)}
         onPanelPointerLeave={() => setIsPanelPointerActive(false)}
-        timelineYear={timelineYear}
-        setTimelineYear={setTimelineYear}
-        isPlayMode={isPlayMode}
-        setIsPlayMode={setIsPlayMode}
       />
     </section>
   );

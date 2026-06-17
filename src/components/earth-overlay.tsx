@@ -146,7 +146,7 @@ function ConceptColumn({
       ref={panelRef}
       className={[
         "scrollbar-hidden pointer-events-auto overflow-y-auto overscroll-contain py-4",
-        "border border-white/15 bg-black/42 text-white shadow-[0_0_28px_rgba(59,130,246,0.16)] backdrop-blur-sm",
+        "bg-black/42 text-white shadow-[0_0_28px_rgba(59,130,246,0.16)] backdrop-blur-sm",
         size === "large" ? "w-64" : "w-72",
         size === "large" ? "h-[72vh] max-lg:h-auto max-lg:max-h-[34vh]" : "max-h-[24vh]",
         "max-lg:w-full max-lg:px-4 max-lg:py-3",
@@ -290,84 +290,6 @@ function PopoutToggleButton({
       </span>
     </button>
   );
-}function formatValue(value: number, label: string, unit: string = ""): string {
-  if (label === "Human Population") {
-    return `${value.toFixed(2)}B est.`;
-  }
-  if (label === "Global Oil Stock") {
-    return `${Math.round(value)}% used`;
-  }
-  if (label === "Global GDP") {
-    return `$${Math.round(value)}T`;
-  }
-  if (label === "Primary Energy Use") {
-    return `${Math.round(value)} EJ`;
-  }
-  if (label === "Freshwater Withdrawals") {
-    return `${Math.round(value)}% ag.`;
-  }
-  if (label === "Municipal Waste") {
-    return `${value.toFixed(2)}B t/yr`;
-  }
-  if (label === "Plastic Waste") {
-    return `${Math.round(value)}M t/yr`;
-  }
-  if (label === "Land Degradation") {
-    return `up to ${Math.round(value)}%`;
-  }
-  if (label === "Global Temperature") {
-    return `${value > 0 ? "+" : ""}${value.toFixed(2)} C`;
-  }
-  if (label === "Atmospheric CO2") {
-    return `${Math.round(value)} ppm`;
-  }
-  if (label === "Atmospheric Methane") {
-    return `${Math.round(value).toLocaleString()} ppb`;
-  }
-  if (label === "Ocean Heat") {
-    return `${Math.round(value)} +/- 2 ZJ`;
-  }
-  if (label === "Sea Level") {
-    return `${value > 0 ? "+" : ""}${value.toFixed(2)} cm`;
-  }
-  if (label === "Arctic Sea Ice") {
-    return `${value.toFixed(1)} M km²`;
-  }
-  if (label === "Tropical Primary Forest") {
-    return `${value.toFixed(1)}M ha lost`;
-  }
-  if (label === "Wildlife Populations") {
-    return `${Math.round(value)}%`;
-  }
-  return `${value.toFixed(1)} ${unit}`;
-}
-
-function getInterpolatedValue(sign: EarthVitalSign, year: number): string {
-  if (!sign.historicalData) return sign.value;
-  
-  const { points, projection, unit } = sign.historicalData;
-  const allPoints = [...points, ...(projection || [])].sort((a, b) => a.year - b.year);
-  
-  if (allPoints.length === 0) return sign.value;
-  
-  if (year <= allPoints[0].year) {
-    return formatValue(allPoints[0].value, sign.label, unit);
-  }
-  if (year >= allPoints[allPoints.length - 1].year) {
-    return formatValue(allPoints[allPoints.length - 1].value, sign.label, unit);
-  }
-  
-  for (let i = 0; i < allPoints.length - 1; i++) {
-    const p1 = allPoints[i];
-    const p2 = allPoints[i + 1];
-    if (year >= p1.year && year <= p2.year) {
-      const fraction = (year - p1.year) / (p2.year - p1.year);
-      const val = p1.value + (p2.value - p1.value) * fraction;
-      return formatValue(val, sign.label, unit);
-    }
-  }
-  
-  return sign.value;
 }
 
 function EarthVitalSignsPanel({
@@ -377,8 +299,6 @@ function EarthVitalSignsPanel({
   onPanelPointerLeave,
   signs,
   status,
-  timelineYear,
-  isSimulationActive,
 }: {
   isOpen: boolean;
   liveIds: Set<string>;
@@ -386,8 +306,6 @@ function EarthVitalSignsPanel({
   onPanelPointerLeave: () => void;
   signs: EarthVitalSign[];
   status: LiveVitalSignsStatus;
-  timelineYear: number;
-  isSimulationActive: boolean;
 }) {
   const { handlePanelWheel, panelRef } = useManualPanelWheel<HTMLElement>();
   const [expandedLabel, setExpandedLabel] = useState<string | null>(null);
@@ -396,7 +314,7 @@ function EarthVitalSignsPanel({
     <aside
       ref={panelRef}
       className={[
-        "pointer-events-auto relative z-30 border border-blue-300/24 bg-black/58 text-white shadow-[0_0_34px_rgba(59,130,246,0.18)] backdrop-blur-md",
+        "pointer-events-auto relative z-30 bg-black/58 text-white shadow-[0_0_34px_rgba(59,130,246,0.18)] backdrop-blur-md",
         "w-full p-4 lg:absolute lg:left-[calc(100%+0.75rem)] lg:top-0 lg:w-80",
         "scrollbar-hidden max-h-[46vh] overflow-y-auto overscroll-contain lg:max-h-[72vh]",
         isOpen ? "block" : "hidden",
@@ -422,13 +340,9 @@ function EarthVitalSignsPanel({
             <p className="mt-1 font-mono text-[0.58rem] uppercase tracking-[0.14em] text-amber-400/80">
               Live sync unavailable — showing cached values
             </p>
-          ) : liveIds.size > 0 && !isSimulationActive ? (
+          ) : liveIds.size > 0 ? (
             <p className="mt-1 font-mono text-[0.58rem] uppercase tracking-[0.14em] text-emerald-400/80">
               {liveIds.size} live reading{liveIds.size === 1 ? "" : "s"}
-            </p>
-          ) : isSimulationActive ? (
-            <p className="mt-1 font-mono text-[0.58rem] uppercase tracking-[0.14em] text-amber-400/80 animate-pulse">
-              Simulation mode active
             </p>
           ) : null}
         </div>
@@ -439,37 +353,7 @@ function EarthVitalSignsPanel({
       <dl className="mt-4 space-y-2">
         {signs.map((sign) => {
           const isExpanded = expandedLabel === sign.label;
-          const displayValue = isSimulationActive
-            ? getInterpolatedValue(sign, timelineYear)
-            : sign.value;
-
-          let dynamicStatusBar = sign.statusBar;
-          if (isSimulationActive && sign.label === "Global Oil Stock" && sign.historicalData) {
-            const allPoints = [...sign.historicalData.points, ...(sign.historicalData.projection || [])].sort((a, b) => a.year - b.year);
-            let percentage = 49;
-            if (timelineYear <= allPoints[0].year) percentage = allPoints[0].value;
-            else if (timelineYear >= allPoints[allPoints.length - 1].year) percentage = allPoints[allPoints.length - 1].value;
-            else {
-              for (let i = 0; i < allPoints.length - 1; i++) {
-                const p1 = allPoints[i];
-                const p2 = allPoints[i + 1];
-                if (timelineYear >= p1.year && timelineYear <= p2.year) {
-                  const frac = (timelineYear - p1.year) / (p2.year - p1.year);
-                  percentage = p1.value + (p2.value - p1.value) * frac;
-                  break;
-                }
-              }
-            }
-            const totalReserves = 3.5;
-            const usedBillion = (totalReserves * percentage / 100).toFixed(2);
-            const remainingBillion = (totalReserves * (100 - percentage) / 100).toFixed(2);
-            dynamicStatusBar = {
-              usedPercent: percentage,
-              remainingPercent: 100 - percentage,
-              usedLabel: `${usedBillion}T bbl used`,
-              remainingLabel: `${remainingBillion}T bbl remaining`,
-            };
-          }
+          const dynamicStatusBar = sign.statusBar;
 
           return (
             <div
@@ -489,7 +373,7 @@ function EarthVitalSignsPanel({
                   <span className="truncate">{sign.label}</span>
                 </span>
                 <span className="flex shrink-0 items-center gap-1.5 font-mono text-xs text-sky-200 font-bold">
-                  {liveIds.has(sign.id) && !isSimulationActive ? (
+                  {liveIds.has(sign.id) ? (
                     <span
                       className="rounded border border-emerald-400/35 bg-emerald-400/10 px-1 py-px text-[0.5rem] font-bold uppercase tracking-[0.12em] text-emerald-300"
                       title="Live reading from public data source"
@@ -497,7 +381,7 @@ function EarthVitalSignsPanel({
                       live
                     </span>
                   ) : null}
-                  {displayValue}
+                  {sign.value}
                 </span>
               </dt>
               <dd
@@ -569,7 +453,7 @@ function DataIndexPanel({
     <aside
       ref={panelRef}
       className={[
-        "pointer-events-auto relative z-30 border border-blue-300/24 bg-black/58 text-white shadow-[0_0_34px_rgba(59,130,246,0.18)] backdrop-blur-md",
+        "pointer-events-auto relative z-30 bg-black/58 text-white shadow-[0_0_34px_rgba(59,130,246,0.18)] backdrop-blur-md",
         "w-full p-4 lg:absolute lg:right-[calc(100%+0.75rem)] lg:top-0 lg:w-80",
         "scrollbar-hidden max-h-[46vh] overflow-y-auto overscroll-contain lg:max-h-[72vh]",
         isOpen ? "block" : "hidden",
@@ -642,15 +526,11 @@ function EarthSystemsColumn({
   panelRef,
   onPanelPointerEnter,
   onPanelPointerLeave,
-  timelineYear,
-  isPlayMode,
 }: {
   activeBridge: HumanPlatformBridge | null;
   panelRef: RefObject<HTMLElement | null>;
   onPanelPointerEnter: () => void;
   onPanelPointerLeave: () => void;
-  timelineYear: number;
-  isPlayMode: boolean;
 }) {
   const { signs, liveIds, status } = useLiveVitalSigns();
   const [isVitalSignsOpen, setIsVitalSignsOpen] = useState(false);
@@ -666,8 +546,6 @@ function EarthSystemsColumn({
     ...(isVitalSignsOpen ? earthSystemHighlights : []),
     ...platformBridgeHighlights(activeBridge, "earth"),
   ];
-
-  const isSimulationActive = isPlayMode || Math.round(timelineYear) !== 2026;
 
   return (
     <div
@@ -704,8 +582,6 @@ function EarthSystemsColumn({
           onPanelPointerLeave={onPanelPointerLeave}
           signs={signs}
           status={status}
-          timelineYear={timelineYear}
-          isSimulationActive={isSimulationActive}
         />
       </div>
     </div>
@@ -974,8 +850,8 @@ function HumanPlatformsBridgePanel({
   return (
     <aside
       ref={panelRef}
-      className="scrollbar-hidden pointer-events-auto max-h-[24vh] w-72 overflow-y-auto overscroll-contain border border-white/15 bg-black/42 px-6 py-4 text-center text-white shadow-[0_0_28px_rgba(59,130,246,0.16)] backdrop-blur-sm max-lg:w-full max-lg:px-4 max-lg:py-3"
-      aria-label="Human Platforms"
+      className="scrollbar-hidden pointer-events-auto max-h-[24vh] w-72 overflow-y-auto overscroll-contain bg-black/42 px-6 py-4 text-center text-white shadow-[0_0_28px_rgba(59,130,246,0.16)] backdrop-blur-sm max-lg:w-full max-lg:px-4 max-lg:py-3"
+      aria-label="Sapiens Platforms"
       onPointerEnter={onPanelPointerEnter}
       onPointerLeave={() => {
         onBridgeLeave();
@@ -989,7 +865,7 @@ function HumanPlatformsBridgePanel({
           href="/platforms"
           className="rounded-sm transition-colors hover:text-sky-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300"
         >
-          Human Platforms
+          Sapiens Platforms
         </Link>
       </h2>
       <ol className="space-y-1.5">
@@ -1024,7 +900,6 @@ function HumanPlatformsBridgePanel({
                 />
                 {bridge.title}
               </Link>
-              <p className="text-sm leading-tight text-slate-100/88">{bridge.subtitle}</p>
             </li>
           );
         })}
@@ -1062,7 +937,7 @@ function TimeOverlay({
 
   return (
     <aside
-      className="pointer-events-auto w-[min(34rem,calc(100vw-2rem))] border border-white/15 bg-black/48 px-4 py-3 text-center text-white shadow-[0_0_28px_rgba(59,130,246,0.16)] backdrop-blur-sm"
+      className="pointer-events-auto w-[min(34rem,calc(100vw-2rem))] bg-black/48 px-4 py-3 text-center text-white shadow-[0_0_28px_rgba(59,130,246,0.16)] backdrop-blur-sm"
       onPointerEnter={onPanelPointerEnter}
       onPointerLeave={onPanelPointerLeave}
       onWheelCapture={stopPanelScrollPropagation}
@@ -1107,108 +982,16 @@ function TimeOverlay({
   );
 }
 
-function TimelineControlPanel({
-  timelineYear,
-  setTimelineYear,
-  isPlayMode,
-  setIsPlayMode,
-  onPanelPointerEnter,
-  onPanelPointerLeave,
-}: {
-  timelineYear: number;
-  setTimelineYear: (year: number) => void;
-  isPlayMode: boolean;
-  setIsPlayMode: (play: boolean) => void;
-  onPanelPointerEnter: () => void;
-  onPanelPointerLeave: () => void;
-}) {
-  const getMilestoneLabel = (year: number) => {
-    if (year < 1980) return "1970s: Birth of Internet / Holocene Baseline";
-    if (year < 1990) return "1980s: Growth of ARPANET & Early Warming";
-    if (year < 2000) return "1990s: World Wide Web & Climate Acceleration";
-    if (year < 2010) return "2000s: Web 2.0 & Breaching Ecosystem Boundaries";
-    if (year < 2020) return "2010s: Hyper-connectivity & Global Anomalies";
-    if (year <= 2026) return "2020s: Planetary Boundaries Breached / Present Day";
-    return "Projections: Future Paths & Decarbonization Limits";
-  };
-
-  return (
-    <aside
-      className="pointer-events-auto w-[min(34rem,calc(100vw-2rem))] border border-white/15 bg-black/54 px-5 py-3.5 text-white shadow-[0_0_28px_rgba(59,130,246,0.16)] backdrop-blur-sm rounded-lg flex flex-col gap-3"
-      onPointerEnter={onPanelPointerEnter}
-      onPointerLeave={onPanelPointerLeave}
-      onWheelCapture={stopPanelScrollPropagation}
-      onTouchMoveCapture={stopPanelScrollPropagation}
-    >
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setIsPlayMode(!isPlayMode)}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-blue-400/30 bg-blue-500/10 text-blue-300 hover:bg-blue-500/25 hover:border-blue-400/60 hover:text-white transition-all cursor-pointer shadow-[0_0_12px_rgba(56,189,248,0.2)]"
-            aria-label={isPlayMode ? "Pause Simulation" : "Play Simulation"}
-          >
-            <span className="text-xs font-bold leading-none">
-              {isPlayMode ? "⏸" : "▶"}
-            </span>
-          </button>
-          <span className="font-mono text-lg font-extrabold text-blue-300 tracking-wider">
-            YEAR: {Math.round(timelineYear)}
-          </span>
-        </div>
-        <span className="font-mono text-[9px] text-slate-400 uppercase tracking-widest text-right max-sm:hidden">
-          {getMilestoneLabel(timelineYear)}
-        </span>
-      </div>
-      
-      <div className="relative mt-1 flex flex-col gap-1 select-none">
-        <input
-          type="range"
-          min="1970"
-          max="2050"
-          step="0.1"
-          value={timelineYear}
-          onChange={(e) => {
-            setTimelineYear(Number(e.target.value));
-            setIsPlayMode(false);
-          }}
-          className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-400"
-        />
-        <div className="flex justify-between font-mono text-[8px] text-slate-500 px-1 mt-1">
-          <span>1970</span>
-          <span>1980</span>
-          <span>1990</span>
-          <span>2000</span>
-          <span>2010</span>
-          <span>2020</span>
-          <span className="text-blue-300 font-bold">2026</span>
-          <span>2030</span>
-          <span>2040</span>
-          <span>2050</span>
-        </div>
-      </div>
-    </aside>
-  );
-}
-
 export function EarthOverlay({
   isMetaEarthMerged,
   onMetaEarthToggle,
   onPanelPointerEnter,
   onPanelPointerLeave,
-  timelineYear,
-  setTimelineYear,
-  isPlayMode,
-  setIsPlayMode,
 }: {
   isMetaEarthMerged: boolean;
   onMetaEarthToggle: () => void;
   onPanelPointerEnter: () => void;
   onPanelPointerLeave: () => void;
-  timelineYear: number;
-  setTimelineYear: (year: number) => void;
-  isPlayMode: boolean;
-  setIsPlayMode: (play: boolean) => void;
 }) {
   const [activeBridge, setActiveBridge] = useState<HumanPlatformBridge | null>(null);
   const bridgeItemRefs = useRef(new Map<HumanPlatformBridge["id"], HTMLLIElement>());
@@ -1237,18 +1020,10 @@ export function EarthOverlay({
         panelRef={humanPlatformsPanelRef}
       />
       <header className="pointer-events-none absolute inset-x-4 top-8 z-10 flex flex-col items-center gap-4 max-lg:top-4">
-        <p className="bg-gradient-to-r from-emerald-300/84 to-blue-300/88 bg-clip-text text-2xl font-semibold uppercase tracking-[0.18em] text-transparent drop-shadow-[0_0_18px_rgba(96,165,250,0.42)] sm:text-4xl">
+        <p className="bg-gradient-to-r from-emerald-300/84 to-blue-300/88 bg-clip-text text-2xl font-semibold uppercase tracking-[0.35em] text-transparent drop-shadow-[0_0_18px_rgba(96,165,250,0.42)] sm:text-4xl">
           Sapiens Scientia
         </p>
         <TimeOverlay
-          onPanelPointerEnter={onPanelPointerEnter}
-          onPanelPointerLeave={onPanelPointerLeave}
-        />
-        <TimelineControlPanel
-          timelineYear={timelineYear}
-          setTimelineYear={setTimelineYear}
-          isPlayMode={isPlayMode}
-          setIsPlayMode={setIsPlayMode}
           onPanelPointerEnter={onPanelPointerEnter}
           onPanelPointerLeave={onPanelPointerLeave}
         />
@@ -1267,8 +1042,6 @@ export function EarthOverlay({
           panelRef={earthSystemsPanelRef}
           onPanelPointerEnter={onPanelPointerEnter}
           onPanelPointerLeave={onPanelPointerLeave}
-          timelineYear={timelineYear}
-          isPlayMode={isPlayMode}
         />
         <DigitalSystemsColumn
           activeBridge={activeBridge}

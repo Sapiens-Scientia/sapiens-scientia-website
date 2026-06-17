@@ -43,7 +43,7 @@ export default function PlatformsPage() {
               Bridge Model
             </h2>
             <p className="mt-4 text-base leading-7 text-slate-300">
-              On the homepage, the Human Platforms sit as the interpretive bridge
+              On the homepage, the Sapiens Platforms sit as the interpretive bridge
               between Earth Systems and Digital Systems. The platforms are not
               separate from the planet they study or the digital knowledge that
               represents it — they mediate between lived planetary reality and
@@ -63,4 +63,3 @@ export default function PlatformsPage() {
     </main>
   );
 }
-

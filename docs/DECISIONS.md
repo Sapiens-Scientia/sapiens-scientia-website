@@ -31,7 +31,7 @@ Do not rename these or introduce replacements unless the change intentionally up
 
 ## Keep The Homepage As A Real Product Surface
 
-The first screen is the actual Sapiens Scientia experience, not a marketing landing page. The homepage should remain centered on the interactive Physical Earth / Digital Halo / Meta Earth model plus the Human Platforms bridge.
+The first screen is the actual Sapiens Scientia experience, not a marketing landing page. The homepage should remain centered on the interactive Physical Earth / Digital Halo / Meta Earth model plus the Sapiens Platforms bridge.
 
 ## Treat Data Modules As Editorial Sources Of Truth
 

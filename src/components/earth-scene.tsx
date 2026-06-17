@@ -10,9 +10,9 @@ import { dataIndexCategories, dataIndexEntries } from "@/lib/data-index";
 import { dataCenterSites, type DataCenterSite } from "@/lib/earth-systems";
 import { EARTHVIEW_PAGE_PATH } from "@/lib/projects";
 
-const physicalCenter = new THREE.Vector3(-1.9, -0.08, 0);
-const haloCenter = new THREE.Vector3(1.9, -0.08, 0);
-const metaCenter = new THREE.Vector3(0, -0.08, 0);
+const physicalCenter = new THREE.Vector3(-1.9, 0.28, 0);
+const haloCenter = new THREE.Vector3(1.9, 0.28, 0);
+const metaCenter = new THREE.Vector3(0, 0.28, 0);
 const haloMajorRadius = 1.36;
 const physicalEarthTilt: [number, number, number] = [0.26, -0.04, -0.08];
 const haloRingTilt: [number, number, number] = [0.6 + Math.PI / 2, 0, 0];
@@ -172,7 +172,7 @@ function EarthSunOrbitModel({
   theme?: "dark" | "light";
 }) {
   const [now, setNow] = useState(() => new Date());
-  const orbitRadius = 0.76;
+  const orbitRadius = 0.96;
   const orbitPoints = useMemo(
     () =>
       Array.from({ length: 97 }, (_, index) => {
@@ -207,7 +207,7 @@ function EarthSunOrbitModel({
             anchorY="middle"
             color={theme === "light" ? "#b45309" : "#fde68a"}
             font={labelFont}
-            fontSize={0.06}
+            fontSize={0.09}
             fontWeight={300}
             outlineColor={theme === "light" ? "#faf8f5" : "#000000"}
             outlineWidth={0.008}
@@ -239,7 +239,7 @@ function EarthSunOrbitModel({
                   anchorY="middle"
                   color={theme === "light" ? "#1c1917" : "#d8eeff"}
                   font={labelFont}
-                  fontSize={0.052}
+                  fontSize={0.08}
                   fontWeight={300}
                   outlineColor={theme === "light" ? "#faf8f5" : "#000000"}
                   outlineWidth={0.007}
@@ -261,7 +261,7 @@ function EarthSunOrbitModel({
                 anchorY="middle"
                 color={theme === "light" ? "#0284c7" : "#93c5fd"}
                 font={labelFont}
-                fontSize={0.058}
+                fontSize={0.09}
                 fontWeight={300}
                 outlineColor={theme === "light" ? "#faf8f5" : "#000000"}
                 outlineWidth={0.008}
@@ -274,7 +274,7 @@ function EarthSunOrbitModel({
         })}
         {solarEventMarkers.map((marker) => {
           const point = orbitPosition(marker.progress, orbitRadius, 0.026);
-          const labelPoint = orbitPosition(marker.progress, orbitRadius + 0.2, 0.034);
+          const labelPoint = orbitPosition(marker.progress, orbitRadius + 0.34, 0.034);
 
           return (
             <group key={marker.label}>
@@ -288,7 +288,7 @@ function EarthSunOrbitModel({
                   anchorY="middle"
                   color={theme === "light" ? "#b45309" : "#fef3c7"}
                   font={labelFont}
-                  fontSize={0.052}
+                  fontSize={0.08}
                   fontWeight={300}
                   outlineColor={theme === "light" ? "#faf8f5" : "#000000"}
                   outlineWidth={0.008}
@@ -316,13 +316,13 @@ function EarthSunOrbitModel({
             anchorY="middle"
             color={theme === "light" ? "#0284c7" : "#ffffff"}
             font={labelFont}
-            fontSize={0.062}
+            fontSize={0.094}
             fontWeight={300}
             outlineColor={theme === "light" ? "#faf8f5" : "#000000"}
             outlineWidth={0.008}
             renderOrder={45}
           >
-            Earth now
+            Earth
           </Text>
         </Billboard>
       </group>
@@ -333,11 +333,9 @@ function EarthSunOrbitModel({
 function PhysicalEarth({
   isInteractive,
   targetPosition,
-  timelineYear,
 }: {
   isInteractive: boolean;
   targetPosition: THREE.Vector3;
-  timelineYear: number;
 }) {
   const groupRef = useRef<THREE.Group>(null);
   const earthRef = useRef<THREE.Group>(null);
@@ -375,16 +373,6 @@ function PhysicalEarth({
 
     if (atmosphereRef.current) {
       atmosphereRef.current.rotation.y -= delta * 0.04;
-
-      const mat = atmosphereRef.current.material as THREE.MeshBasicMaterial;
-      if (mat) {
-        const opacityFraction = (timelineYear - 1970) / (2050 - 1970);
-        mat.opacity = 0.06 + opacityFraction * 0.14;
-
-        const c1 = new THREE.Color("#77b9ff");
-        const c2 = new THREE.Color("#ff9e66");
-        mat.color.copy(c1).lerp(c2, opacityFraction * 0.5);
-      }
     }
   });
 
@@ -424,12 +412,10 @@ function DigitalHalo({
   isInteractive,
   targetPosition,
   theme = "dark",
-  timelineYear,
 }: {
   isInteractive: boolean;
   targetPosition: THREE.Vector3;
   theme?: "dark" | "light";
-  timelineYear: number;
 }) {
   const groupRef = useRef<THREE.Group>(null);
   const pointsRef = useRef<THREE.Points>(null);
@@ -497,11 +483,8 @@ function DigitalHalo({
       groupRef.current.position.lerp(targetPosition, 1 - Math.pow(0.0008, delta));
     }
 
-    const activeFraction = (timelineYear - 1970) / (2050 - 1970);
-    const activeCount = Math.floor(10 + activeFraction * 180);
-
-    const rotationSpeed = 0.02 + activeFraction * 0.14;
-    dataPhaseRef.current += delta * rotationSpeed;
+    const activeCount = nodeDescriptors.length;
+    dataPhaseRef.current += delta * 0.12;
 
     if (orbitGroupRef.current) {
       // Orbit the labeled nodes around the ring normal (local Z) in lockstep
@@ -520,8 +503,8 @@ function DigitalHalo({
       pointsRef.current.geometry.setDrawRange(0, activeCount);
       const mat = pointsRef.current.material as THREE.PointsMaterial;
       if (mat) {
-        mat.size = 0.04 + activeFraction * 0.05;
-        mat.opacity = 0.3 + activeFraction * 0.7;
+        mat.size = 0.074;
+        mat.opacity = 1;
       }
     }
 
@@ -539,7 +522,7 @@ function DigitalHalo({
       linesRef.current.geometry.setDrawRange(0, activeCount * 4);
       const mat = linesRef.current.material as THREE.LineBasicMaterial;
       if (mat) {
-        mat.opacity = 0.15 + activeFraction * 0.23;
+        mat.opacity = 0.34;
       }
     }
   });
@@ -1051,13 +1034,11 @@ export function EarthScene({
   isMerged,
   onToggleMerged,
   theme = "dark",
-  timelineYear,
 }: {
   enableZoom: boolean;
   isMerged: boolean;
   onToggleMerged: () => void;
   theme?: "dark" | "light";
-  timelineYear: number;
 }) {
   const router = useRouter();
   const physicalTarget = isMerged ? metaCenter : physicalCenter;
@@ -1085,8 +1066,8 @@ export function EarthScene({
       {theme === "dark" && (
         <Stars radius={16} depth={24} count={900} factor={2.4} saturation={0} fade speed={0.18} />
       )}
-      <PhysicalEarth isInteractive={!isMerged} targetPosition={physicalTarget} timelineYear={timelineYear} />
-      <DigitalHalo isInteractive={!isMerged} targetPosition={haloTarget} theme={theme} timelineYear={timelineYear} />
+      <PhysicalEarth isInteractive={!isMerged} targetPosition={physicalTarget} />
+      <DigitalHalo isInteractive={!isMerged} targetPosition={haloTarget} theme={theme} />
       {!isMerged && <DataConnectors />}
       <EarthSunOrbitModel
         position={[0, metaCenter.y + defaultOrbitTuning.yOffset, metaCenter.z + 0.18]}

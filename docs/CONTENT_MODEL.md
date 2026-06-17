@@ -4,14 +4,14 @@ This document describes the current Sapiens Scientia taxonomy, naming model, and
 
 ## Core Idea
 
-Sapiens Scientia presents reality as nested systems across scale, time, Earth, human platforms, and digital knowledge.
+Sapiens Scientia presents reality as nested systems across scale, time, Earth, Sapiens platforms, and digital knowledge.
 
 The homepage visualizes this as:
 
 - Physical Earth: the material planet and Earth systems.
 - Digital Halo: orbiting digital knowledge infrastructure, data systems, models, and networks.
 - Meta Earth: the bridge between planetary reality and digital representation.
-- Human Platforms: Salus, Societas, and Terra as interpretive bridges.
+- Sapiens Platforms: Salus, Societas, and Terra as interpretive bridges.
 
 ## Platform Naming
 
@@ -52,7 +52,7 @@ The homepage side panels are not arbitrary navigation lists. They are conceptual
 
 - Earth Systems: nested physical, biological, social, and planetary systems.
 - Digital Systems: compute, communication, data systems, and intelligence systems, visualized as the Digital Halo rather than as a second Earth.
-- Human Platforms: Salus, Societas, and Terra connect the Earth side to the Digital side.
+- Sapiens Platforms: Salus, Societas, and Terra connect the Earth side to the Digital side.
 
 The source of truth is `src/lib/earth-systems.ts`.
 
