@@ -13,8 +13,9 @@ import { EARTHVIEW_PAGE_PATH } from "@/lib/projects";
 const physicalCenter = new THREE.Vector3(-1.9, -0.08, 0);
 const haloCenter = new THREE.Vector3(1.9, -0.08, 0);
 const metaCenter = new THREE.Vector3(0, -0.08, 0);
-const haloMajorRadius = 0.98;
-const haloMinorScale = 0.28;
+const haloMajorRadius = 1.36;
+const physicalEarthTilt: [number, number, number] = [0.26, -0.04, -0.08];
+const haloRingTilt: [number, number, number] = [0.82, 0.08, -0.16];
 const maxPanTargetRadius = 0.9;
 const labelFont = "/fonts/geist-regular.ttf";
 const earthLabelFont = "/fonts/geist-semibold.ttf";
@@ -29,6 +30,13 @@ type ArcPath = {
   color: string;
 };
 
+type HaloOrbitPoint = {
+  angle: number;
+  lane: number;
+  laneOffset: number;
+  radius: number;
+};
+
 function seededRandom(seed: number) {
   let value = seed;
 
@@ -38,15 +46,12 @@ function seededRandom(seed: number) {
   };
 }
 
-function haloPoint(index: number, count: number, radius: number, lane = 0) {
-  const angle = (Math.PI * 2 * index) / count + lane * 0.23;
-  const laneOffset = (lane - 1) * 0.12;
+function writeHaloVector(target: Float32Array, offset: number, descriptor: HaloOrbitPoint, phase = 0) {
+  const activeAngle = descriptor.angle - phase;
 
-  return new THREE.Vector3(
-    Math.cos(angle) * radius,
-    Math.sin(angle) * radius * haloMinorScale,
-    laneOffset + Math.sin(angle * 2 + lane) * 0.035,
-  );
+  target[offset] = Math.cos(activeAngle) * descriptor.radius;
+  target[offset + 1] = Math.sin(activeAngle) * descriptor.radius;
+  target[offset + 2] = descriptor.laneOffset + Math.sin(activeAngle * 2 + descriptor.lane) * 0.035;
 }
 
 function clusteredHaloPoint({
@@ -64,14 +69,14 @@ function clusteredHaloPoint({
 }) {
   const categoryAngle = (Math.PI * 2 * categoryIndex) / categoryTotal + 0.34;
   const angle = (Math.PI * 2 * entryIndex) / entryTotal + categoryIndex * 0.42;
-  const ringRadius = radius + [-0.18, 0, 0.18][categoryIndex % 3];
+  const ringRadius = radius + [-0.16, 0, 0.16][categoryIndex % 3];
   const clusterSpread = entryTotal > 5 ? 0.22 : 0.16;
   const orbitAngle = categoryAngle + Math.cos(angle) * clusterSpread;
   const laneOffset = (categoryIndex % 3 - 1) * 0.14 + Math.sin(angle) * 0.035;
 
   return new THREE.Vector3(
     Math.cos(orbitAngle) * ringRadius,
-    Math.sin(orbitAngle) * ringRadius * haloMinorScale,
+    Math.sin(orbitAngle) * ringRadius,
     laneOffset,
   );
 }
@@ -386,6 +391,7 @@ function PhysicalEarth({
   return (
     <group
       ref={groupRef}
+      rotation={physicalEarthTilt}
       onClick={isInteractive ? (event) => {
         event.stopPropagation();
         openEarthView();
@@ -426,44 +432,61 @@ function DigitalHalo({
   timelineYear: number;
 }) {
   const groupRef = useRef<THREE.Group>(null);
-  const networkRef = useRef<THREE.Group>(null);
   const pointsRef = useRef<THREE.Points>(null);
   const linesRef = useRef<THREE.LineSegments>(null);
   const hasPositionedRef = useRef(false);
+  const dataPhaseRef = useRef(0);
 
-  const { nodePositions, linkPositions } = useMemo(() => {
-    const nodes: number[] = [];
-    const links: number[] = [];
+  const { linkPairs, linkPositions, nodeDescriptors, nodePositions } = useMemo(() => {
     const count = 190;
-    const nodeVectors = Array.from({ length: count }, (_, index) => {
+    const descriptors: HaloOrbitPoint[] = Array.from({ length: count }, (_, index) => {
       const lane = index % 3;
-      const radius = haloMajorRadius + (lane - 1) * 0.18;
 
-      return haloPoint(index, count, radius, lane);
+      return {
+        angle: (Math.PI * 2 * index) / count + lane * 0.23,
+        lane,
+        laneOffset: (lane - 1) * 0.12,
+        radius: haloMajorRadius + (lane - 1) * 0.18,
+      };
+    });
+    const nodes = new Float32Array(descriptors.length * 3);
+    const pairs: [number, number][] = [];
+
+    descriptors.forEach((descriptor, index) => {
+      writeHaloVector(nodes, index * 3, descriptor);
     });
 
-    nodeVectors.forEach((point) => nodes.push(point.x, point.y, point.z));
-
-    nodeVectors.forEach((point, index) => {
-      const next = nodeVectors[(index + 9) % count];
-      const near = nodeVectors[(index + 21) % count];
+    descriptors.forEach((_, index) => {
+      const nextIndex = (index + 9) % count;
+      const nearIndex = (index + 21) % count;
 
       if (index % 3 !== 0) {
-        links.push(point.x, point.y, point.z, next.x, next.y, next.z);
+        pairs.push([index, nextIndex]);
       }
 
       if (index % 8 === 0) {
-        links.push(point.x, point.y, point.z, near.x, near.y, near.z);
+        pairs.push([index, nearIndex]);
       }
     });
 
+    const links = new Float32Array(pairs.length * 6);
+
+    pairs.forEach(([from, to], pairIndex) => {
+      const offset = pairIndex * 6;
+
+      writeHaloVector(links, offset, descriptors[from]);
+      writeHaloVector(links, offset + 3, descriptors[to]);
+    });
+
     return {
-      nodePositions: new Float32Array(nodes),
-      linkPositions: new Float32Array(links),
+      linkPairs: pairs,
+      linkPositions: links,
+      nodeDescriptors: descriptors,
+      nodePositions: nodes,
     };
   }, []);
 
-  useFrame(({ clock }, delta) => {
+  useFrame((_, delta) => {
     if (groupRef.current) {
       if (!hasPositionedRef.current) {
         groupRef.current.position.copy(targetPosition);
@@ -476,7 +499,17 @@ function DigitalHalo({
     const activeFraction = (timelineYear - 1970) / (2050 - 1970);
     const activeCount = Math.floor(10 + activeFraction * 180);
 
+    const rotationSpeed = 0.02 + activeFraction * 0.14;
+    dataPhaseRef.current += delta * rotationSpeed;
+
     if (pointsRef.current) {
+      const pointAttribute = pointsRef.current.geometry.getAttribute("position") as THREE.BufferAttribute;
+      const pointArray = pointAttribute.array as Float32Array;
+
+      nodeDescriptors.forEach((descriptor, index) => {
+        writeHaloVector(pointArray, index * 3, descriptor, dataPhaseRef.current);
+      });
+      pointAttribute.needsUpdate = true;
       pointsRef.current.geometry.setDrawRange(0, activeCount);
       const mat = pointsRef.current.material as THREE.PointsMaterial;
       if (mat) {
@@ -486,68 +519,70 @@ function DigitalHalo({
     }
 
     if (linesRef.current) {
+      const lineAttribute = linesRef.current.geometry.getAttribute("position") as THREE.BufferAttribute;
+      const lineArray = lineAttribute.array as Float32Array;
+
+      linkPairs.forEach(([from, to], pairIndex) => {
+        const offset = pairIndex * 6;
+
+        writeHaloVector(lineArray, offset, nodeDescriptors[from], dataPhaseRef.current);
+        writeHaloVector(lineArray, offset + 3, nodeDescriptors[to], dataPhaseRef.current);
+      });
+      lineAttribute.needsUpdate = true;
       linesRef.current.geometry.setDrawRange(0, activeCount * 4);
       const mat = linesRef.current.material as THREE.LineBasicMaterial;
       if (mat) {
         mat.opacity = 0.15 + activeFraction * 0.23;
       }
     }
-
-    if (networkRef.current) {
-      const rotationSpeed = 0.02 + activeFraction * 0.14;
-      networkRef.current.rotation.z -= delta * rotationSpeed;
-      networkRef.current.rotation.x = Math.sin(clock.getElapsedTime() * 0.24) * 0.025;
-    }
   });
 
   return (
-    <group ref={groupRef} rotation={[0.18, 0.08, -0.12]}>
-      <group ref={networkRef}>
-        {[0.8, 0.98, 1.16].map((radius, index) => (
-          <mesh key={radius} scale={[1, haloMinorScale, 1]} renderOrder={12 + index}>
-            <torusGeometry args={[radius, index === 1 ? 0.012 : 0.008, 12, 192]} />
-            <meshBasicMaterial
-              color={theme === "light" ? "#38bdf8" : "#62c7ff"}
-              transparent
-              opacity={index === 1 ? 0.42 : 0.26}
-              depthTest
-              depthWrite={false}
-            />
-          </mesh>
-        ))}
-        <mesh renderOrder={18}>
-          <sphereGeometry args={[0.13, 32, 32]} />
+    <group ref={groupRef} rotation={haloRingTilt}>
+      {[1.18, 1.36, 1.54].map((radius, index) => (
+        <mesh key={radius} renderOrder={12 + index}>
+          <torusGeometry args={[radius, index === 1 ? 0.012 : 0.008, 12, 192]} />
           <meshBasicMaterial
-            color={theme === "light" ? "#bae6fd" : "#d8fbff"}
+            color={theme === "light" ? "#38bdf8" : "#62c7ff"}
             transparent
-            opacity={0.58}
+            opacity={index === 1 ? 0.42 : 0.26}
             depthTest
             depthWrite={false}
           />
         </mesh>
-        <points ref={pointsRef}>
-          <bufferGeometry>
-            <bufferAttribute attach="attributes-position" args={[nodePositions, 3]} />
-          </bufferGeometry>
-          <pointsMaterial
-            color={theme === "light" ? "#0284c7" : "#b8ecff"}
-            size={0.074}
-            sizeAttenuation
-            transparent
-            opacity={1}
-            depthTest
-            depthWrite={false}
-          />
-        </points>
-        <lineSegments ref={linesRef}>
-          <bufferGeometry>
-            <bufferAttribute attach="attributes-position" args={[linkPositions, 3]} />
-          </bufferGeometry>
-          <lineBasicMaterial color={theme === "light" ? "#0ea5e9" : "#2fe3ff"} transparent opacity={0.38} depthTest depthWrite={false} />
-        </lineSegments>
-        <DataIndexHaloNodes isInteractive={isInteractive} theme={theme} />
-        <FeaturedDigitalNode isInteractive={isInteractive} />
-      </group>
+      ))}
+      <mesh renderOrder={18}>
+        <sphereGeometry args={[0.13, 32, 32]} />
+        <meshBasicMaterial
+          color={theme === "light" ? "#bae6fd" : "#d8fbff"}
+          transparent
+          opacity={0.58}
+          depthTest
+          depthWrite={false}
+        />
+      </mesh>
+      <points ref={pointsRef}>
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" args={[nodePositions, 3]} />
+        </bufferGeometry>
+        <pointsMaterial
+          color={theme === "light" ? "#0284c7" : "#b8ecff"}
+          size={0.074}
+          sizeAttenuation
+          transparent
+          opacity={1}
+          depthTest
+          depthWrite={false}
+        />
+      </points>
+      <lineSegments ref={linesRef}>
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" args={[linkPositions, 3]} />
+        </bufferGeometry>
+        <lineBasicMaterial color={theme === "light" ? "#0ea5e9" : "#2fe3ff"} transparent opacity={0.38} depthTest depthWrite={false} />
+      </lineSegments>
+      <DataIndexHaloNodes isInteractive={isInteractive} theme={theme} />
+      <FeaturedDigitalNode isInteractive={isInteractive} />
     </group>
   );
 }
@@ -722,7 +757,7 @@ function FeaturedDigitalNode({ isInteractive }: { isInteractive: boolean }) {
   const [isHovered, setIsHovered] = useState(false);
   const nodeRef = useRef<THREE.Mesh>(null);
   const labelRef = useRef<THREE.Mesh>(null);
-  const position: [number, number, number] = [0, 0.54, 0.04];
+  const position: [number, number, number] = [0, 0.42, 0.04];
 
   useFrame(({ clock }) => {
     if (!nodeRef.current) {
