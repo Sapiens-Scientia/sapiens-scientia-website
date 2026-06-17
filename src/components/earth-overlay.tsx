@@ -1237,6 +1237,14 @@ export function EarthOverlay({
           onPanelPointerEnter={onPanelPointerEnter}
           onPanelPointerLeave={onPanelPointerLeave}
         />
+        <TimelineControlPanel
+          timelineYear={timelineYear}
+          setTimelineYear={setTimelineYear}
+          isPlayMode={isPlayMode}
+          setIsPlayMode={setIsPlayMode}
+          onPanelPointerEnter={onPanelPointerEnter}
+          onPanelPointerLeave={onPanelPointerLeave}
+        />
       </header>
       {isMetaEarthMerged ? (
         <button
@@ -1263,14 +1271,6 @@ export function EarthOverlay({
         />
       </div>
       <div className="pointer-events-none absolute inset-x-0 bottom-16 z-10 flex flex-col items-center gap-4 px-8 max-lg:inset-x-4 max-lg:bottom-6 max-lg:px-0">
-        <TimelineControlPanel
-          timelineYear={timelineYear}
-          setTimelineYear={setTimelineYear}
-          isPlayMode={isPlayMode}
-          setIsPlayMode={setIsPlayMode}
-          onPanelPointerEnter={onPanelPointerEnter}
-          onPanelPointerLeave={onPanelPointerLeave}
-        />
         <HumanPlatformsBridgePanel
           activeBridgeId={activeBridge?.id ?? null}
           onBridgeEnter={setActiveBridge}
