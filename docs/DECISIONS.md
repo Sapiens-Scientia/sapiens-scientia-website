@@ -13,7 +13,7 @@ The documentation model is:
 - `docs/ARCHITECTURE.md` for implementation structure.
 - `docs/CONTENT_MODEL.md` for taxonomy, naming, and narrative model.
 - `docs/ROUTES.md` for the public route inventory.
-- `docs/CODEX_HANDOFF.md` for current handoff context.
+- `docs/AGENT_HANDOFF.md` for current handoff context.
 - `docs/DECISIONS.md` for durable decisions.
 
 There is no submodule, generated docs import, or build-time docs dependency.

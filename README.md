@@ -17,7 +17,7 @@ Start with:
 - [`docs/CONTENT_MODEL.md`](docs/CONTENT_MODEL.md)
 - [`docs/ROUTES.md`](docs/ROUTES.md)
 - [`docs/DECISIONS.md`](docs/DECISIONS.md)
-- [`docs/CODEX_HANDOFF.md`](docs/CODEX_HANDOFF.md)
+- [`docs/AGENT_HANDOFF.md`](docs/AGENT_HANDOFF.md)
 
 ## Concept
 

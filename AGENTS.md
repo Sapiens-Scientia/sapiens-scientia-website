@@ -11,13 +11,13 @@ Agents working here should preserve the separation between implementation code a
 - `docs/CONTENT_MODEL.md` records taxonomy, naming, and narrative architecture.
 - `docs/ROUTES.md` records the current public route inventory.
 - `docs/DECISIONS.md` records durable product, taxonomy, naming, and architecture decisions.
-- `docs/CODEX_HANDOFF.md` records implementation handoffs, constraints, and context future agents should see.
+- `docs/AGENT_HANDOFF.md` records implementation handoffs, constraints, and context future agents should see.
 
 ## Working rules
 
 - Check the local `docs/` directory before changing platform names, ontology terms, major narrative language, route structure, or conceptual architecture.
 - Keep website-specific implementation details in this repo.
-- Record durable conceptual changes in `docs/DECISIONS.md`, `docs/CONTENT_MODEL.md`, or `docs/CODEX_HANDOFF.md`.
+- Record durable conceptual changes in `docs/DECISIONS.md`, `docs/CONTENT_MODEL.md`, or `docs/AGENT_HANDOFF.md`.
 - Preserve the current naming model unless the local docs are intentionally updated: `Persona`, `Societas`, and `Terra`.
 - Do not copy large sections of internal docs into public website copy unless the content is meant to be public.
 - If implementation reveals a constraint or mismatch, update the local handoff so future agents can see it.

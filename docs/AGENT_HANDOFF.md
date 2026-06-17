@@ -1,4 +1,4 @@
-# Codex Handoff
+# Agent Handoff
 
 This file records practical handoff context for future agents working on the Sapiens Scientia website.
 
@@ -7,7 +7,7 @@ This file records practical handoff context for future agents working on the Sap
 - The site is a Next.js App Router application using React, Tailwind CSS, and React Three Fiber.
 - Project memory is local to this repository under `docs/`.
 - The homepage is a full-screen 3D experience with overlay panels, time controls, theme support, and platform bridge interactions.
-- The main platform model is `Salus`, `Societas`, `Terra`, with `Soma` and `Morbus` nested inside Salus.
+- The main platform model is `Persona`, `Societas`, `Terra`, with `Soma`, `Salus`, `Morbus`, and `Domus` nested inside Persona.
 - Public project routes include the Data Index and EarthView 3D.
 
 ## Read Before Conceptual Changes
@@ -19,7 +19,7 @@ Before changing platform names, ontology terms, major narrative language, brand 
 - `docs/ROUTES.md`
 - `AGENTS.md`
 
-If the implementation reveals a conceptual mismatch or durable constraint, update `docs/CODEX_HANDOFF.md` or `docs/DECISIONS.md` in the same change.
+If the implementation reveals a conceptual mismatch or durable constraint, update `docs/AGENT_HANDOFF.md` or `docs/DECISIONS.md` in the same change.
 
 ## Current Implementation Notes
 
@@ -29,7 +29,7 @@ If the implementation reveals a conceptual mismatch or durable constraint, updat
 - `src/lib/earth-systems.ts` is the homepage taxonomy source for Earth Systems, Digital Systems, and platform bridge highlighting.
 - `src/lib/vital-signs.ts` feeds both `/vitals` and homepage vital-sign overlays.
 - `src/lib/data-index.ts` feeds `/projects/sapiens-scientia-data-index` and the Digital Halo/data index surfaces.
-- `src/lib/soma.ts` feeds `/platforms/salus/soma` and the Soma section on `/platforms/salus`.
+- `src/lib/soma.ts` feeds `/platforms/persona/soma` and the Soma section on `/platforms/persona`.
 
 ## Recent Context To Preserve
 
@@ -43,6 +43,7 @@ If the implementation reveals a conceptual mismatch or durable constraint, updat
 - Standard checks are `npm run lint` and `npm run build`.
 - The homepage can fail visually even when lint/build pass, especially around the Three canvas. Browser verification is important for hero changes.
 - When serving the app locally through `127.0.0.1`, Next dev may need `allowedDevOrigins` in `next.config.ts`.
+- **Git workflow rule**: Do not commit, merge, or push changes to remote until the user explicitly requests it.
 
 ## Good Next Improvements
 
