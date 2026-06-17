@@ -22,9 +22,10 @@ Preserve these names unless a deliberate taxonomy change updates docs, source mo
 | `Sapiens Scientia Salus` | Human health platform. | `/platforms/salus` |
 | `Sapiens Scientia Societas` | Human society platform. | `/platforms/societas` |
 | `Sapiens Scientia Terra` | Environmental / Earth systems platform. | `/platforms/terra` |
+| `Sapiens Scientia Soma` | Human body module inside Salus. | `/platforms/salus/soma` |
 | `Sapiens Scientia Morbus` | Disease ontology inside Salus. | `/platforms/salus/morbus` |
 
-Short names are `Salus`, `Societas`, `Terra`, and `Morbus`.
+Short names are `Salus`, `Societas`, `Terra`, `Soma`, and `Morbus`.
 
 ## Scale Model
 
@@ -66,6 +67,18 @@ Morbus is the disease ontology inside Salus. It organizes disease knowledge usin
 - Crosswalks to external disease vocabularies such as ICD-11, SNOMED CT, MeSH, MONDO, DOID, and HPO.
 
 The source of truth is `src/lib/morbus.ts`.
+
+## Soma Model
+
+Soma is the human body module inside Salus. It models the healthy body across:
+
+- Anatomy: bodily structures and spatial relationships.
+- Physiology: functions, mechanisms, flows, and regulatory loops.
+- Histology: tissue-level fabric and microscopic organization.
+
+Its native frame is the organ system, with a nested structural ladder from chemical scale to the whole organism. Soma stands independently from Morbus, but organ systems cross-link to Morbus disease exemplars where failure modes are represented.
+
+The source of truth is `src/lib/soma.ts`.
 
 ## Planetary Vital Signs
 

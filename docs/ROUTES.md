@@ -20,6 +20,7 @@ This is the current public route inventory for the Sapiens Scientia website.
 | `/platforms/salus` | `src/app/platforms/salus/page.tsx` | Human health platform. |
 | `/platforms/societas` | `src/app/platforms/societas/page.tsx` | Human society platform. |
 | `/platforms/terra` | `src/app/platforms/terra/page.tsx` | Environmental / Earth systems platform. |
+| `/platforms/salus/soma` | `src/app/platforms/salus/soma/page.tsx` | Human body module inside Salus. |
 | `/platforms/salus/morbus` | `src/app/platforms/salus/morbus/page.tsx` | Disease ontology inside Salus. |
 
 ## Project Pages

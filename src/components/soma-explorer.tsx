@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   somaLenses,
@@ -21,16 +21,21 @@ function lensContent(system: SomaSystem, lens: SomaLensId) {
 }
 
 export function SomaExplorer() {
-  const [selectedId, setSelectedId] = useState(() => {
-    if (typeof window === "undefined") {
-      return somaSystems[0]?.id ?? "nervous";
-    }
-    const hashId = window.location.hash.replace(/^#/, "");
-    return somaSystems.some((system) => system.id === hashId)
-      ? hashId
-      : somaSystems[0]?.id ?? "nervous";
-  });
+  const [selectedId, setSelectedId] = useState(() => somaSystems[0]?.id ?? "nervous");
   const [lens, setLens] = useState<SomaLensId>("anatomy");
+
+  useEffect(() => {
+    const syncSelectionFromHash = () => {
+      const hashId = window.location.hash.replace(/^#/, "");
+      if (somaSystems.some((system) => system.id === hashId)) {
+        setSelectedId(hashId);
+      }
+    };
+
+    syncSelectionFromHash();
+    window.addEventListener("hashchange", syncSelectionFromHash);
+    return () => window.removeEventListener("hashchange", syncSelectionFromHash);
+  }, []);
 
   const activeSystem =
     somaSystems.find((system) => system.id === selectedId) ?? somaSystems[0];

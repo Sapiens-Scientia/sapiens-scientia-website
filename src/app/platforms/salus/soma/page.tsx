@@ -55,8 +55,8 @@ export default function SomaPage() {
           </p>
         </header>
 
-        <div className="relative flex justify-center overflow-hidden rounded-lg border border-rose-200/15 bg-gradient-to-b from-rose-500/[0.04] to-transparent p-6">
-          <SomaBodyFigure className="h-[clamp(18rem,38vw,28rem)] w-auto" />
+        <div className="relative flex justify-center overflow-hidden rounded-lg border border-rose-200/15 bg-gradient-to-b from-rose-500/[0.04] to-transparent p-4 sm:p-6">
+          <SomaBodyFigure className="h-[clamp(20rem,42vw,32rem)] w-full max-w-[42rem]" />
         </div>
 
         {/* Overview stats */}
