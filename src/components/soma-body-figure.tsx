@@ -12,6 +12,7 @@ import {
 } from "@react-three/drei";
 import { Suspense, useEffect } from "react";
 import * as THREE from "three";
+import { useTheme, type Theme } from "@/lib/use-theme";
 
 const modelPath = "/models/soma-anatomy.glb";
 
@@ -52,10 +53,14 @@ function AnatomicalBody() {
   );
 }
 
-function LoadingFigure() {
+function LoadingFigure({ theme }: { theme: Theme }) {
   return (
     <Html center>
-      <p className="whitespace-nowrap font-mono text-[0.65rem] uppercase tracking-[0.22em] text-rose-200/65">
+      <p
+        className={`whitespace-nowrap font-mono text-[0.65rem] uppercase tracking-[0.22em] ${
+          theme === "light" ? "text-rose-950/55" : "text-rose-200/65"
+        }`}
+      >
         Assembling anatomy
       </p>
     </Html>
@@ -63,6 +68,9 @@ function LoadingFigure() {
 }
 
 export function SomaBodyFigure({ className }: { className?: string }) {
+  const { theme } = useTheme();
+  const isLight = theme === "light";
+
   return (
     <div
       role="img"
@@ -75,29 +83,36 @@ export function SomaBodyFigure({ className }: { className?: string }) {
         gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
         shadows
       >
-        <color attach="background" args={["#050304"]} />
-        <ambientLight intensity={0.48} />
+        <color attach="background" args={[isLight ? "#eee9e4" : "#050304"]} />
+        <ambientLight intensity={isLight ? 0.58 : 0.48} />
         <directionalLight
           castShadow
           position={[3.5, 5, 5]}
-          intensity={1.45}
-          color="#fff1e8"
+          intensity={isLight ? 1.25 : 1.45}
+          color={isLight ? "#fffaf3" : "#fff1e8"}
         />
         <directionalLight
           position={[-4, 1.5, 3]}
-          intensity={0.7}
-          color="#fecdd3"
+          intensity={isLight ? 0.48 : 0.7}
+          color={isLight ? "#e7c3bd" : "#fecdd3"}
         />
-        <pointLight position={[0, -2, 3]} intensity={0.45} color="#7dd3fc" />
+        <pointLight
+          position={[0, -2, 3]}
+          intensity={isLight ? 0.12 : 0.45}
+          color={isLight ? "#9ab8c7" : "#7dd3fc"}
+        />
 
-        <Suspense fallback={<LoadingFigure />}>
+        <Suspense fallback={<LoadingFigure theme={theme} />}>
           <AnatomicalBody />
-          <Environment preset="studio" environmentIntensity={0.12} />
+          <Environment
+            preset="studio"
+            environmentIntensity={isLight ? 0.08 : 0.12}
+          />
           <ContactShadows
             position={[0, -2.2, 0]}
-            opacity={0.32}
+            opacity={isLight ? 0.22 : 0.32}
             scale={5}
-            blur={2.4}
+            blur={isLight ? 2.8 : 2.4}
             far={4}
           />
         </Suspense>
@@ -119,7 +134,13 @@ export function SomaBodyFigure({ className }: { className?: string }) {
         />
       </Canvas>
 
-      <div className="pointer-events-none absolute bottom-3 left-3 border border-rose-100/10 bg-black/55 px-3 py-1.5 font-mono text-[0.6rem] uppercase tracking-[0.2em] text-rose-100/55 backdrop-blur-sm">
+      <div
+        className={`pointer-events-none absolute bottom-3 left-3 border px-3 py-1.5 font-mono text-[0.6rem] uppercase tracking-[0.2em] backdrop-blur-sm ${
+          isLight
+            ? "border-rose-950/10 bg-white/70 text-rose-950/55"
+            : "border-rose-100/10 bg-black/55 text-rose-100/55"
+        }`}
+      >
         Drag to rotate · Right-drag to pan
       </div>
     </div>
