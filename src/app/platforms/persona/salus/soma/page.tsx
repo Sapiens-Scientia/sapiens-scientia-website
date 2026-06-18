@@ -211,36 +211,6 @@ export default function SomaPage() {
             </p>
           </div>
 
-          {/* Multiaxial Dimensions Grid */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="border border-white/5 bg-white/[0.01] p-4 rounded-lg">
-              <span className="text-[0.65rem] font-mono font-semibold uppercase tracking-wider text-emerald-400 bg-emerald-400/10 px-2.5 py-1 rounded-full">Axis I-III</span>
-              <h3 className="text-base font-semibold text-slate-200 mt-3">Physical Substrate</h3>
-              <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-                <strong>Anatomical:</strong> Where dysfunction manifests. <br/>
-                <strong>Etiologic:</strong> Initiating cause (e.g. viral, genetic). <br/>
-                <strong>Molecular:</strong> Signaling, receptors, mutations.
-              </p>
-            </div>
-            <div className="border border-white/5 bg-white/[0.01] p-4 rounded-lg">
-              <span className="text-[0.65rem] font-mono font-semibold uppercase tracking-wider text-sky-400 bg-sky-400/10 px-2.5 py-1 rounded-full">Axis IV-VI</span>
-              <h3 className="text-base font-semibold text-slate-200 mt-3">Physiological Host</h3>
-              <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-                <strong>Immunological:</strong> Host response and inflammation. <br/>
-                <strong>Barrier:</strong> Cellular junctions and mucosal linings. <br/>
-                <strong>Ecological:</strong> Environmental exposures and coinfections.
-              </p>
-            </div>
-            <div className="border border-white/5 bg-white/[0.01] p-4 rounded-lg">
-              <span className="text-[0.65rem] font-mono font-semibold uppercase tracking-wider text-rose-400 bg-rose-400/10 px-2.5 py-1 rounded-full">Axis VII-IX</span>
-              <h3 className="text-base font-semibold text-slate-200 mt-3">Temporal & Social Lenses</h3>
-              <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-                <strong>Developmental:</strong> Latency and acute-to-chronic timeline. <br/>
-                <strong>Social:</strong> Access, disparities, and policy dynamics. <br/>
-                <strong>Experiential:</strong> Lived burden and sensory suffering.
-              </p>
-            </div>
-          </div>
 
           {/* Classification Groups Grid */}
           <div className="flex flex-col gap-4">
