@@ -25,6 +25,35 @@ export const metadata: Metadata = {
 // SiteNav toggles.
 const themeInitScript = `(function(){try{if(localStorage.getItem('sapiens-theme')==='light'){document.documentElement.classList.add('light-theme');}}catch(e){}})();`;
 
+const SITE_URL = "https://www.sapiensscientia.com";
+const SITE_DESCRIPTION =
+  "A public knowledge project mapping human health, society, Earth systems, and digital knowledge.";
+
+// Schema.org structured data so search engines and knowledge panels can model
+// the project itself — fitting for a site whose whole subject is a knowledge
+// graph. Emitted once, sitewide, as a single @graph of linked nodes.
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${SITE_URL}/#organization`,
+      name: "Sapiens Scientia",
+      url: SITE_URL,
+      description: SITE_DESCRIPTION,
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${SITE_URL}/#website`,
+      name: "Sapiens Scientia",
+      url: SITE_URL,
+      description: SITE_DESCRIPTION,
+      inLanguage: "en",
+      publisher: { "@id": `${SITE_URL}/#organization` },
+    },
+  ],
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -38,6 +67,10 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col antialiased">
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
         {children}
       </body>
     </html>
