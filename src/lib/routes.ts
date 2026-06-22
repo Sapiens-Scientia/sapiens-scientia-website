@@ -16,6 +16,7 @@ const ROUTE_LABELS: Record<string, string> = {
   "/platforms/persona/domus": "Domus",
   "/platforms/societas": "Societas",
   "/platforms/terra": "Terra",
+  "/ontology": "The Map",
   "/scales": "Scales",
   "/chronos": "Chronos",
   "/vitals": "Vitals",

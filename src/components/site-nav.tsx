@@ -48,6 +48,7 @@ const primaryNav: SiteNavItem[] = [
       { href: "/platforms/terra", label: "Terra" },
     ],
   },
+  { href: "/ontology", label: "The Map" },
   { href: "/scales", label: "Scales" },
   { href: "/chronos", label: "Chronos" },
   { href: "/vitals", label: "Vitals" },

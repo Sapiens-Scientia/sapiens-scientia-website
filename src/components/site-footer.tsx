@@ -18,6 +18,7 @@ const columns: { title: string; links: FooterLink[] }[] = [
   {
     title: "Explore",
     links: [
+      { href: "/ontology", label: "The Map" },
       { href: "/scales", label: "The Ladder of Scale" },
       { href: "/chronos", label: "The Arc of Time" },
       { href: "/vitals", label: "Planetary Vital Signs" },
