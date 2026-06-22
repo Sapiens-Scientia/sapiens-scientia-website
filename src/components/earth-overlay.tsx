@@ -798,7 +798,7 @@ export function EarthOverlay({
           Sapiens Scientia
         </p>
         <p className="max-w-md text-center text-sm leading-6 text-slate-300 max-sm:hidden">
-          A public atlas for human-scale science.
+          A public atlas for human-centered science.
         </p>
         <TimeOverlay
           onPanelPointerEnter={onPanelPointerEnter}

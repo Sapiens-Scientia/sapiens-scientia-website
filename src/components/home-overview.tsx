@@ -43,7 +43,7 @@ export function HomeOverview() {
               Read The System
             </p>
             <h2 className="mt-4 text-4xl font-semibold tracking-normal text-white sm:text-5xl">
-              A public atlas for human-scale science.
+              A public atlas for human-centered science.
             </h2>
             <p className="mt-5 text-lg leading-8 text-slate-300">
               The homepage globe is the entry point. Below it, the site turns
