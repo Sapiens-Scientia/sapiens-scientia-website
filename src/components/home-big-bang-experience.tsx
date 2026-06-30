@@ -19,6 +19,14 @@ export function HomeBigBangExperience() {
     return () => window.clearTimeout(timer);
   }, [phase]);
 
+  useEffect(() => {
+    if (phase === "revealed") {
+      window.dispatchEvent(new Event("sapiens-home-revealed"));
+    } else {
+      window.dispatchEvent(new Event("sapiens-home-intro-start"));
+    }
+  }, [phase]);
+
   const begin = () => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     setPhase(reduceMotion ? "revealed" : "animating");
@@ -35,7 +43,7 @@ export function HomeBigBangExperience() {
       >
         <EarthHero />
         <HomeOverview />
-        <div className="bg-black px-6 pb-32 text-white sm:px-10 sm:pb-36">
+        <div className="bg-black px-6 pb-24 text-white sm:px-10 sm:pb-28">
           <SiteFooter />
         </div>
       </div>
@@ -54,18 +62,13 @@ export function HomeBigBangExperience() {
 
           <div className="relative z-10 flex flex-col items-center px-6 text-center">
             {phase === "ready" ? (
-              <>
-                <h1 className="text-4xl font-semibold tracking-normal text-white sm:text-6xl">
-                  Sapiens Scientia
-                </h1>
-                <button
-                  type="button"
-                  onClick={begin}
-                  className="mt-10 border border-sky-200/35 bg-white/[0.035] px-7 py-4 text-sm font-semibold uppercase tracking-[0.22em] text-sky-100 shadow-[0_0_44px_rgba(56,189,248,0.16)] backdrop-blur-md transition-all hover:border-sky-100/70 hover:bg-sky-200/10 hover:text-white focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-sky-200"
-                >
-                  Initiate Big Bang
-                </button>
-              </>
+              <button
+                type="button"
+                onClick={begin}
+                className="border border-sky-200/35 bg-white/[0.035] px-7 py-4 text-sm font-semibold uppercase tracking-[0.22em] text-sky-100 shadow-[0_0_44px_rgba(56,189,248,0.16)] backdrop-blur-md transition-all hover:border-sky-100/70 hover:bg-sky-200/10 hover:text-white focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-sky-200"
+              >
+                Initiate Big Bang
+              </button>
             ) : (
               <div className="big-bang-readout" aria-live="polite">
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-amber-200">
