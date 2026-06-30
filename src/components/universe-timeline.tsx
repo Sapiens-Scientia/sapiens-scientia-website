@@ -20,6 +20,8 @@ export function UniverseTimeline() {
   const pathname = usePathname();
   const [hasHomeRevealed, setHasHomeRevealed] = useState(false);
   const isHomeIntroActive = pathname === "/" && !hasHomeRevealed;
+  const isEarthViewActive = pathname === "/projects/earthview";
+  const isHidden = isHomeIntroActive || isEarthViewActive;
 
   useEffect(() => {
     const onHomeIntroStart = () => setHasHomeRevealed(false);
@@ -35,16 +37,16 @@ export function UniverseTimeline() {
   return (
     <aside
       aria-label="Universe timeline"
-      aria-hidden={isHomeIntroActive}
+      aria-hidden={isHidden}
       className={`universe-timeline pointer-events-none fixed inset-x-0 bottom-0 z-[110] px-2 pb-2 transition-opacity duration-500 sm:px-4 sm:pb-3 ${
-        isHomeIntroActive ? "opacity-0" : "opacity-100"
+        isHidden ? "opacity-0" : "opacity-100"
       }`}
     >
       <div className="pointer-events-auto mx-auto max-w-7xl border border-white/10 bg-black/58 p-1.5 text-white shadow-[0_-14px_42px_rgba(0,0,0,0.4)] backdrop-blur-xl sm:p-2">
         <div className="mb-1 flex items-center justify-between gap-3 px-1">
           <Link
             href="/chronos"
-            tabIndex={isHomeIntroActive ? -1 : undefined}
+            tabIndex={isHidden ? -1 : undefined}
             className="text-[0.56rem] font-semibold uppercase tracking-[0.2em] text-sky-200 transition-colors hover:text-sky-50 sm:text-[0.62rem]"
           >
             Universe Timeline
@@ -61,7 +63,7 @@ export function UniverseTimeline() {
                 <Link
                   key={milestone.label}
                   href="/chronos"
-                  tabIndex={isHomeIntroActive ? -1 : undefined}
+                  tabIndex={isHidden ? -1 : undefined}
                   className="group min-h-8 border-r border-black/35 px-2 py-1.5 last:border-r-0 sm:min-h-9"
                   style={{
                     background: `linear-gradient(135deg, ${milestone.color}e6, ${milestone.color}82)`,

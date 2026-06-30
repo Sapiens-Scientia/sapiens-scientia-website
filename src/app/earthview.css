@@ -1,0 +1,513 @@
+:root {
+  color-scheme: light;
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+:root.dark {
+  color-scheme: dark;
+  --background: #020617;
+  --foreground: #f8fafc;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button {
+  font: inherit;
+}
+
+.earth-shell {
+  width: 100%;
+  height: 100%;
+  min-height: 520px;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, rgba(14, 116, 144, 0.12), rgba(245, 158, 11, 0.08) 44%, rgba(16, 185, 129, 0.1)),
+    var(--background);
+}
+
+.earth-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.earth-stage-dark {
+  background: #050816;
+}
+
+.earth-stage-light {
+  background: #ffffff;
+}
+
+.earth-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.earth-topbar {
+  position: absolute;
+  top: max(16px, env(safe-area-inset-top));
+  left: 16px;
+  right: 16px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.earth-brand {
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+  color: #f8fafc;
+  text-shadow: 0 1px 12px rgba(2, 6, 23, 0.6);
+}
+
+.earth-stage-light .earth-brand {
+  color: #0f172a;
+  text-shadow: 0 1px 12px rgba(255, 255, 255, 0.75);
+}
+
+.earth-brand span {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  opacity: 0.72;
+}
+
+.earth-brand h1 {
+  margin: 0;
+  font-size: clamp(24px, 5vw, 48px);
+  line-height: 0.95;
+  letter-spacing: 0;
+}
+
+.earth-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.earth-icon-button,
+.earth-action-button,
+.earth-theme-button,
+.earth-mode-button {
+  appearance: none;
+  border: 1px solid rgba(226, 232, 240, 0.28);
+  background: rgba(15, 23, 42, 0.58);
+  color: #f8fafc;
+  box-shadow: 0 12px 32px rgba(2, 6, 23, 0.18);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.earth-stage-light .earth-icon-button,
+.earth-stage-light .earth-action-button,
+.earth-stage-light .earth-theme-button,
+.earth-stage-light .earth-mode-button {
+  border-color: rgba(15, 23, 42, 0.1);
+  background: rgba(255, 255, 255, 0.78);
+  color: #0f172a;
+}
+
+.earth-icon-button {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+.earth-action-button {
+  height: 38px;
+  min-width: 104px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border-radius: 8px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.earth-action-button svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+
+.earth-icon-button svg {
+  width: 17px;
+  height: 17px;
+}
+
+.earth-animation-button {
+  min-width: 84px;
+}
+
+.earth-theme-button {
+  min-width: 72px;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.earth-modebar {
+  position: absolute;
+  left: 50%;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(68px, 1fr));
+  gap: 6px;
+  width: min(520px, calc(100vw - 32px));
+  transform: translateX(-50%);
+  pointer-events: auto;
+}
+
+.earth-mode-button {
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 8px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.earth-mode-button svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+
+.earth-mode-button.is-active {
+  border-color: rgba(34, 211, 238, 0.7);
+  background: rgba(8, 145, 178, 0.78);
+  color: #ecfeff;
+}
+
+.earth-icon-button.is-active,
+.earth-action-button.is-active,
+.earth-stage-light .earth-mode-button.is-active {
+  border-color: rgba(8, 145, 178, 0.32);
+  background: rgba(207, 250, 254, 0.92);
+  color: #155e75;
+}
+
+.earth-stage-dark .earth-icon-button.is-active,
+.earth-stage-dark .earth-action-button.is-active {
+  border-color: rgba(34, 211, 238, 0.7);
+  background: rgba(8, 145, 178, 0.78);
+  color: #ecfeff;
+}
+
+.earth-icon-button:hover,
+.earth-action-button:hover,
+.earth-theme-button:hover,
+.earth-mode-button:hover {
+  background: rgba(30, 41, 59, 0.78);
+}
+
+.earth-stage-light .earth-icon-button:hover,
+.earth-stage-light .earth-action-button:hover,
+.earth-stage-light .earth-theme-button:hover,
+.earth-stage-light .earth-mode-button:hover {
+  background: rgba(241, 245, 249, 0.92);
+}
+
+.earth-event-browser {
+  position: absolute;
+  top: 104px;
+  right: 16px;
+  z-index: 2;
+  width: min(308px, calc(100vw - 32px));
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(226, 232, 240, 0.22);
+  border-radius: 8px;
+  background: rgba(8, 13, 28, 0.72);
+  color: #f8fafc;
+  box-shadow: 0 18px 48px rgba(2, 6, 23, 0.34);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  pointer-events: auto;
+}
+
+.earth-event-browser-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.earth-event-browser-header span {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.earth-event-browser-header strong {
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: #bae6fd;
+}
+
+.earth-event-select-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(226, 232, 240, 0.72);
+}
+
+.earth-event-select {
+  width: 100%;
+  height: 38px;
+  min-width: 0;
+  border: 1px solid rgba(226, 232, 240, 0.24);
+  border-radius: 8px;
+  padding: 0 10px;
+  background: rgba(15, 23, 42, 0.82);
+  color: #f8fafc;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  outline: none;
+}
+
+.earth-event-select:focus {
+  border-color: rgba(34, 211, 238, 0.75);
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.14);
+}
+
+.earth-event-stepper {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.earth-event-stepper button {
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(226, 232, 240, 0.24);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.7);
+  color: #f8fafc;
+  transition: background-color 0.16s ease, border-color 0.16s ease;
+}
+
+.earth-event-stepper button:hover {
+  border-color: rgba(34, 211, 238, 0.55);
+  background: rgba(30, 41, 59, 0.82);
+}
+
+.earth-event-stepper svg {
+  width: 17px;
+  height: 17px;
+}
+
+.earth-event-detail {
+  display: grid;
+  gap: 7px;
+  padding-top: 2px;
+}
+
+.earth-event-color {
+  width: 38px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--event-color);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--event-color) 72%, transparent);
+}
+
+.earth-event-detail h2 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.12;
+  letter-spacing: 0;
+}
+
+.earth-event-year {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #bae6fd;
+}
+
+.earth-event-description {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.35;
+  color: rgba(226, 232, 240, 0.76);
+}
+
+.earth-gts-glossary {
+  display: grid;
+  gap: 7px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(226, 232, 240, 0.16);
+}
+
+.earth-gts-glossary h3,
+.earth-gts-glossary p,
+.earth-gts-glossary dl,
+.earth-gts-glossary dd {
+  margin: 0;
+}
+
+.earth-gts-glossary h3 {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: rgba(226, 232, 240, 0.84);
+}
+
+.earth-gts-glossary p {
+  font-size: 12px;
+  font-weight: 800;
+  color: #bae6fd;
+}
+
+.earth-gts-glossary dl {
+  display: grid;
+  gap: 5px;
+}
+
+.earth-gts-glossary dl div {
+  display: grid;
+  grid-template-columns: 54px 1fr;
+  gap: 8px;
+}
+
+.earth-gts-glossary dt {
+  font-size: 11px;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.earth-gts-glossary dd {
+  font-size: 11px;
+  line-height: 1.25;
+  color: rgba(226, 232, 240, 0.7);
+}
+
+@media (max-width: 640px) {
+  .earth-shell {
+    min-height: 420px;
+  }
+
+  .earth-topbar {
+    left: 12px;
+    right: 12px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .earth-brand h1 {
+    font-size: 28px;
+  }
+
+  .earth-actions {
+    width: 100%;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
+  .earth-icon-button {
+    width: 36px;
+    height: 36px;
+  }
+
+  .earth-action-button {
+    height: 36px;
+    min-width: 92px;
+    gap: 5px;
+    padding: 0 9px;
+    font-size: 11px;
+  }
+
+  .earth-animation-button {
+    min-width: 66px;
+    padding: 0 7px;
+    font-size: 10px;
+  }
+
+  .earth-theme-button {
+    display: none;
+  }
+
+  .earth-modebar {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: calc(100vw - 20px);
+    bottom: max(10px, env(safe-area-inset-bottom));
+  }
+
+  .earth-mode-button {
+    height: 42px;
+    gap: 5px;
+    padding: 0 6px;
+    font-size: 11px;
+  }
+
+  .earth-mode-button svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .earth-event-browser {
+    top: auto;
+    right: 10px;
+    bottom: calc(max(10px, env(safe-area-inset-bottom)) + 54px);
+    left: 10px;
+    width: auto;
+    gap: 9px;
+    padding: 11px;
+  }
+
+  .earth-event-browser-header strong,
+  .earth-event-select,
+  .earth-event-description,
+  .earth-gts-glossary h3,
+  .earth-gts-glossary p,
+  .earth-gts-glossary dt,
+  .earth-gts-glossary dd {
+    font-size: 11px;
+  }
+
+  .earth-event-browser-header span,
+  .earth-event-year {
+    font-size: 14px;
+  }
+
+  .earth-event-detail h2 {
+    font-size: 16px;
+  }
+}
