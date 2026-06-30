@@ -43,9 +43,9 @@ export function ChronosArc() {
       {/* Eon mini-map — proportional to each eon's span on the log-time axis */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between text-[0.65rem] font-medium uppercase tracking-[0.18em] text-slate-500">
-          <span>Deep past</span>
+          <span>Year 0</span>
           <span>{ORDERS_OF_TIME} orders of magnitude in time</span>
-          <span>Present</span>
+          <span>Now</span>
         </div>
         <div className="flex h-9 w-full gap-1">
           {eons.map((eon) => {
@@ -113,7 +113,7 @@ export function ChronosArc() {
                   className="text-right font-mono text-xs tabular-nums sm:text-sm"
                   style={{ color }}
                 >
-                  {event.ageLabel}
+                  {event.sinceLabel}
                 </span>
 
                 <span className="relative flex h-9 items-center overflow-hidden border border-white/5">
@@ -182,7 +182,7 @@ export function ChronosArc() {
           <p className="text-sm font-semibold text-white">
             {active.name}
             <span className="ml-2 font-mono text-xs font-normal text-slate-400">
-              {active.ageLabel} ago
+              {active.sinceLabel} since Big Bang
             </span>
           </p>
           <p className="mt-1 text-sm leading-6 text-slate-400">{active.note}</p>

@@ -5,14 +5,15 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const milestones = [
-  { label: "Big Bang", age: "13.8 Gyr", color: "#f59e0b" },
-  { label: "First Stars", age: "13.4 Gyr", color: "#fbbf24" },
-  { label: "Earth Forms", age: "4.54 Gyr", color: "#22d3ee" },
-  { label: "First Life", age: "3.7 Gyr", color: "#34d399" },
-  { label: "Animals", age: "540 Myr", color: "#a78bfa" },
-  { label: "Homo Sapiens", age: "300k yr", color: "#38bdf8" },
-  { label: "Agriculture", age: "12k yr", color: "#818cf8" },
-  { label: "Knowledge Age", age: "now", color: "#ec4899" },
+  { label: "Big Bang", since: "Year 0", color: "#f59e0b" },
+  { label: "Milky Way", since: "0.2 Gyr", color: "#fb923c" },
+  { label: "First Stars", since: "0.4 Gyr", color: "#fbbf24" },
+  { label: "Earth Forms", since: "9.3 Gyr", color: "#22d3ee" },
+  { label: "First Life", since: "10.1 Gyr", color: "#34d399" },
+  { label: "Animals", since: "13.3 Gyr", color: "#a78bfa" },
+  { label: "Homo Sapiens", since: "13.7997 Gyr", color: "#38bdf8" },
+  { label: "Agriculture", since: "13.799988 Gyr", color: "#818cf8" },
+  { label: "Knowledge Age", since: "13.8 Gyr", color: "#ec4899" },
 ];
 
 export function UniverseTimeline() {
@@ -49,13 +50,13 @@ export function UniverseTimeline() {
             Universe Timeline
           </Link>
           <span className="hidden text-[0.56rem] font-medium uppercase tracking-[0.16em] text-slate-500 sm:block">
-            Big Bang to present
+            Years since Big Bang
           </span>
         </div>
 
         <div className="scrollbar-hidden overflow-x-auto">
-          <div className="min-w-[48rem]">
-            <div className="grid grid-cols-8 overflow-hidden border border-white/10 bg-white/[0.025]">
+          <div className="min-w-[54rem]">
+            <div className="grid grid-cols-9 overflow-hidden border border-white/10 bg-white/[0.025]">
               {milestones.map((milestone) => (
                 <Link
                   key={milestone.label}
@@ -70,7 +71,7 @@ export function UniverseTimeline() {
                     {milestone.label}
                   </span>
                   <span className="block text-[0.54rem] font-medium text-black/62 sm:text-[0.58rem]">
-                    {milestone.age}
+                    {milestone.since}
                   </span>
                 </Link>
               ))}

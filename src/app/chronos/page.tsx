@@ -44,18 +44,19 @@ export default function ChronosPage() {
             One Arc, Four Eons
           </h2>
           <p className="mt-4 text-base leading-7 text-slate-300">
-            Plotted on a logarithmic time axis, the whole of recorded history is
-            the thin bright tail of the arc: the last twelve thousand years of
-            farming, writing, and science take up as much room as billions of
-            years of cosmic and geological time. Deep time is compressed; the
-            human present is stretched wide. Hover any moment to read it.
+            Plotted on a logarithmic time axis with the Big Bang as year 0, the
+            whole of recorded history is the thin bright tail of the arc: the
+            last twelve thousand years of farming, writing, and science take up
+            as much room as billions of years of cosmic and geological time.
+            Deep time is compressed; the human present is stretched wide. Hover
+            any moment to read it.
           </p>
         </div>
 
         <ChronosArc />
         <p className="text-xs leading-5 text-slate-500">
-          Positions are order-of-magnitude ages in years before present on a
-          base-10 log axis, not precise dates.
+          Labels show elapsed time since the Big Bang. Rail positions use
+          order-of-magnitude time on a base-10 log axis, not precise dates.
         </p>
       </section>
 

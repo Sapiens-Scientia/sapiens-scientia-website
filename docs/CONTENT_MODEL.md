@@ -58,6 +58,9 @@ The Arc of Time is the temporal companion to the Ladder of Scale. It reads neste
 
 The source of truth is `src/lib/chronos.ts`.
 
+Chronos displays time as elapsed years since the Big Bang, with the Big Bang as
+year 0 and the present as roughly 13.8 billion years.
+
 ## Earth And Digital Systems
 
 The homepage side panels are not arbitrary navigation lists. They are conceptual maps:

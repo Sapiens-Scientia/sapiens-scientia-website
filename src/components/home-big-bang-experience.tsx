@@ -12,6 +12,7 @@ const UNIVERSE_AGE_BILLIONS = 13.8;
 const timelineMilestones = [
   "Big Bang",
   "First Stars",
+  "Milky Way Galaxy Forms",
   "Earth Forms",
   "First Life",
   "Animals",
