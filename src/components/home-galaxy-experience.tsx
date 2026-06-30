@@ -10,6 +10,16 @@ export function HomeGalaxyExperience() {
         <HomeGalaxyView />
       </div>
 
+      <div className="pointer-events-none absolute left-1/2 top-5 z-[125] w-[min(34rem,calc(100vw-22rem))] -translate-x-1/2 text-center max-lg:top-20 max-lg:w-[min(34rem,calc(100vw-2.5rem))]">
+        <h1 className="text-balance text-2xl font-semibold leading-none tracking-normal text-white drop-shadow-[0_10px_28px_rgba(0,0,0,0.65)] sm:text-4xl">
+          <span>History of Planet Earth</span>
+          <br />
+          <span className="mt-1 inline-block text-lg font-medium text-slate-400 sm:text-2xl">
+            In the Milky Way Galaxy
+          </span>
+        </h1>
+      </div>
+
       <div className="pointer-events-none absolute right-5 top-5 z-[130] flex max-w-[min(28rem,calc(100vw-2.5rem))] flex-col items-end gap-3 sm:right-6 sm:top-6">
         <Link
           href="/meta-earth"
