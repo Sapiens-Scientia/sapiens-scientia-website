@@ -2,6 +2,7 @@
 
 /* eslint-disable react-hooks/set-state-in-effect */
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import Link from "next/link";
 import type { CSSProperties } from "react";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -10,11 +11,18 @@ import {
 } from "@/components/earthview/globe/UnifiedEarthView";
 import { AppProvider } from "@/components/earthview/contexts";
 
+type CosmicHierarchyItem = {
+  name: string;
+  size: string;
+  description: string;
+  href?: `/${string}`;
+};
+
 function formatEventBrowserYear(yearMa: string) {
   return yearMa.replace(" Ma", " Million Years Old");
 }
 
-const cosmicHierarchy = [
+const cosmicHierarchy: CosmicHierarchyItem[] = [
   {
     name: "Dust grain",
     size: "~1 um",
@@ -84,6 +92,7 @@ const cosmicHierarchy = [
     name: "Observable universe",
     size: "~93 billion ly",
     description: "Everything whose light has had time to reach us since the Big Bang.",
+    href: "/observable-universe",
   },
 ];
 
@@ -133,6 +142,11 @@ function GalaxyScene() {
                   <span>{item.size}</span>
                 </div>
                 <p>{item.description}</p>
+                {item.href ? (
+                  <Link href={item.href} className="cosmic-hierarchy-link">
+                    Open observable universe view
+                  </Link>
+                ) : null}
               </article>
             ))}
           </div>

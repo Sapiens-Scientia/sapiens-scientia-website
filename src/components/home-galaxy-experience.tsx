@@ -20,6 +20,15 @@ export function HomeGalaxyExperience() {
         </h1>
       </div>
 
+      <div className="pointer-events-none absolute left-5 top-20 z-[130] flex max-w-[min(18rem,calc(100vw-2.5rem))] flex-col items-start gap-3 sm:left-6">
+        <Link
+          href="/observable-universe"
+          className="pointer-events-auto w-fit border border-cyan-200/30 bg-black/58 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-100 shadow-[0_16px_36px_rgba(0,0,0,0.3)] backdrop-blur-md transition-colors hover:border-cyan-100/60 hover:bg-black/72 hover:text-white focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-200"
+        >
+          Observable Universe
+        </Link>
+      </div>
+
       <div className="pointer-events-none absolute right-5 top-5 z-[130] flex max-w-[min(28rem,calc(100vw-2.5rem))] flex-col items-end gap-3 sm:right-6 sm:top-6">
         <Link
           href="/meta-earth"
