@@ -44,14 +44,12 @@ const GALAXY_ORBIT_RADIUS = 1.95
 const GALAXY_HISTORY_HEIGHT = 8.2
 const GALAXY_DISK_SIZE = 7
 const GALAXY_TEXTURE_ZOOM = 0.68
-const GALAXY_EARTH_ORBIT_DECORATIVE_TURNS = 2080
-const GALAXY_EARTH_ORBIT_DECORATIVE_POINTS = 41600
-const GALAXY_EARTH_ORBIT_DECORATIVE_RADIUS = 0.0725
 const GALAXY_TURN_ANNOTATION_EARTH_AGE_MA = 3000
 const FUTURE_PROJECTION_MA = 2_000
 const ECLIPTIC_TO_GALACTIC_RAD = (60.2 * Math.PI) / 180
 const GALAXY_LABEL_RADIAL_SPREAD = 1.18
 const SOLAR_SYSTEM_NOW_EVENT_KEY = 'solar-system-now'
+const COMPLEX_LIFE_HABITABILITY_WINDOW_KEY = 'complex-life-habitability-window'
 
 const SEASON_EVENTS = [
     { key: 'VE', label: 'Mar Equinox', monthIndex: 2, day: 20, color: '#22c55e' },
@@ -230,6 +228,16 @@ export const GALAXY_TIMELINE_EVENTS: GalaxyTimelineEvent[] = [
         description: 'Present orbital position',
         color: '#fde68a',
         group: 'present',
+    },
+    {
+        key: COMPLEX_LIFE_HABITABILITY_WINDOW_KEY,
+        label: 'Complex-Life Habitability Window',
+        earthAgeMa: EARTH_AGE_MA + 750,
+        ageMa: -750,
+        yearMa: `${Number(EARTH_AGE_MA.toPrecision(3))}-${Number((EARTH_AGE_MA + 1500).toPrecision(3))} Ma`,
+        description: 'From now until solar brightening begins to strongly stress complex surface life.',
+        color: '#f59e0b',
+        group: 'future-window',
     },
     ...FUTURE_EARTH_EVENTS.map((item) => {
         const earthAgeMa = EARTH_AGE_MA + item.yearsFromNowMa
@@ -1246,21 +1254,14 @@ function GalaxyHistoryModel({ isDark, theme, selectedEventKey }: { isDark: boole
     const outline = isDark ? '#020617' : '#ffffff'
     const [hoveredEventKey, setHoveredEventKey] = useState<string | null>(null)
     const activeEventKey = hoveredEventKey ?? selectedEventKey ?? null
-    const decorativeEarthOrbit = useMemo(() => {
+    const helixSegment = (startAgeMa: number, endAgeMa: number, segments = 180) => {
         const points: THREE.Vector3[] = []
-        for (let i = 0; i <= GALAXY_EARTH_ORBIT_DECORATIVE_POINTS; i++) {
-            const t = i / GALAXY_EARTH_ORBIT_DECORATIVE_POINTS
-            const ageMa = EARTH_AGE_MA * (1 - t)
-            const center = galaxyPoint(ageMa)
-            const radial = center.clone().setY(0).normalize()
-            const vertical = new THREE.Vector3(0, 1, 0)
-            const phase = t * GALAXY_EARTH_ORBIT_DECORATIVE_TURNS * Math.PI * 2
-            points.push(center.clone()
-                .add(radial.multiplyScalar(Math.cos(phase) * GALAXY_EARTH_ORBIT_DECORATIVE_RADIUS))
-                .add(vertical.multiplyScalar(Math.sin(phase) * GALAXY_EARTH_ORBIT_DECORATIVE_RADIUS)))
+        for (let i = 0; i <= segments; i++) {
+            const t = i / segments
+            points.push(galaxyPoint(THREE.MathUtils.lerp(startAgeMa, endAgeMa, t)))
         }
         return points
-    }, [])
+    }
     const pathData = useMemo(() => {
         const points: THREE.Vector3[] = []
         const colors: [number, number, number][] = []
@@ -1327,6 +1328,52 @@ function GalaxyHistoryModel({ isDark, theme, selectedEventKey }: { isDark: boole
         if (level === 'period') return { inner: -0.05, outer: 0.13, width: 0.95, radius: 0.017, opacity: 0.76 }
         return { inner: -0.035, outer: 0.095, width: 0.72, radius: 0.012, opacity: 0.66 }
     }
+    const activeExtent = useMemo(() => {
+        if (!activeEventKey) return null
+
+        const geoItem = GEO_SCALE_LABELS.find((item) => makeGeoEventKey(item.level, item.label) === activeEventKey)
+        if (geoItem) {
+            const levelItems = GEO_SCALE_LABELS.filter((item) => item.level === geoItem.level).sort((a, b) => b.ageMa - a.ageMa)
+            const index = levelItems.findIndex((item) => item.label === geoItem.label)
+            const nextYounger = levelItems[index + 1]
+            const endAgeMa = nextYounger?.ageMa ?? 0
+            return {
+                color: geoItem.color,
+                points: helixSegment(geoItem.ageMa, endAgeMa, geoItem.level === 'epoch' ? 80 : 180),
+                lineWidth: geoItem.level === 'eon' ? 7.6 : geoItem.level === 'era' ? 6.6 : geoItem.level === 'period' ? 5.6 : 4.8,
+            }
+        }
+
+        const futureItem = FUTURE_EARTH_EVENTS.find((item) => makeFutureEventKey(item.label) === activeEventKey)
+        if (futureItem) {
+            const startAgeMa = -futureItem.yearsFromNowMa
+            const nextFuture = FUTURE_EARTH_EVENTS.find((item) => item.yearsFromNowMa > futureItem.yearsFromNowMa)
+            const endAgeMa = nextFuture ? -nextFuture.yearsFromNowMa : -FUTURE_PROJECTION_MA
+            return {
+                color: futureItem.color,
+                points: helixSegment(startAgeMa, endAgeMa, 90),
+                lineWidth: 5,
+            }
+        }
+
+        if (activeEventKey === COMPLEX_LIFE_HABITABILITY_WINDOW_KEY) {
+            return {
+                color: '#f59e0b',
+                points: helixSegment(0, -1500, 180),
+                lineWidth: 6.2,
+            }
+        }
+
+        if (activeEventKey === SOLAR_SYSTEM_NOW_EVENT_KEY) {
+            return {
+                color: '#fde68a',
+                points: helixSegment(5, -5, 24),
+                lineWidth: 5.4,
+            }
+        }
+
+        return null
+    }, [activeEventKey])
     const presentPoint = galaxyPoint(0)
     const presentCenterDirection = presentPoint.clone().multiplyScalar(-1).setY(0).normalize()
     const presentMotionDirection = galaxyMotionDirection(0)
@@ -1348,9 +1395,19 @@ function GalaxyHistoryModel({ isDark, theme, selectedEventKey }: { isDark: boole
             {orbitGhosts.map((ring, index) => (
                 <Line key={`galactic-ring-${index}`} points={ring} color={isDark ? '#334155' : '#cbd5e1'} lineWidth={0.55} transparent opacity={isDark ? 0.16 : 0.2} />
             ))}
-            <Line points={decorativeEarthOrbit} color={isDark ? '#94a3b8' : '#64748b'} lineWidth={1.1} transparent opacity={0.3} />
             <Line points={pathData.points} vertexColors={pathData.colors} lineWidth={3.3} />
             <Line points={futurePath} color={isDark ? '#fbbf24' : '#d97706'} lineWidth={2.1} transparent opacity={0.5} dashed dashSize={0.14} dashScale={4} gapSize={0.08} />
+            {activeExtent && (
+                <Line
+                    points={activeExtent.points}
+                    color={activeExtent.color}
+                    lineWidth={activeExtent.lineWidth}
+                    transparent
+                    opacity={0.72}
+                    depthTest={false}
+                    depthWrite={false}
+                />
+            )}
             <Line points={helixTurnAnnotation.guide} color={isDark ? '#bae6fd' : '#0891b2'} lineWidth={1.5} transparent opacity={0.82} />
             <Line points={helixTurnAnnotation.startTick} color={isDark ? '#bae6fd' : '#0891b2'} lineWidth={1.5} transparent opacity={0.82} />
             <Line points={helixTurnAnnotation.endTick} color={isDark ? '#bae6fd' : '#0891b2'} lineWidth={1.5} transparent opacity={0.82} />
