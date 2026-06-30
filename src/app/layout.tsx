@@ -3,6 +3,7 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { UniverseTimeline } from "@/components/universe-timeline";
 import "./globals.css";
+import "./earthview.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.sapiensscientia.com"),

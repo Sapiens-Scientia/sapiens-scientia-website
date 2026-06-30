@@ -66,6 +66,8 @@ const primaryNav: SiteNavItem[] = [
 const linkBase =
   "relative py-1 transition-all duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-sky-300";
 
+const navHref = (href: string) => (href === "/" ? "/?intro=skip" : href);
+
 function ActiveUnderline() {
   return (
     <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-gradient-to-r from-sky-400 to-emerald-400 animate-pulse rounded-full" />
@@ -149,7 +151,7 @@ export function SiteNav({ links }: SiteNavProps) {
             return (
               <Link
                 key={`${link.href}-${link.label}`}
-                href={link.href}
+                href={navHref(link.href)}
                 className={`${linkBase} ${
                   active ? "text-white font-semibold" : "text-slate-400 hover:text-white"
                 }`}
@@ -178,7 +180,7 @@ export function SiteNav({ links }: SiteNavProps) {
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={navHref(item.href)}
                 className={`${linkBase} ${
                   active ? "text-white font-semibold" : "text-slate-400 hover:text-white"
                 }`}
@@ -227,7 +229,7 @@ export function SiteNav({ links }: SiteNavProps) {
                     return (
                       <Link
                         key={child.href}
-                        href={child.href}
+                        href={navHref(child.href)}
                         role="menuitem"
                         onClick={() => setOpenMenu(null)}
                         className={`rounded-md px-3 py-1.5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300 ${

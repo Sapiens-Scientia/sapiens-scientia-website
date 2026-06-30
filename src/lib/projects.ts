@@ -1,5 +1,3 @@
-export const EARTHVIEW_EXTERNAL_URL = "https://earthview3d.vercel.app/";
-
 export const EARTHVIEW_PAGE_PATH = "/projects/earthview";
 
 export const projectLinks = [

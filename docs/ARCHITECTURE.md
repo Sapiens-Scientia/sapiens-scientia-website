@@ -43,6 +43,9 @@ The site is mostly static pages with client-side interactive islands.
   gate with the "Initiate Big Bang" sequence before revealing the current
   homepage experience.
 - `EarthHero` is a client component because it owns the 3D canvas, theme state, timeline state, and pointer interlock between overlays and orbit controls.
+- `src/app/projects/earthview/page.tsx` renders the imported EarthView 3D
+  React/Three experience directly from `src/components/earthview/`; it is not
+  an iframe wrapper.
 - Content pages use server components where possible, with client components for interactive visualizations.
 - `src/app/api/vital-signs/route.ts` provides a route for vital-sign data.
 
@@ -61,6 +64,19 @@ The homepage is the most sensitive surface.
 - `src/components/home-overview.tsx`: content below the hero.
 
 When editing the homepage, verify in a browser. Build and lint can pass even if the canvas is visually blank or incorrectly sized.
+
+## EarthView 3D
+
+The `/projects/earthview` route imports the standalone EarthView 3D codebase
+into this website rather than embedding the separate app in an iframe.
+
+- Source lives under `src/components/earthview/`.
+- Global EarthView-specific class styles live in `src/app/earthview.css`, which
+  is imported by the root layout.
+- Runtime textures are copied into `public/earth-blue-marble-5400x2700.jpg` and
+  `public/assets/milky-way.jpg`.
+- The sitewide `UniverseTimeline` is hidden on `/projects/earthview` so it does
+  not cover EarthView's own bottom mode controls.
 
 ## Shared Page System
 

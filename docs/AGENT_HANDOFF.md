@@ -29,8 +29,13 @@ If the implementation reveals a conceptual mismatch or durable constraint, updat
   the intro animation.
 - `src/components/universe-timeline.tsx` is rendered from `src/app/layout.tsx`
   as the sitewide fixed bottom Universe Timeline. It intentionally floats above
-  all routes, links to `/chronos`, and uses a horizontally scrollable milestone
-  rail on narrow screens.
+  most routes, links to `/chronos`, and uses a horizontally scrollable milestone
+  rail on narrow screens. It is hidden on `/projects/earthview` so EarthView's
+  own bottom mode controls remain usable.
+- `src/components/earthview/` contains the imported EarthView 3D React/Three
+  project. `/projects/earthview` renders it directly rather than using an
+  iframe. Keep the copied textures in `public/earth-blue-marble-5400x2700.jpg`
+  and `public/assets/milky-way.jpg` available for the scene.
 - `src/components/earth-scene.tsx` owns the 3D scene: Physical Earth, Digital Halo, Meta Earth label, data connectors, solar orbit model, and orbit controls.
 - `src/components/earth-overlay.tsx` owns homepage overlays: Earth Systems, Digital Systems, Sapiens Platforms, vital signs popout, data index popout, and clock.
 - `src/lib/earth-systems.ts` is the homepage taxonomy source for Earth Systems, Digital Systems, and platform bridge highlighting.
