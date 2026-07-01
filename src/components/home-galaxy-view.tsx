@@ -126,6 +126,7 @@ function GalaxyScene() {
             </div>
           </aside>
         ) : null}
+
       </section>
     </main>
   );

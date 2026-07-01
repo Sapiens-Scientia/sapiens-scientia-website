@@ -39,11 +39,17 @@ export function ObservableUniverseView() {
             imageLoaded ? "opacity-100" : "opacity-0"
           }`}
         />
+        <div className="pointer-events-none absolute left-1/2 top-[13.1%] z-10 -translate-x-1/2 text-center text-xs font-semibold uppercase tracking-[0.22em] text-cyan-100/90 drop-shadow-[0_0_12px_rgba(56,189,248,0.75)] sm:text-sm">
+          Milky Way Galaxy
+        </div>
+        <div className="pointer-events-none absolute left-1/2 top-[calc(50%-8.9rem)] z-10 -translate-x-1/2 text-center text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-cyan-100/85 drop-shadow-[0_0_12px_rgba(56,189,248,0.7)] sm:text-[0.68rem]">
+          Solar System
+        </div>
         <Link
-          href="/?intro=skip"
+          href="/history-of-planet-earth"
           aria-label="Zoom into the History of Planet Earth in the Milky Way"
           title="Zoom into the History of Planet Earth"
-          className="absolute left-1/2 top-1/2 z-10 h-[170px] w-[170px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-cyan-100/58 bg-cyan-200/[0.025] shadow-[0_0_42px_rgba(56,189,248,0.28),inset_0_0_26px_rgba(56,189,248,0.14)] transition-all hover:scale-105 hover:border-cyan-50/90 hover:bg-cyan-100/[0.045] hover:shadow-[0_0_56px_rgba(56,189,248,0.38),inset_0_0_32px_rgba(56,189,248,0.2)] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-200"
+          className="absolute left-1/2 top-1/2 z-10 h-[220px] w-[220px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-cyan-100/58 bg-cyan-200/[0.025] shadow-[0_0_42px_rgba(56,189,248,0.28),inset_0_0_26px_rgba(56,189,248,0.14)] transition-all hover:scale-105 hover:border-cyan-50/90 hover:bg-cyan-100/[0.045] hover:shadow-[0_0_56px_rgba(56,189,248,0.38),inset_0_0_32px_rgba(56,189,248,0.2)] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-200"
         />
         <figcaption className="absolute -bottom-7 left-1/2 w-[min(36rem,calc(100vw-3rem))] -translate-x-1/2 text-center text-[0.62rem] font-medium leading-4 text-slate-500">
           Image by{" "}

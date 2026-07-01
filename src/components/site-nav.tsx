@@ -67,7 +67,7 @@ const primaryNav: SiteNavItem[] = [
 const linkBase =
   "relative py-1 transition-all duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-sky-300";
 
-const navHref = (href: string) => (href === "/" ? "/?intro=skip" : href);
+const navHref = (href: string) => (href === "/" ? "/observable-universe" : href);
 
 function ActiveUnderline() {
   return (

@@ -7,9 +7,9 @@ This file records practical handoff context for future agents working on the Sap
 - The site is a Next.js App Router application using React, Tailwind CSS, and React Three Fiber.
 - Project memory is local to this repository under `docs/`.
 - The homepage starts with the Big Bang intro, which resolves into the
-  Observable Universe view. From there the central target ring links to the
-  homepage-only Galaxy view / History of Planet Earth via `/?intro=skip`, which
-  then links onward to Meta Earth.
+  Observable Universe view at `/observable-universe`. From there the central
+  target ring links to the Galaxy view / History of Planet Earth at
+  `/history-of-planet-earth`, which then links onward to Meta Earth.
 - `/meta-earth` is the former homepage: a full-screen 3D experience with overlay
   panels, time controls, theme support, and platform bridge interactions.
 - The main platform model is `Persona`, `Societas`, `Terra`, with `Salus` and `Domus` nested inside Persona, `Soma` nested inside Salus, and `Morbus` nested inside Soma.
@@ -30,11 +30,12 @@ If the implementation reveals a conceptual mismatch or durable constraint, updat
 
 - `src/components/earth-hero.tsx` owns the Meta Earth hero shell, React Three Fiber canvas, theme toggle, and timeline state.
 - `src/components/home-big-bang-experience.tsx` wraps the homepage in the
-  "Initiate Big Bang" landing gate and reveals the homepage Galaxy view after
-  the intro animation.
-- `src/components/home-galaxy-view.tsx` is the homepage-only duplicated Galaxy
-  scene. It uses the lower-level EarthView `UnifiedEarthView` but does not
-  change `/projects/earthview` or its standalone EarthView app wrapper.
+  Big Bang landing gate and routes to `/observable-universe` after the intro
+  animation.
+- `src/components/home-galaxy-view.tsx` is the duplicated Galaxy scene used by
+  `/history-of-planet-earth`. It uses the lower-level EarthView
+  `UnifiedEarthView` but does not change `/projects/earthview` or its
+  standalone EarthView app wrapper.
 - `src/components/universe-timeline.tsx` is rendered from `src/app/layout.tsx`
   as the sitewide fixed bottom Universe Timeline. It intentionally floats above
   most routes, links to `/chronos`, and uses a horizontally scrollable milestone
@@ -82,7 +83,7 @@ If the implementation reveals a conceptual mismatch or durable constraint, updat
 
 ## Good Next Improvements
 
-- Add a lightweight visual regression check for the homepage Galaxy view and
-  Meta Earth hero.
+- Add a lightweight visual regression check for the History of Planet Earth
+  Galaxy view and Meta Earth hero.
 - Keep `docs/ROUTES.md` current when adding or removing public pages.
 - Consider adding tests around route metadata or data-module shape if the site continues to grow.
