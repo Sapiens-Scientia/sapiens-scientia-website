@@ -3,16 +3,19 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { CosmicObjectHierarchy } from "@/components/cosmic-object-hierarchy";
 
 export function ObservableUniverseView() {
   const [imageLoaded, setImageLoaded] = useState(false);
 
   return (
     <section
-      className="relative flex min-h-screen items-center justify-center overflow-hidden bg-black text-white"
+      className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#01040d] text-white"
       aria-label="Observable universe alternate view"
     >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(14,165,233,0.14),rgba(3,7,18,0.38)_36%,rgba(0,0,0,0.96)_76%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_46%,rgba(56,189,248,0.13),rgba(30,64,175,0.09)_30%,rgba(15,23,42,0.88)_62%,rgba(1,4,13,1)_100%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(14,165,233,0.045),transparent_34%,rgba(30,64,175,0.07)_72%,rgba(14,165,233,0.035))]" />
+      <CosmicObjectHierarchy />
 
       <div className="pointer-events-none absolute left-1/2 top-5 z-10 w-[min(34rem,calc(100vw-2.5rem))] -translate-x-1/2 text-center">
         <h1 className="text-balance text-2xl font-semibold leading-none tracking-normal text-white drop-shadow-[0_10px_28px_rgba(0,0,0,0.65)] sm:text-4xl">
