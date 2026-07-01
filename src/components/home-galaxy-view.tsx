@@ -21,7 +21,7 @@ function GalaxyScene() {
       GALAXY_TIMELINE_EVENTS[0]?.key ??
       "",
   );
-  const displayedGalaxyEvents = useMemo(() => [...GALAXY_TIMELINE_EVENTS].reverse(), []);
+  const displayedGalaxyEvents = useMemo(() => [...GALAXY_TIMELINE_EVENTS], []);
   const selectedGalaxyEventIndex = GALAXY_TIMELINE_EVENTS.findIndex(
     (event) => event.key === selectedGalaxyEventKey,
   );
