@@ -30,7 +30,13 @@ Do not rename these or introduce replacements unless the change intentionally up
 
 ## Keep The Homepage As A Real Product Surface
 
-The first screen is the actual Sapiens Scientia experience, not a marketing landing page. The homepage begins with the Big Bang intro, then reveals a Galaxy 3D view from the imported EarthView scene with a clear link into Meta Earth.
+The first screen is the actual Sapiens Scientia experience, not a marketing landing page. The homepage begins with the Big Bang intro, then leads into the Observable Universe view before zooming into the Galaxy 3D History of Planet Earth route and onward to Meta Earth.
+
+## Route The Opening Sequence Through Cosmic Scale
+
+The opening sequence is now structured as `/` Big Bang intro -> `/observable-universe` -> `/history-of-planet-earth` -> `/meta-earth`.
+
+Treat the History of Planet Earth Galaxy view as its own public route at `/history-of-planet-earth`, not as a query-string variant of the homepage. The Observable Universe view is the immediate post-Big-Bang destination, and its central target ring zooms into the History of Planet Earth page.
 
 ## Move The Original Homepage To Meta Earth
 

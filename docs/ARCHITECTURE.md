@@ -40,8 +40,10 @@ The site is mostly static pages with client-side interactive islands.
 - `src/app/layout.tsx` renders the sitewide `UniverseTimeline`, a fixed
   bottom rail of colored universe-history milestones that floats over all
   routes and links into `/chronos`.
-- `HomeBigBangExperience` is a client-side landing gate with the "Initiate Big
-  Bang" sequence before revealing the homepage Galaxy 3D view.
+- `HomeBigBangExperience` is a client-side landing gate with the Big Bang
+  sequence before routing into the Observable Universe view.
+- `src/app/history-of-planet-earth/page.tsx` renders the Galaxy 3D history
+  view as its own public route.
 - `src/app/meta-earth/page.tsx` renders `MetaEarthExperience`, the former
   homepage Physical Earth / Digital Halo / Meta Earth product surface.
 - `EarthHero` is a client component because it owns the Meta Earth 3D canvas, theme state, timeline state, and pointer interlock between overlays and orbit controls.
@@ -56,11 +58,11 @@ The site is mostly static pages with client-side interactive islands.
 The homepage is the most sensitive surface.
 
 - `src/components/home-big-bang-experience.tsx`: landing initiation gate and
-  reveal choreography around the homepage Galaxy view.
+  reveal choreography into `/observable-universe`.
 - `src/components/home-galaxy-view.tsx`: duplicated Galaxy-only EarthView scene
-  used only by the homepage so `/projects/earthview` keeps its standalone app
-  wrapper unchanged.
-- `src/components/home-galaxy-experience.tsx`: full-screen Galaxy homepage shell
+  used by `/history-of-planet-earth` so `/projects/earthview` keeps its
+  standalone app wrapper unchanged.
+- `src/components/home-galaxy-experience.tsx`: full-screen Galaxy history shell
   with the clear Meta Earth link.
 - `src/components/earth-hero.tsx`: full-screen Meta Earth hero shell and React Three Fiber canvas.
 - `src/components/universe-timeline.tsx`: sitewide fixed universe-history

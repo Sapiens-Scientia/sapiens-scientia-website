@@ -42,7 +42,8 @@ const GALACTIC_YEAR_MA = GALACTIC_YEAR_SOLAR_YEARS / 1_000_000
 const GALACTIC_TURNS = EARTH_AGE_MA / GALACTIC_YEAR_MA
 const GALAXY_ORBIT_RADIUS = 1.95
 const GALAXY_HISTORY_HEIGHT = 8.2
-const GALAXY_DISK_SIZE = 7
+const GALAXY_DISK_SIZE = 16.2
+const GALAXY_DISK_ROTATION_DEG = 159
 const GALAXY_TEXTURE_ZOOM = 0.68
 const GALAXY_TURN_ANNOTATION_EARTH_AGE_MA = 3000
 const FUTURE_PROJECTION_MA = 2_000
@@ -1162,8 +1163,25 @@ function geologicColorForAge(ageMa: number) {
     return '#10b981'
 }
 
-function GalaxyDisk({ position, isDark }: { position: THREE.Vector3; isDark: boolean }) {
+function GalaxyDisk({
+    position,
+    isDark,
+    size,
+    rotationDeg = 0,
+}: {
+    position: THREE.Vector3
+    isDark: boolean
+    size: number
+    rotationDeg?: number
+}) {
     const texture = useLoader(THREE.TextureLoader, '/assets/milky-way.jpg')
+    const uniforms = useMemo(
+        () => ({
+            map: { value: texture },
+            opacity: { value: isDark ? 0.92 : 0.82 },
+        }),
+        [isDark, texture],
+    )
 
     useMemo(() => {
         texture.colorSpace = THREE.SRGBColorSpace
@@ -1175,9 +1193,35 @@ function GalaxyDisk({ position, isDark }: { position: THREE.Vector3; isDark: boo
 
     return (
         <group position={position}>
-            <mesh rotation={[-Math.PI / 2, 0, 0]}>
-                <circleGeometry args={[GALAXY_DISK_SIZE / 2, 128]} />
-                <meshBasicMaterial map={texture} depthWrite={false} side={THREE.DoubleSide} transparent opacity={isDark ? 0.92 : 0.82} />
+            <mesh rotation={[-Math.PI / 2, 0, THREE.MathUtils.degToRad(rotationDeg)]}>
+                <circleGeometry args={[size / 2, 128]} />
+                <shaderMaterial
+                    key={isDark ? 'galaxy-disk-dark' : 'galaxy-disk-light'}
+                    uniforms={uniforms}
+                    vertexShader={`
+                        varying vec2 vUv;
+
+                        void main() {
+                            vUv = uv;
+                            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                        }
+                    `}
+                    fragmentShader={`
+                        uniform sampler2D map;
+                        uniform float opacity;
+                        varying vec2 vUv;
+
+                        void main() {
+                            vec4 texel = texture2D(map, vUv);
+                            float luminance = dot(texel.rgb, vec3(0.299, 0.587, 0.114));
+                            float alpha = smoothstep(0.035, 0.13, luminance) * opacity;
+                            gl_FragColor = vec4(texel.rgb, alpha);
+                        }
+                    `}
+                    depthWrite={false}
+                    side={THREE.DoubleSide}
+                    transparent
+                />
             </mesh>
         </group>
     )
@@ -1250,7 +1294,19 @@ function SolarSystemGlyph({
     )
 }
 
-function GalaxyHistoryModel({ isDark, theme, selectedEventKey }: { isDark: boolean; theme: ThemeMode; selectedEventKey?: string | null }) {
+function GalaxyHistoryModel({
+    isDark,
+    theme,
+    selectedEventKey,
+    galaxyDiskSize = GALAXY_DISK_SIZE,
+    galaxyDiskRotationDeg = GALAXY_DISK_ROTATION_DEG,
+}: {
+    isDark: boolean
+    theme: ThemeMode
+    selectedEventKey?: string | null
+    galaxyDiskSize?: number
+    galaxyDiskRotationDeg?: number
+}) {
     const outline = isDark ? '#020617' : '#ffffff'
     const [hoveredEventKey, setHoveredEventKey] = useState<string | null>(null)
     const activeEventKey = hoveredEventKey ?? selectedEventKey ?? null
@@ -1379,9 +1435,13 @@ function GalaxyHistoryModel({ isDark, theme, selectedEventKey }: { isDark: boole
     const presentMotionDirection = galaxyMotionDirection(0)
     const futureEndPoint = galaxyPoint(-FUTURE_PROJECTION_MA)
     const historyStartPoint = galaxyPoint(EARTH_AGE_MA)
+    const galaxyDiskPosition = useMemo(
+        () => new THREE.Vector3(0, historyStartPoint.y, 0),
+        [historyStartPoint.y],
+    )
     return (
         <group>
-            <GalaxyDisk position={new THREE.Vector3(0, -GALAXY_HISTORY_HEIGHT / 2 - 0.32, 0)} isDark={isDark} />
+            <GalaxyDisk position={galaxyDiskPosition} isDark={isDark} size={galaxyDiskSize} rotationDeg={galaxyDiskRotationDeg} />
             <Line
                 points={[new THREE.Vector3(0, historyStartPoint.y + 0.5, 0), new THREE.Vector3(0, futureEndPoint.y - 0.5, 0)]}
                 color={isDark ? '#64748b' : '#94a3b8'}
@@ -2120,6 +2180,8 @@ function UnifiedScene({
     orbitTiltStripsVisible,
     resetViewKey,
     selectedGalaxyEventKey,
+    galaxyDiskSize,
+    galaxyDiskRotationDeg,
 }: {
     mode: EarthVisualizationMode
     isDark: boolean
@@ -2135,6 +2197,8 @@ function UnifiedScene({
     orbitTiltStripsVisible: boolean
     resetViewKey: number
     selectedGalaxyEventKey?: string | null
+    galaxyDiskSize?: number
+    galaxyDiskRotationDeg?: number
 }) {
     const { camera } = useThree()
     const sceneDate = useMemo(() => new Date(Date.now() + dateOffsetMs), [dateOffsetMs])
@@ -2217,7 +2281,7 @@ function UnifiedScene({
                 {mode === 'orbit' && orbitTiltStripsVisible && <OrbitTiltReferenceRings isDark={isDark} theme={theme} />}
                 {mode === 'orbit' && <OrbitAnnotations isDark={isDark} theme={theme} progress={progress} />}
                 {mode === 'spiral' && <SpiralAnnotations isDark={isDark} theme={theme} />}
-                {mode === 'galaxy' && <GalaxyHistoryModel isDark={isDark} theme={theme} selectedEventKey={selectedGalaxyEventKey} />}
+                {mode === 'galaxy' && <GalaxyHistoryModel isDark={isDark} theme={theme} selectedEventKey={selectedGalaxyEventKey} galaxyDiskSize={galaxyDiskSize} galaxyDiskRotationDeg={galaxyDiskRotationDeg} />}
                 {mode !== 'globe' && mode !== 'galaxy' && <Sun position={sunPos} radius={sunRadius} isDark={isDark} theme={theme} />}
                 {(mode === 'orbit' || mode === 'spiral') && (
                     <Billboard position={sunPos.clone().add(new THREE.Vector3(0, sunRadius + 0.38, 0))}>
@@ -2292,12 +2356,14 @@ interface UnifiedEarthViewProps {
     orbitTiltStripsVisible?: boolean
     resetViewKey?: number
     selectedGalaxyEventKey?: string | null
+    galaxyDiskSize?: number
+    galaxyDiskRotationDeg?: number
     homeCoords?: EarthCoords
     timezone: string
     timezoneRingScale?: number
 }
 
-export function UnifiedEarthView({ className, style, mode, dateOffsetMs = 0, rotationOffsetMs = 0, sunOrbitProgress = 0, sunOrbitActive = false, isDarkOverride, orbitTiltView = false, orbitTiltStripsVisible = true, resetViewKey = 0, selectedGalaxyEventKey, homeCoords, timezone, timezoneRingScale = 1 }: UnifiedEarthViewProps) {
+export function UnifiedEarthView({ className, style, mode, dateOffsetMs = 0, rotationOffsetMs = 0, sunOrbitProgress = 0, sunOrbitActive = false, isDarkOverride, orbitTiltView = false, orbitTiltStripsVisible = true, resetViewKey = 0, selectedGalaxyEventKey, galaxyDiskSize, galaxyDiskRotationDeg, homeCoords, timezone, timezoneRingScale = 1 }: UnifiedEarthViewProps) {
     const { isDark, theme } = useAppContext()
     const [ready, setReady] = useState(false)
     const [contextResetKey, setContextResetKey] = useState(0)
@@ -2334,7 +2400,7 @@ export function UnifiedEarthView({ className, style, mode, dateOffsetMs = 0, rot
                 }}
             >
                 <SceneBackground color={bgColor} />
-                <UnifiedScene mode={mode} isDark={sceneIsDark} theme={theme} dateOffsetMs={dateOffsetMs} rotationOffsetMs={rotationOffsetMs} sunOrbitProgress={sunOrbitProgress} sunOrbitActive={sunOrbitActive} homeCoords={homeCoords} timezone={timezone} timezoneRingScale={timezoneRingScale} orbitTiltView={orbitTiltView} orbitTiltStripsVisible={orbitTiltStripsVisible} resetViewKey={resetViewKey} selectedGalaxyEventKey={selectedGalaxyEventKey} />
+                <UnifiedScene mode={mode} isDark={sceneIsDark} theme={theme} dateOffsetMs={dateOffsetMs} rotationOffsetMs={rotationOffsetMs} sunOrbitProgress={sunOrbitProgress} sunOrbitActive={sunOrbitActive} homeCoords={homeCoords} timezone={timezone} timezoneRingScale={timezoneRingScale} orbitTiltView={orbitTiltView} orbitTiltStripsVisible={orbitTiltStripsVisible} resetViewKey={resetViewKey} selectedGalaxyEventKey={selectedGalaxyEventKey} galaxyDiskSize={galaxyDiskSize} galaxyDiskRotationDeg={galaxyDiskRotationDeg} />
             </Canvas>
         </div>
     )
