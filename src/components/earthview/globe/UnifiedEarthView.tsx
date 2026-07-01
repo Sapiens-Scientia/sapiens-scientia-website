@@ -359,7 +359,7 @@ function galaxyPoint(ageMa: number, radius = GALAXY_ORBIT_RADIUS) {
     const elapsedMa = EARTH_AGE_MA - ageMa
     const t = Math.max(0, elapsedMa / EARTH_AGE_MA)
     const angle = -t * GALACTIC_TURNS * Math.PI * 2 - Math.PI / 2
-    const y = (t - 0.5) * GALAXY_HISTORY_HEIGHT
+    const y = (0.5 - t) * GALAXY_HISTORY_HEIGHT
     return new THREE.Vector3(
         Math.cos(angle) * radius,
         y,
@@ -1176,7 +1176,7 @@ function GalaxyDisk({ position, isDark }: { position: THREE.Vector3; isDark: boo
     return (
         <group position={position}>
             <mesh rotation={[-Math.PI / 2, 0, 0]}>
-                <planeGeometry args={[GALAXY_DISK_SIZE, GALAXY_DISK_SIZE]} />
+                <circleGeometry args={[GALAXY_DISK_SIZE / 2, 128]} />
                 <meshBasicMaterial map={texture} depthWrite={false} side={THREE.DoubleSide} transparent opacity={isDark ? 0.92 : 0.82} />
             </mesh>
         </group>
@@ -1287,7 +1287,7 @@ function GalaxyHistoryModel({ isDark, theme, selectedEventKey }: { isDark: boole
         const totalTurns = GALACTIC_TURNS + FUTURE_PROJECTION_MA / GALACTIC_YEAR_MA
         for (let turn = 0; turn <= Math.floor(totalTurns); turn += 2) {
             const t = turn / GALACTIC_TURNS
-            const y = (t - 0.5) * GALAXY_HISTORY_HEIGHT
+            const y = (0.5 - t) * GALAXY_HISTORY_HEIGHT
             const ring: THREE.Vector3[] = []
             for (let i = 0; i <= 96; i++) {
                 const a = (i / 96) * Math.PI * 2
@@ -1378,11 +1378,12 @@ function GalaxyHistoryModel({ isDark, theme, selectedEventKey }: { isDark: boole
     const presentCenterDirection = presentPoint.clone().multiplyScalar(-1).setY(0).normalize()
     const presentMotionDirection = galaxyMotionDirection(0)
     const futureEndPoint = galaxyPoint(-FUTURE_PROJECTION_MA)
+    const historyStartPoint = galaxyPoint(EARTH_AGE_MA)
     return (
         <group>
             <GalaxyDisk position={new THREE.Vector3(0, -GALAXY_HISTORY_HEIGHT / 2 - 0.32, 0)} isDark={isDark} />
             <Line
-                points={[new THREE.Vector3(0, -GALAXY_HISTORY_HEIGHT / 2 - 0.5, 0), new THREE.Vector3(0, futureEndPoint.y + 0.5, 0)]}
+                points={[new THREE.Vector3(0, historyStartPoint.y + 0.5, 0), new THREE.Vector3(0, futureEndPoint.y - 0.5, 0)]}
                 color={isDark ? '#64748b' : '#94a3b8'}
                 lineWidth={1}
                 transparent
@@ -2165,7 +2166,7 @@ function UnifiedScene({
     const controlsModeKey = `${mode}-${resetViewKey}`
     const desiredCamera = useMemo(() => getCameraPosition(mode), [mode])
     const desiredTarget = useMemo(() => {
-        if (mode === 'galaxy') return new THREE.Vector3(0, (galaxyPoint(-FUTURE_PROJECTION_MA).y - GALAXY_HISTORY_HEIGHT / 2) / 2, 0)
+        if (mode === 'galaxy') return new THREE.Vector3(0, (galaxyPoint(-FUTURE_PROJECTION_MA).y + GALAXY_HISTORY_HEIGHT / 2) / 2, 0)
         return new THREE.Vector3(0, 0, 0)
     }, [mode])
     const transitionRef = useRef({
