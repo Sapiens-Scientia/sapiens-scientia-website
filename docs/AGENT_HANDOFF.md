@@ -6,9 +6,10 @@ This file records practical handoff context for future agents working on the Sap
 
 - The site is a Next.js App Router application using React, Tailwind CSS, and React Three Fiber.
 - Project memory is local to this repository under `docs/`.
-- The homepage starts with the Big Bang intro and then reveals a homepage-only
-  duplicated Galaxy view from the EarthView scene, with a clear link to Meta
-  Earth and an Observable Universe route.
+- The homepage starts with the Big Bang intro, which resolves into the
+  Observable Universe view. From there the central target ring links to the
+  homepage-only Galaxy view / History of Planet Earth via `/?intro=skip`, which
+  then links onward to Meta Earth.
 - `/meta-earth` is the former homepage: a full-screen 3D experience with overlay
   panels, time controls, theme support, and platform bridge interactions.
 - The main platform model is `Persona`, `Societas`, `Terra`, with `Salus` and `Domus` nested inside Persona, `Soma` nested inside Salus, and `Morbus` nested inside Soma.
