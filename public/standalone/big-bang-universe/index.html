@@ -529,6 +529,7 @@
   const pToY = (p) => topPad + p * usableH;
   // Downward sag of the expanding "now" front (and the bottom rim)
   const sagAt = (hw) => Math.min(hw * 0.06, 26);
+  const todayRimRY = () => Math.max(30, Math.min(maxHW * 0.085, 46));
 
   function layout() {
     dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -1166,42 +1167,60 @@
       // once parked at today, the rim keeps breathing — expansion never stops
       const breathe = (currentP >= 1 && !reduceMotion) ? 0.8 + 0.2 * Math.sin(tsec * 1.1) : 1;
       const a = clamp01((currentP - 0.96) / 0.04) * breathe;
-      const ry = sagAt(maxHW);
+      const ry = todayRimRY();
       const yb = pToY(1);
       ctx.save();
       ctx.globalCompositeOperation = PAL.partComp;
-      ctx.globalAlpha = a * 0.10;
-      ctx.fillStyle = `rgb(${PAL.todayRim})`;
+      ctx.globalAlpha = a * 0.14;
+      const fill = ctx.createRadialGradient(centerX, yb, 0, centerX, yb, maxHW);
+      fill.addColorStop(0, `rgba(${PAL.todayRimHi},0.34)`);
+      fill.addColorStop(0.58, `rgba(${PAL.todayRim},0.14)`);
+      fill.addColorStop(1, `rgba(${PAL.todayRim},0)`);
+      ctx.fillStyle = fill;
       ctx.beginPath(); ctx.ellipse(centerX, yb, maxHW, ry, 0, 0, TAU); ctx.fill();
       const rim = ctx.createLinearGradient(centerX - maxHW, 0, centerX + maxHW, 0);
       rim.addColorStop(0, `rgba(${PAL.todayRim},0)`);
-      rim.addColorStop(0.5, `rgba(${PAL.todayRimHi},${a * 0.85})`);
+      rim.addColorStop(0.16, `rgba(${PAL.todayRim},${a * 0.72})`);
+      rim.addColorStop(0.5, `rgba(${PAL.todayRimHi},${a})`);
+      rim.addColorStop(0.84, `rgba(${PAL.todayRim},${a * 0.72})`);
       rim.addColorStop(1, `rgba(${PAL.todayRim},0)`);
-      ctx.strokeStyle = rim; ctx.lineWidth = 1.6;
-      ctx.shadowColor = `rgb(${PAL.todayRim})`; ctx.shadowBlur = 14;
+      ctx.strokeStyle = rim;
+      ctx.shadowColor = `rgb(${PAL.todayRim})`; ctx.shadowBlur = 22;
       ctx.globalAlpha = a;
+      ctx.lineWidth = 5.5;
       ctx.beginPath(); ctx.ellipse(centerX, yb, maxHW, ry, 0, 0, TAU); ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = a * 0.9;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.ellipse(centerX, yb, maxHW * 0.985, ry * 0.84, 0, 0, TAU); ctx.stroke();
       // the payoff: what this rim actually is
       if (currentP >= 0.995) {
         const la = clamp01((currentP - 0.995) / 0.005) * a;
-        ctx.font = "600 10px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+        ctx.font = "700 10.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
         try { ctx.letterSpacing = "3px"; } catch (err) {}
-        const label = "93 BILLION LIGHT-YEARS ACROSS";
+        const label = "PRESENT OBSERVABLE UNIVERSE";
         if (ctx.measureText(label).width < maxHW * 2 - 40) {
-          ctx.globalAlpha = la * 0.7;
+          ctx.globalAlpha = la * 0.88;
           ctx.fillStyle = `rgb(${PAL.todayRimHi})`;
           ctx.textAlign = "center"; ctx.textBaseline = "middle";
           ctx.shadowBlur = 0;
-          ctx.fillText(label, centerX, yb - ry - 12);
+          ctx.fillText(label, centerX, yb - 2);
+        }
+        const span = "93 BILLION LIGHT-YEARS ACROSS";
+        if (ctx.measureText(span).width < maxHW * 2 - 40) {
+          ctx.globalAlpha = la * 0.62;
+          ctx.fillStyle = `rgb(${PAL.todayRimHi})`;
+          ctx.textAlign = "center"; ctx.textBaseline = "middle";
+          ctx.fillText(span, centerX, yb - ry - 14);
         }
         if (siteIntroMode) {
           const prompt = "CLICK THE RIM TO ENTER THE OBSERVABLE UNIVERSE";
           if (ctx.measureText(prompt).width < maxHW * 2 - 40) {
-            ctx.globalAlpha = la * 0.56;
+            ctx.globalAlpha = la * 0.82;
             ctx.fillStyle = `rgb(${PAL.todayRimHi})`;
             ctx.textAlign = "center"; ctx.textBaseline = "middle";
             ctx.shadowBlur = 0;
-            ctx.fillText(prompt, centerX, yb + ry + 18);
+            ctx.fillText(prompt, centerX, yb + ry + 20);
           }
         }
         try { ctx.letterSpacing = "0px"; } catch (err) {}
@@ -1466,7 +1485,7 @@
   const nearTodayRim = (e) => {
     if (!siteIntroMode || currentP < 0.995) return false;
     const rx = Math.max(maxHW, 1);
-    const ry = Math.max(sagAt(maxHW), 24);
+    const ry = Math.max(todayRimRY(), 30);
     const dx = (e.clientX - centerX) / rx;
     const dy = (e.clientY - pToY(1)) / ry;
     return dx * dx + dy * dy <= 1.12;

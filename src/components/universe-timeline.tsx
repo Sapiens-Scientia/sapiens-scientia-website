@@ -39,11 +39,15 @@ export function UniverseTimeline() {
     <aside
       aria-label="Universe timeline"
       aria-hidden={isHidden}
-      className={`universe-timeline pointer-events-none fixed inset-x-0 bottom-0 z-[110] px-2 pb-2 transition-opacity duration-500 sm:px-4 sm:pb-3 ${
-        isHidden ? "opacity-0" : "opacity-100"
+      className={`universe-timeline fixed inset-x-0 bottom-0 z-[110] px-2 pb-2 transition-opacity duration-500 sm:px-4 sm:pb-3 ${
+        isHidden ? "pointer-events-none invisible opacity-0" : "pointer-events-none visible opacity-100"
       }`}
     >
-      <div className="pointer-events-auto mx-auto max-w-7xl border border-white/10 bg-black/58 p-1.5 text-white shadow-[0_-14px_42px_rgba(0,0,0,0.4)] backdrop-blur-xl sm:p-2">
+      <div
+        className={`mx-auto max-w-7xl border border-white/10 bg-black/58 p-1.5 text-white shadow-[0_-14px_42px_rgba(0,0,0,0.4)] backdrop-blur-xl sm:p-2 ${
+          isHidden ? "pointer-events-none" : "pointer-events-auto"
+        }`}
+      >
         <div className="mb-1 flex items-center justify-between gap-3 px-1">
           <Link
             href="/chronos"
