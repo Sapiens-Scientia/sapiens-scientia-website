@@ -947,18 +947,21 @@
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = "source-over";
 
-    // era captions, whispered across the funnel
+    // era captions, readable but still embedded in the cosmic volume
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    ctx.font = "600 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+    ctx.font = "700 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
     try { ctx.letterSpacing = "4px"; } catch (e) {}
+    ctx.shadowColor = "rgba(0,0,0,0.75)";
+    ctx.shadowBlur = 10;
     for (const [label, cvy] of CAPTIONS) {
       const reveal = clamp01((currentP - cvy) / 0.03);
       if (reveal <= 0) continue;
       const cw = ctx.measureText(label).width;
       if (funnelHW(cvy) * 2 - 44 < cw) continue;
-      ctx.fillStyle = `rgba(${PAL.captionInk},${0.15 * reveal})`;
+      ctx.fillStyle = `rgba(${PAL.captionInk},${0.48 * reveal})`;
       ctx.fillText(label, centerX, pToY(cvy));
     }
+    ctx.shadowBlur = 0;
     try { ctx.letterSpacing = "0px"; } catch (e) {}
     ctx.restore(); // end funnel clip
 
