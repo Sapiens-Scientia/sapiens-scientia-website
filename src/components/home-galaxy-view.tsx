@@ -14,13 +14,13 @@ function formatEventBrowserYear(yearMa: string) {
   return yearMa.replace(" Ma", " Million Years Old");
 }
 
+const HADEAN_EVENT_KEY =
+  GALAXY_TIMELINE_EVENTS.find((event) => event.label === "Hadean Eon")?.key ??
+  GALAXY_TIMELINE_EVENTS[0]?.key ??
+  "";
+
 function GalaxyScene() {
-  const [selectedGalaxyEventKey, setSelectedGalaxyEventKey] = useState(
-    () =>
-      GALAXY_TIMELINE_EVENTS.find((event) => event.group === "present")?.key ??
-      GALAXY_TIMELINE_EVENTS[0]?.key ??
-      "",
-  );
+  const [selectedGalaxyEventKey, setSelectedGalaxyEventKey] = useState(HADEAN_EVENT_KEY);
   const displayedGalaxyEvents = useMemo(() => [...GALAXY_TIMELINE_EVENTS], []);
   const selectedGalaxyEventIndex = GALAXY_TIMELINE_EVENTS.findIndex(
     (event) => event.key === selectedGalaxyEventKey,
