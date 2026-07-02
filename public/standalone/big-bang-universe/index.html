@@ -601,8 +601,6 @@
       edgeFaint: "rgba(150,180,255,0.10)", edgeBright: "rgba(175,198,255,0.55)",
       edgeShadow: "rgba(150,180,255,0.7)", rimPhoton: "rgba(255,255,255,0.5)",
       partComp: "lighter",
-      bangColors: ["#ffffff", "#cfe0ff", "#ffe9c0"],
-      sparkA: "#cfe0ff", sparkB: "#ffcf9a", sparkC: "#bfe8ff",
       todayRim: "102,224,192", todayRimHi: "160,255,225",
       funnelShadow: null,
       pillBg: "rgba(10,13,32,0.85)", pillBrd: "rgba(160,180,255,0.45)", pillInk: "#dfe7ff",
@@ -617,8 +615,6 @@
       edgeFaint: "rgba(70,85,170,0.12)", edgeBright: "rgba(70,90,180,0.6)",
       edgeShadow: "rgba(90,110,220,0.5)", rimPhoton: "rgba(60,75,180,0.55)",
       partComp: "source-over",
-      bangColors: ["#5a6fd8", "#8fa9f5", "#e8a83a"],
-      sparkA: "#5a6fd8", sparkB: "#d88a3a", sparkC: "#2ea0a0",
       todayRim: "35,170,140", todayRimHi: "46,207,174",
       funnelShadow: "rgba(50,60,140,0.35)",
       pillBg: "rgba(255,255,255,0.94)", pillBrd: "rgba(70,85,160,0.4)", pillInk: "#1c2340",
@@ -757,84 +753,15 @@
     ctx.globalCompositeOperation = "source-over";
   }
 
-  // ---- Particles ----------------------------------------------------------
-  const parts = [];
-  const MAX_PARTS = reduceMotion ? 0 : 700;
-  function spawnBurst(m) {
-    if (reduceMotion) return;
-    if (m === RECOMB) cmbGlow = 1;   // the universe becomes transparent: flash!
-    const y = pToY(m.vy), hw = funnelHW(m.vy);
-    const n = m.vy < 0.3 ? 46 : m.vy < 0.7 ? 34 : 24;
-    for (let i = 0; i < n; i++) {
-      if (parts.length >= MAX_PARTS) break;
-      const ang = Math.random() * TAU;
-      const spd = (0.6 + Math.random() * 2.4) * (m.vy < 0.3 ? 2.1 : 1.3);
-      const spread = hw * (0.15 + Math.random() * 0.85);
-      parts.push({
-        x: centerX + Math.cos(ang) * spread * 0.4,
-        y: y + (Math.random() - 0.5) * 10,
-        vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd * 0.7 + 0.3,
-        life: 1, decay: 0.006 + Math.random() * 0.014,
-        size: 1 + Math.random() * 2.4, color: m.color,
-      });
-    }
-  }
-  // Sparks shed along the expanding "now" front
-  function spawnSparks(currentP, frontY) {
-    if (reduceMotion || parts.length >= MAX_PARTS - 4) return;
-    const hw = funnelHW(currentP), sag = sagAt(hw);
-    for (let i = 0; i < 2; i++) {
-      const u = Math.random();
-      parts.push({
-        x: centerX + hw * (2 * u - 1),
-        y: frontY + 4 * sag * u * (1 - u),
-        vx: (u - 0.5) * 1.6, vy: 0.3 + Math.random() * 0.7,
-        life: 0.8, decay: 0.02 + Math.random() * 0.025,
-        size: 0.6 + Math.random() * 1.5,
-        color: currentP < 0.35 ? PAL.sparkA : currentP < 0.72 ? PAL.sparkB : PAL.sparkC,
-      });
-    }
-  }
-  // The Bang itself: a violent radial burst from the singularity
-  function spawnBang() {
-    if (reduceMotion) return;
-    for (let i = 0; i < 70; i++) {
-      if (parts.length >= MAX_PARTS) break;
-      const ang = Math.random() * TAU;
-      const spd = 1 + Math.random() * 5;
-      const r = Math.random();
-      parts.push({
-        x: centerX, y: topPad,
-        vx: Math.cos(ang) * spd,
-        vy: Math.abs(Math.sin(ang)) * spd * 0.8 + 0.4, // downward bias
-        life: 1, decay: 0.008 + Math.random() * 0.02,
-        size: 1 + Math.random() * 2.8,
-        color: r < 0.6 ? PAL.bangColors[0] : (r < 0.8 ? PAL.bangColors[1] : PAL.bangColors[2]),
-      });
-    }
-  }
-  function updateParticles() {
-    for (let i = parts.length - 1; i >= 0; i--) {
-      const p = parts[i];
-      p.x += p.vx; p.y += p.vy; p.vy += 0.008; p.vx *= 0.992;
-      p.life -= p.decay;
-      if (p.life <= 0) parts.splice(i, 1);
-    }
-  }
-
   // ---- Cinematic state ------------------------------------------------------
   let flashA = 0;      // full-screen bang flash
   let cmbGlow = 0;     // warm recombination glow
-  const rings = [];    // expanding shockwave rings
   const PREROLL_T = 1.5;
   let preroll = 0;     // seconds of held breath before the bang
   let focusVy = 0, focusA = 0; // glow band lighting up a visited moment
   function bang() {
     if (reduceMotion) return;
     flashA = 0.85;
-    rings.length = 0;
-    rings.push({ a: 0 }, { a: -0.22 }, { a: -0.45 });
-    spawnBang();
   }
 
   // ---- Funnel gradient (era tinted) ---------------------------------------
@@ -1058,22 +985,6 @@
     }
     ctx.restore();
 
-    // ---- particles (drawn as velocity streaks — fireworks, not dots) ----
-    ctx.save();
-    ctx.globalCompositeOperation = PAL.partComp;
-    ctx.lineCap = "round";
-    for (const p of parts) {
-      const r = p.size * (0.6 + p.life * 0.6);
-      ctx.globalAlpha = Math.max(0, p.life) * 0.9;
-      ctx.strokeStyle = p.color;
-      ctx.lineWidth = r * 1.6;
-      ctx.beginPath();
-      ctx.moveTo(p.x - p.vx * 2.5, p.y - p.vy * 2.5);
-      ctx.lineTo(p.x, p.y);
-      ctx.stroke();
-    }
-    ctx.restore();
-
     // ---- milestone nodes + curved leader lines (revealed) ----
     ctx.save();
     for (const m of MS) {
@@ -1228,22 +1139,6 @@
       ctx.restore();
     }
 
-    // ---- shockwave rings from the bang ----
-    if (rings.length) {
-      ctx.save();
-      ctx.globalCompositeOperation = PAL.partComp;
-      for (const r of rings) {
-        if (r.a <= 0) continue;
-        const e = 1 - Math.pow(1 - Math.min(1, r.a), 2.2); // ease-out
-        const rad = e * maxHW * 0.85;
-        ctx.globalAlpha = (1 - r.a) * 0.5;
-        ctx.strokeStyle = PAL.ring;
-        ctx.lineWidth = 1.5 + (1 - r.a) * 2.5;
-        ctx.beginPath(); ctx.ellipse(centerX, topPad, rad, rad * 0.55, 0, 0, TAU); ctx.stroke();
-      }
-      ctx.restore();
-    }
-
     // ---- the singularity: pulsing bloom + lens spikes ----
     ctx.save();
     ctx.globalCompositeOperation = PAL.singComp;
@@ -1312,10 +1207,9 @@
   let scrubbing = false, targetP = null, last = performance.now();
 
   function crossings(from, to) {
-    const hit = MS.filter(m => from < m.vy && to >= m.vy);
-    // A big scrub jump crosses many milestones at once — bursting them all
-    // washes the screen out. Only celebrate the last couple.
-    for (const m of (hit.length > 4 ? hit.slice(-2) : hit)) spawnBurst(m);
+    if (from < RECOMB.vy && to >= RECOMB.vy) {
+      cmbGlow = 1; // the universe becomes transparent: flash!
+    }
   }
 
   function travelTo(vy) {
@@ -1330,7 +1224,7 @@
     const raw = Math.max(0, now - last); last = now;
     const dt = Math.min(raw, 60);        // simulation step (pauses gracefully)
     const wdt = Math.min(raw, 500);      // wall-clock step for cinematic decays,
-                                         // so flashes/rings fade even in throttled tabs
+                                         // so cinematic fades continue in throttled tabs
     const tsec = now * 0.001;
 
     if (preroll > 0) {
@@ -1352,26 +1246,20 @@
         playing = false; syncPlay();
       }
       crossings(prevP, currentP);
-      if (currentP < 1) spawnSparks(currentP, pToY(currentP));
     }
 
     // decay cinematic state
     flashA = Math.max(0, flashA - wdt * 0.0011);
     cmbGlow = Math.max(0, cmbGlow - wdt * 0.0006);
     if (targetP === null) focusA = Math.max(0, focusA - wdt * 0.0005);
-    for (let i = rings.length - 1; i >= 0; i--) {
-      rings[i].a += wdt * 0.00075;
-      if (rings[i].a > 1) rings.splice(i, 1);
-    }
 
-    updateParticles();
     draw(currentP, tsec);
     updateOverlay(currentP);
     requestAnimationFrame(frame);
   }
 
   function resetRun() {
-    currentP = 0; prevP = 0; targetP = null; parts.length = 0; cmbGlow = 0;
+    currentP = 0; prevP = 0; targetP = null; cmbGlow = 0;
     playing = true;
     preroll = reduceMotion ? 0 : PREROLL_T;
     syncPlay();
@@ -1379,7 +1267,7 @@
   function syncPlay() { playBtn.innerHTML = playing ? SVG_PAUSE : SVG_PLAY; }
 
   // ---- Events -------------------------------------------------------------
-  // True while the page waits for its first spark
+  // True while the page waits for its first start.
   function waiting() { return !playing && currentP === 0 && preroll <= 0 && targetP === null; }
   function ignite() {
     preroll = PREROLL_T;
