@@ -369,8 +369,8 @@
     ["FIRST NUCLEI", 0.475],
     ["THE DARK AGES", 0.615],
     ["COSMIC DAWN", 0.735],
-    ["AGE OF GALAXIES", 0.865],
-    ["ACCELERATING EXPANSION", 0.968],
+    ["AGE OF GALAXIES", 0.835],
+    ["ACCELERATING EXPANSION", 0.915],
   ];
 
   // ---- Composition keyframes (fractions r,m,de by cosmic time) ------------
@@ -688,71 +688,6 @@
     gals.sort((a, b) => a.vy - b.vy);
   })();
 
-  // ---- Density texture (structure formation) ------------------------------
-  // A ridged fractal-noise texture, built once, painted inside the funnel with
-  // contrast that GROWS with cosmic time: the early universe is nearly smooth
-  // (tiny fluctuations) and it wrinkles into filaments & voids toward today.
-  function hash2(ix, iy) {
-    let n = (ix * 374761393 + iy * 668265263) | 0;
-    n = (n ^ (n >> 13)) * 1274126177 | 0;
-    return ((n ^ (n >> 16)) >>> 0) / 4294967295;
-  }
-  function vnoise(x, y) {
-    const ix = Math.floor(x), iy = Math.floor(y), fx = x - ix, fy = y - iy;
-    const ux = fx * fx * (3 - 2 * fx), uy = fy * fy * (3 - 2 * fy);
-    const a = hash2(ix, iy), b = hash2(ix + 1, iy), c = hash2(ix, iy + 1), d = hash2(ix + 1, iy + 1);
-    return a + (b - a) * ux + (c - a) * uy + (a - b - c + d) * ux * uy;
-  }
-  function fbm(x, y) {
-    let v = 0, amp = 0.5, f = 1;
-    for (let o = 0; o < 4; o++) { v += amp * vnoise(x * f, y * f); f *= 2; amp *= 0.5; }
-    return v;
-  }
-  const NW = 256, NH = 512;
-  const noiseCanvas = document.createElement("canvas");
-  noiseCanvas.width = NW; noiseCanvas.height = NH;
-  (function buildNoise() {
-    const nctx = noiseCanvas.getContext("2d");
-    const img = nctx.createImageData(NW, NH);
-    const d = img.data;
-    for (let y = 0; y < NH; y++) {
-      for (let x = 0; x < NW; x++) {
-        const f = fbm(x / NW * 10, y / NH * 11);
-        let ridge = 1 - Math.abs(2 * f - 1);   // bright ridges = filaments
-        ridge = Math.pow(Math.max(0, ridge), 1.7);
-        const g = Math.round(38 + ridge * 202); // ~38 (voids) .. ~240 (filaments)
-        const idx = (y * NW + x) * 4;
-        d[idx] = d[idx + 1] = d[idx + 2] = g; d[idx + 3] = 255;
-      }
-    }
-    nctx.putImageData(img, 0, 0);
-  })();
-
-  // Contrast of the density field as a function of display progress (time).
-  function structureAmp(vy) {
-    const s = clamp01((vy - 0.28) / 0.62);
-    return 0.08 + 0.92 * s * s;
-  }
-  // Paint the wrinkles/ripples inside the current funnel clip, up to frontY.
-  function drawWrinkles(frontY, tsec) {
-    const h = frontY - topPad;
-    if (h <= 2) return;
-    const t = reduceMotion ? 0 : tsec;
-    const srcSpan = NH * 0.82;                                    // most of the texture height
-    const drift = (Math.sin(t * 0.16) * 0.5 + 0.5) * (NH - srcSpan); // ping-pong, no wrap seams
-    const bands = 40, bandH = h / bands, srcH = srcSpan / bands;
-    ctx.globalCompositeOperation = "overlay";
-    for (let i = 0; i < bands; i++) {
-      const y0 = topPad + i * bandH;
-      const vy = (y0 + bandH / 2 - topPad) / usableH;
-      ctx.globalAlpha = structureAmp(vy);
-      const srcY = drift + (i / bands) * srcSpan;
-      ctx.drawImage(noiseCanvas, 0, srcY, NW, srcH, 0, y0, W, bandH + 1);
-    }
-    ctx.globalAlpha = 1;
-    ctx.globalCompositeOperation = "source-over";
-  }
-
   // ---- Cinematic state ------------------------------------------------------
   let flashA = 0;      // full-screen bang flash
   let cmbGlow = 0;     // warm recombination glow
@@ -905,9 +840,6 @@
       ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
       ctx.globalCompositeOperation = "source-over";
     }
-
-    // density ripples & wrinkles (structure formation)
-    drawWrinkles(frontY, tsec);
 
     // focus glow: the moment you traveled to lights up, then fades
     if (focusA > 0.01) {
@@ -1085,10 +1017,10 @@
       const yb = pToY(1);
       ctx.save();
       ctx.globalCompositeOperation = PAL.partComp;
-      ctx.globalAlpha = a * 0.14;
+      ctx.globalAlpha = a * 0.10;
       const fill = ctx.createRadialGradient(centerX, yb, 0, centerX, yb, maxHW);
-      fill.addColorStop(0, `rgba(${PAL.todayRimHi},0.34)`);
-      fill.addColorStop(0.58, `rgba(${PAL.todayRim},0.14)`);
+      fill.addColorStop(0, `rgba(${PAL.todayRimHi},0.22)`);
+      fill.addColorStop(0.62, `rgba(${PAL.todayRim},0.10)`);
       fill.addColorStop(1, `rgba(${PAL.todayRim},0)`);
       ctx.fillStyle = fill;
       ctx.beginPath(); ctx.ellipse(centerX, yb, maxHW, ry, 0, 0, TAU); ctx.fill();
@@ -1099,14 +1031,11 @@
       rim.addColorStop(0.84, `rgba(${PAL.todayRim},${a * 0.72})`);
       rim.addColorStop(1, `rgba(${PAL.todayRim},0)`);
       ctx.strokeStyle = rim;
-      ctx.shadowColor = `rgb(${PAL.todayRim})`; ctx.shadowBlur = 22;
+      ctx.shadowColor = `rgb(${PAL.todayRim})`; ctx.shadowBlur = 16;
       ctx.globalAlpha = a;
-      ctx.lineWidth = 5.5;
+      ctx.lineWidth = 3.8;
       ctx.beginPath(); ctx.ellipse(centerX, yb, maxHW, ry, 0, 0, TAU); ctx.stroke();
       ctx.shadowBlur = 0;
-      ctx.globalAlpha = a * 0.9;
-      ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.ellipse(centerX, yb, maxHW * 0.985, ry * 0.84, 0, 0, TAU); ctx.stroke();
       // the payoff: what this rim actually is
       if (currentP >= 0.995) {
         const la = clamp01((currentP - 0.995) / 0.005) * a;
@@ -1120,21 +1049,14 @@
           ctx.shadowBlur = 0;
           ctx.fillText(label, centerX, yb - 2);
         }
-        const span = "93 BILLION LIGHT-YEARS ACROSS";
-        if (ctx.measureText(span).width < maxHW * 2 - 40) {
-          ctx.globalAlpha = la * 0.62;
-          ctx.fillStyle = `rgb(${PAL.todayRimHi})`;
-          ctx.textAlign = "center"; ctx.textBaseline = "middle";
-          ctx.fillText(span, centerX, yb - ry - 14);
-        }
         if (siteIntroMode) {
-          const prompt = "CLICK THE RIM TO ENTER THE OBSERVABLE UNIVERSE";
+          const prompt = "ENTER OBSERVABLE UNIVERSE";
           if (ctx.measureText(prompt).width < maxHW * 2 - 40) {
-            ctx.globalAlpha = la * 0.82;
+            ctx.globalAlpha = la * 0.72;
             ctx.fillStyle = `rgb(${PAL.todayRimHi})`;
             ctx.textAlign = "center"; ctx.textBaseline = "middle";
             ctx.shadowBlur = 0;
-            ctx.fillText(prompt, centerX, yb + ry + 20);
+            ctx.fillText(prompt, centerX, yb + ry + 18);
           }
         }
         try { ctx.letterSpacing = "0px"; } catch (err) {}
