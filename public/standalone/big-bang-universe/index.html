@@ -69,6 +69,9 @@
     --compbar-ring: rgba(0, 0, 0, .06);
     --title-grad: linear-gradient(92deg, #141a3e 10%, #4a63d8 40%, #1f9e82 60%, #7a4ad8 80%, #141a3e 95%);
   }
+  body.embedded #title {
+    display: none;
+  }
   * { box-sizing: border-box; }
   html, body {
     margin: 0; padding: 0; height: 100%; overflow: hidden;
@@ -280,7 +283,9 @@
   const LR = L1 - L0;
   const BASE_DURATION = 48;            // seconds for currentP 0 -> 1 at 1x
   const TAU = Math.PI * 2;
-  const siteIntroMode = new URLSearchParams(window.location.search).has("siteIntro");
+  const params = new URLSearchParams(window.location.search);
+  const siteIntroMode = params.has("siteIntro");
+  const embeddedMode = params.has("embedded");
 
   // time (s) <-> progress (0..1), logarithmic
   const timeToP = (t) => (Math.log10(t) - L0) / LR;
@@ -461,6 +466,7 @@
   const controlsEl = document.getElementById("controls");
   const compEl = document.getElementById("composition");
   document.body.classList.toggle("site-intro", siteIntroMode);
+  document.body.classList.toggle("embedded", embeddedMode);
 
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -529,9 +535,11 @@
     centerX = W / 2;
     const mobile = W < 720;
     compEl.style.top = (mobile ? 14 : 18) + "px";
-    topPad = mobile ? 76 : 88;
-    // the controls bar lives at the bottom now — leave room for it + the rim
-    const bottomReserve = controlsEl.offsetHeight + 14 + 30;
+    topPad = embeddedMode ? (mobile ? 60 : 54) : (mobile ? 76 : 88);
+    // Leave room below the present-day rim for its labels. In site-intro mode
+    // the controls are hidden, so reserve explicit space for the click prompt.
+    const controlsH = siteIntroMode ? 0 : controlsEl.offsetHeight;
+    const bottomReserve = siteIntroMode ? (mobile ? 86 : 78) : controlsH + 14 + 46;
     usableH = H - topPad - bottomReserve;
     maxHW = Math.min(W * 0.44, centerX - (mobile ? 24 : 244));
     cardW = mobile ? 150 : 214;
@@ -540,8 +548,9 @@
   }
 
   function computeCardLayout() {
-    // lowest allowed card BOTTOM edge sits above the bottom controls bar
-    const bottomLimit = H - controlsEl.offsetHeight - 26;
+    // lowest allowed card BOTTOM edge sits above the controls or intro gutter
+    const bottomInset = siteIntroMode ? 34 : controlsEl.offsetHeight + 34;
+    const bottomLimit = H - bottomInset;
     const pad = 12;              // vertical gap between adjacent cards
     // Set widths first so wrapped heights measure correctly, then read heights.
     MS.forEach(m => { m.el.style.width = cardW + "px"; m.ch = m.el.offsetHeight || 70; });
@@ -549,7 +558,7 @@
     const compB = compEl.offsetTop + compEl.offsetHeight;
     ["L", "R"].forEach(side => {
       // Left column clears the title (desktop); right clears the composition panel.
-      const minY = side === "L" ? (W < 720 ? 16 : 96) : compB + 12;
+      const minY = side === "L" ? (embeddedMode ? 20 : (W < 720 ? 16 : 96)) : compB + 12;
       const list = MS.filter(m => m.side === side).sort((a, b) => a.vy - b.vy);
       const n = list.length;
       // forward pass: node-centred, then pushed down to clear the previous card

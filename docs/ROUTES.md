@@ -34,7 +34,7 @@ This is the current public route inventory for the Sapiens Scientia website.
 |---|---|---|
 | `/projects/sapiens-scientia-data-index` | `src/app/projects/sapiens-scientia-data-index/page.tsx` | Structured index of public knowledge databases and registries. |
 | `/projects/earthview` | `src/app/projects/earthview/page.tsx` | Embedded EarthView 3D project page. |
-| `/projects/big-bang-universe` | `src/app/projects/big-bang-universe/page.tsx` | Standalone Big Bang Universe animated inflation diagram imported as static HTML. |
+| `/projects/big-bang-universe` | `src/app/projects/big-bang-universe/page.tsx` | React project page shell embedding the Big Bang Universe animated cosmic-history canvas runtime. |
 
 ## API And Metadata Routes
 

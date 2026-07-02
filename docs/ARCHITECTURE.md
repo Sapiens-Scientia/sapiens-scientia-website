@@ -36,7 +36,11 @@ npm run build
 The site is mostly static pages with client-side interactive islands.
 
 - `src/app/page.tsx` renders the homepage shell as a full-screen iframe of the
-  standalone Big Bang Universe app in site-intro mode.
+  standalone Big Bang Universe canvas runtime in site-intro mode.
+- `src/app/projects/big-bang-universe/page.tsx` renders a React/Next project
+  page shell around that same canvas runtime with `?embedded=1`, so the public
+  project route keeps the site navigation, page rhythm, and footer while the
+  canvas animation remains isolated in `public/standalone/big-bang-universe/`.
 - `src/app/layout.tsx` renders the sitewide `UniverseTimeline`, a fixed
   bottom rail of colored universe-history milestones that floats over all
   routes and links into `/chronos`.
@@ -57,9 +61,11 @@ The site is mostly static pages with client-side interactive islands.
 
 The homepage is the most sensitive surface.
 
-- `public/standalone/big-bang-universe/index.html`: standalone Big Bang
-  Universe canvas app. The homepage loads it with `?siteIntro=1`, which enables
-  the bottom/today rim click-through into `/observable-universe`.
+- `public/standalone/big-bang-universe/index.html`: Big Bang Universe canvas
+  runtime. The homepage loads it with `?siteIntro=1`, which enables the
+  bottom/today rim click-through into `/observable-universe`; the public project
+  route embeds the same runtime inside a React site shell with `?embedded=1`,
+  which hides the runtime's duplicate internal title.
 - `src/components/home-galaxy-view.tsx`: duplicated Galaxy-only EarthView scene
   used by `/history-of-planet-earth` so `/projects/earthview` keeps its
   standalone app wrapper unchanged.
