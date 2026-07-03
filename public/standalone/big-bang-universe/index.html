@@ -70,7 +70,6 @@
     --title-grad: linear-gradient(92deg, #141a3e 10%, #4a63d8 40%, #1f9e82 60%, #7a4ad8 80%, #141a3e 95%);
   }
   body.embedded #title { display: none; }
-  body.prestart #title,
   body.prestart #composition,
   body.prestart #controls {
     opacity: 0;
@@ -90,11 +89,14 @@
 
   /* ---- Title ---- */
   #title {
-    position: absolute; top: 20px; left: 24px; z-index: 5;
-    pointer-events: none; max-width: 46%;
+    position: absolute; top: 24px; left: 50%; z-index: 5;
+    width: min(34rem, calc(100vw - 2.5rem));
+    transform: translateX(-50%);
+    pointer-events: none; text-align: center;
   }
   #title h1 {
-    margin: 0; font-size: 23px; font-weight: 750; letter-spacing: .3px;
+    margin: 0; font-size: clamp(24px, 3.3vw, 40px); font-weight: 750; letter-spacing: 0;
+    line-height: 1;
     background: var(--title-grad);
     background-size: 220% 100%;
     -webkit-background-clip: text; background-clip: text; color: transparent;
@@ -103,7 +105,7 @@
   @keyframes sheen { from { background-position: 0% 0; } to { background-position: 100% 0; } }
   @media (prefers-reduced-motion: reduce) { #title h1 { animation: none; } }
   #title p {
-    margin: 7px 0 0; font-size: 10.5px; color: var(--muted); line-height: 1.5;
+    margin: 8px 0 0; font-size: clamp(11px, 1.4vw, 14px); color: var(--muted); line-height: 1.4;
     text-transform: uppercase; letter-spacing: .18em;
   }
 
@@ -218,7 +220,9 @@
   .speeds .btn.active { background: var(--accent); color: var(--accent-contrast); border-color: var(--accent); }
 
   @media (max-width: 720px) {
-    #title { display: none; }
+    #title { top: 80px; width: min(24rem, calc(100vw - 2rem)); }
+    #title h1 { font-size: 26px; }
+    #title p { font-size: 10px; letter-spacing: .14em; }
     #composition { width: 192px; padding: 10px 11px 9px; }
     .card { width: 150px; }
     .card .cdesc { display: none; }
@@ -541,7 +545,7 @@
     centerX = W / 2;
     const mobile = W < 720;
     compEl.style.top = (mobile ? 14 : 18) + "px";
-    topPad = embeddedMode ? (mobile ? 60 : 54) : (mobile ? 76 : 88);
+    topPad = embeddedMode ? (mobile ? 60 : 54) : (mobile ? 154 : 128);
     // Leave room below the present-day rim for its labels. In site-intro mode
     // the controls are hidden, so reserve explicit space for the click prompt.
     const controlsH = siteIntroMode ? 0 : controlsEl.offsetHeight;

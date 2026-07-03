@@ -2,12 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
 import { CosmicObjectHierarchy } from "@/components/cosmic-object-hierarchy";
 
 export function ObservableUniverseView() {
-  const [imageLoaded, setImageLoaded] = useState(false);
-
   return (
     <section
       className="relative flex min-h-screen items-center justify-center overflow-hidden bg-black text-white"
@@ -32,10 +29,7 @@ export function ObservableUniverseView() {
           width={1920}
           height={1920}
           priority
-          onLoad={() => setImageLoaded(true)}
-          className={`h-full w-full object-contain drop-shadow-[0_0_42px_rgba(186,230,253,0.2)] transition-opacity duration-[4000ms] ease-out ${
-            imageLoaded ? "opacity-100" : "opacity-0"
-          }`}
+          className="h-full w-full object-contain drop-shadow-[0_0_42px_rgba(186,230,253,0.2)]"
         />
         <div className="pointer-events-none absolute left-1/2 top-[13.1%] z-10 -translate-x-1/2 text-center text-xs font-semibold uppercase tracking-[0.22em] text-cyan-100/90 drop-shadow-[0_0_12px_rgba(56,189,248,0.75)] sm:text-sm">
           Milky Way Galaxy
