@@ -106,6 +106,16 @@ export function HomeOrbitExperience() {
           </h1>
         </div>
 
+        <Link
+          href="/meta-earth"
+          aria-label="Zoom from Earth's orbit into Meta Earth"
+          title="Zoom into Meta Earth"
+          className="cosmic-hotspot left-1/2 top-[74%] z-[120] h-24 w-24 -translate-x-1/2 -translate-y-1/2 max-sm:top-[72%] max-sm:h-20 max-sm:w-20"
+          style={{ "--hotspot-color": "52 211 153" } as React.CSSProperties}
+        >
+          <span className="cosmic-hotspot__label">Earth</span>
+        </Link>
+
         <div className="pointer-events-none absolute right-5 top-5 z-[130] flex max-w-[min(28rem,calc(100vw-2.5rem))] flex-col items-end gap-3 sm:right-6 sm:top-6">
           <Link
             href="/meta-earth"
