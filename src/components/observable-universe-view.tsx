@@ -15,7 +15,7 @@ export function ObservableUniverseView() {
     >
       <CosmicObjectHierarchy />
 
-      <div className="pointer-events-none absolute left-1/2 top-5 z-10 w-[min(34rem,calc(100vw-2.5rem))] -translate-x-1/2 text-center">
+      <div className="pointer-events-none absolute left-1/2 top-20 z-10 w-[min(34rem,calc(100vw-2.5rem))] -translate-x-1/2 text-center sm:top-5">
         <h1 className="text-balance text-2xl font-semibold leading-none tracking-normal text-white drop-shadow-[0_10px_28px_rgba(0,0,0,0.65)] sm:text-4xl">
           <span>Observable Universe</span>
           <br />
@@ -47,8 +47,10 @@ export function ObservableUniverseView() {
           href="/history-of-planet-earth"
           aria-label="Zoom into the History of Planet Earth in the Milky Way"
           title="Zoom into the History of Planet Earth"
-          className="absolute left-1/2 top-1/2 z-10 h-[220px] w-[220px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-cyan-100/58 bg-cyan-200/[0.025] shadow-[0_0_42px_rgba(56,189,248,0.28),inset_0_0_26px_rgba(56,189,248,0.14)] transition-all hover:scale-105 hover:border-cyan-50/90 hover:bg-cyan-100/[0.045] hover:shadow-[0_0_56px_rgba(56,189,248,0.38),inset_0_0_32px_rgba(56,189,248,0.2)] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-200"
-        />
+          className="cosmic-hotspot left-1/2 top-1/2 z-10 h-28 w-28 -translate-x-1/2 -translate-y-1/2 sm:h-32 sm:w-32"
+        >
+          <span className="cosmic-hotspot__label">Solar System</span>
+        </Link>
         <figcaption className="absolute -bottom-7 left-1/2 w-[min(36rem,calc(100vw-3rem))] -translate-x-1/2 text-center text-[0.62rem] font-medium leading-4 text-slate-500">
           Image by{" "}
           <a

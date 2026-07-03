@@ -20,6 +20,15 @@ export function HomeGalaxyExperience() {
         </h1>
       </div>
 
+      <Link
+        href="/earth-orbit"
+        aria-label="Zoom from Earth history into Earth's orbit"
+        title="Zoom into Earth's orbit"
+        className="cosmic-hotspot left-1/2 top-[78%] z-[120] h-32 w-32 -translate-x-1/2 -translate-y-1/2 max-lg:top-[74%] max-sm:h-24 max-sm:w-24"
+      >
+        <span className="cosmic-hotspot__label">Present Earth</span>
+      </Link>
+
       <div className="pointer-events-none absolute right-5 top-5 z-[130] flex max-w-[min(28rem,calc(100vw-2.5rem))] flex-col items-end gap-3 sm:right-6 sm:top-6">
         <Link
           href="/earth-orbit"
