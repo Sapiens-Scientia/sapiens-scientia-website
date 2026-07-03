@@ -48,6 +48,8 @@ The site is mostly static pages with client-side interactive islands.
   when the user clicks the bottom/today rim of the completed history bell.
 - `src/app/history-of-planet-earth/page.tsx` renders the Galaxy 3D history
   view as its own public route.
+- `src/app/earth-orbit/page.tsx` renders the EarthView orbit scene as the
+  intermediate zoom step between Galaxy history and Meta Earth.
 - `src/app/meta-earth/page.tsx` renders `MetaEarthExperience`, the former
   homepage Physical Earth / Digital Halo / Meta Earth product surface.
 - `EarthHero` is a client component because it owns the Meta Earth 3D canvas, theme state, timeline state, and pointer interlock between overlays and orbit controls.
@@ -70,7 +72,9 @@ The homepage is the most sensitive surface.
   used by `/history-of-planet-earth` so `/projects/earthview` keeps its
   standalone app wrapper unchanged.
 - `src/components/home-galaxy-experience.tsx`: full-screen Galaxy history shell
-  with the clear Meta Earth link.
+  with the clear Earth Orbit link.
+- `src/components/home-orbit-experience.tsx`: full-screen EarthView orbit shell
+  used by `/earth-orbit` with reset, tilt-view, and tilt-strip controls.
 - `src/components/earth-hero.tsx`: full-screen Meta Earth hero shell and React Three Fiber canvas.
 - `src/components/universe-timeline.tsx`: sitewide fixed universe-history
   timeline rendered from the root layout.
@@ -91,8 +95,9 @@ into this website rather than embedding the separate app in an iframe.
   is imported by the root layout.
 - Runtime textures are copied into `public/earth-blue-marble-5400x2700.jpg` and
   `public/assets/milky-way.jpg`.
-- The sitewide `UniverseTimeline` is hidden on `/projects/earthview` so it does
-  not cover EarthView's own bottom mode controls.
+- The sitewide `UniverseTimeline` is hidden on `/earth-orbit` and
+  `/projects/earthview` so it does not cover EarthView-style 3D controls or
+  orbit annotations.
 
 ## Shared Page System
 

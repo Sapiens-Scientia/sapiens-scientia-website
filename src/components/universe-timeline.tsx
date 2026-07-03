@@ -20,9 +20,10 @@ export function UniverseTimeline() {
   const pathname = usePathname();
   const [hasHomeRevealed, setHasHomeRevealed] = useState(false);
   const isHomeIntroActive = pathname === "/" && !hasHomeRevealed;
+  const isEarthOrbitActive = pathname === "/earth-orbit";
   const isEarthViewActive = pathname === "/projects/earthview";
   const isStandaloneProjectActive = pathname === "/projects/big-bang-universe";
-  const isHidden = isHomeIntroActive || isEarthViewActive || isStandaloneProjectActive;
+  const isHidden = isHomeIntroActive || isEarthOrbitActive || isEarthViewActive || isStandaloneProjectActive;
 
   useEffect(() => {
     const onHomeIntroStart = () => setHasHomeRevealed(false);

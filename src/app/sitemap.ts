@@ -7,6 +7,7 @@ const routes = [
   "/",
   "/observable-universe",
   "/history-of-planet-earth",
+  "/earth-orbit",
   "/meta-earth",
   "/ontology",
   "/scales",

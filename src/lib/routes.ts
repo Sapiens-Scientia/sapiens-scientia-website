@@ -8,6 +8,7 @@ export const SITE_URL = "https://www.sapiensscientia.com";
 
 const ROUTE_LABELS: Record<string, string> = {
   "/": "Home",
+  "/earth-orbit": "Earth Orbit",
   "/meta-earth": "Meta Earth",
   "/platforms": "Platforms",
   "/platforms/persona": "Persona",
