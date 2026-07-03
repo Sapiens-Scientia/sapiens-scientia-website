@@ -10,7 +10,8 @@ This file records practical handoff context for future agents working on the Sap
   homepage mode, clicking the bottom/today rim of the completed history bell
   navigates into the Observable Universe view at `/observable-universe`. From
   there the central target ring links to the Galaxy view / History of Planet
-  Earth at `/history-of-planet-earth`, which then links onward to Meta Earth.
+  Earth at `/history-of-planet-earth`, which links onward through Earth Orbit at
+  `/earth-orbit` before Meta Earth.
 - `/meta-earth` is the former homepage: a full-screen 3D experience with overlay
   panels, time controls, theme support, and platform bridge interactions.
 - The main platform model is `Persona`, `Societas`, `Terra`, with `Salus` and `Domus` nested inside Persona, `Soma` nested inside Salus, and `Morbus` nested inside Soma.
@@ -38,11 +39,16 @@ If the implementation reveals a conceptual mismatch or durable constraint, updat
   `/history-of-planet-earth`. It uses the lower-level EarthView
   `UnifiedEarthView` but does not change `/projects/earthview` or its
   standalone EarthView app wrapper.
+- `src/components/home-orbit-experience.tsx` is the flow-specific Earth Orbit
+  scene used by `/earth-orbit`. It reuses the lower-level EarthView
+  `UnifiedEarthView` in `orbit` mode with reset, tilt-view, and tilt-strip
+  controls.
 - `src/components/universe-timeline.tsx` is rendered from `src/app/layout.tsx`
   as the sitewide fixed bottom Universe Timeline. It intentionally floats above
   most routes, links to `/chronos`, and uses a horizontally scrollable milestone
-  rail on narrow screens. It is hidden on `/projects/earthview` so EarthView's
-  own bottom mode controls remain usable.
+  rail on narrow screens. It is hidden on `/earth-orbit` and
+  `/projects/earthview` so EarthView-style controls and annotations remain
+  usable.
 - `src/components/earthview/` contains the imported EarthView 3D React/Three
   project. `/projects/earthview` renders it directly rather than using an
   iframe. Keep the copied textures in `public/earth-blue-marble-5400x2700.jpg`
