@@ -10,6 +10,11 @@
 <meta property="og:type" content="website" />
 <meta name="theme-color" content="#060b18" />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌌</text></svg>" />
+<script>
+  if (new URLSearchParams(window.location.search).has("siteIntro")) {
+    document.documentElement.classList.add("site-intro-boot");
+  }
+</script>
 <style>
   :root {
     --page: #000000;
@@ -70,6 +75,11 @@
     --title-grad: linear-gradient(92deg, #141a3e 10%, #4a63d8 40%, #1f9e82 60%, #7a4ad8 80%, #141a3e 95%);
   }
   body.embedded #title { display: none; }
+  html.site-intro-boot body:not(.intro-complete) #title {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+    visibility: hidden;
+  }
   body.prestart #composition,
   body.prestart #controls {
     opacity: 0;
@@ -93,6 +103,7 @@
     width: min(34rem, calc(100vw - 2.5rem));
     transform: translateX(-50%);
     pointer-events: none; text-align: center;
+    transition: opacity .6s ease, transform .6s ease, visibility .6s ease;
   }
   #title h1 {
     margin: 0; font-size: clamp(24px, 3.3vw, 40px); font-weight: 750; letter-spacing: 0;
@@ -722,7 +733,8 @@
 
   function drawSingularity(x, y, pul, ant, tsec) {
     const lightMode = document.body.classList.contains("light");
-    const phase = reduceMotion ? 0 : tsec;
+    const safePul = Number.isFinite(pul) ? Math.max(0.01, pul) : 1;
+    const phase = reduceMotion || !Number.isFinite(tsec) ? 0 : tsec;
     const shimmer = reduceMotion ? 0 : Math.sin(phase * 1.7) * 0.5 + 0.5;
     const cool = lightMode ? "66,76,190" : "130,190,255";
     const hot = lightMode ? "36,180,158" : "80,255,214";
@@ -734,53 +746,53 @@
     ctx.translate(x, y);
 
     ctx.globalCompositeOperation = lightMode ? "source-over" : "lighter";
-    const halo = ctx.createRadialGradient(0, 0, 2, 0, 0, 58 * pul);
+    const halo = ctx.createRadialGradient(0, 0, 2, 0, 0, 58 * safePul);
     halo.addColorStop(0, `rgba(${hot},${0.34 + shimmer * 0.08})`);
     halo.addColorStop(0.26, `rgba(${violet},${0.30 + ant * 0.16})`);
     halo.addColorStop(0.68, `rgba(${cool},${0.18 + ant * 0.10})`);
     halo.addColorStop(1, `rgba(${cool},0)`);
     ctx.fillStyle = halo;
-    ctx.beginPath(); ctx.arc(0, 0, 58 * pul, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(0, 0, 58 * safePul, 0, TAU); ctx.fill();
 
-    const caustic = ctx.createRadialGradient(0, 0, 0, 0, 0, 29 * pul);
+    const caustic = ctx.createRadialGradient(0, 0, 0, 0, 0, 29 * safePul);
     caustic.addColorStop(0, `rgba(${hot},${0.44 + shimmer * 0.08 + ant * 0.10})`);
     caustic.addColorStop(0.44, `rgba(${violet},${0.24 + ant * 0.08})`);
     caustic.addColorStop(1, `rgba(${cool},0)`);
     ctx.fillStyle = caustic;
     ctx.beginPath();
-    ctx.ellipse(0, 0, 29 * pul, 10 * pul, 0, 0, TAU);
+    ctx.ellipse(0, 0, 29 * safePul, 10 * safePul, 0, 0, TAU);
     ctx.fill();
 
-    const verticalCharge = ctx.createRadialGradient(0, 0, 0, 0, 0, 22 * pul);
+    const verticalCharge = ctx.createRadialGradient(0, 0, 0, 0, 0, 22 * safePul);
     verticalCharge.addColorStop(0, `rgba(${violet},${0.28 + ant * 0.08})`);
     verticalCharge.addColorStop(0.54, `rgba(${cool},0.14)`);
     verticalCharge.addColorStop(1, `rgba(${cool},0)`);
     ctx.fillStyle = verticalCharge;
     ctx.beginPath();
-    ctx.ellipse(0, 0, 12 * pul, 23 * pul, 0, 0, TAU);
+    ctx.ellipse(0, 0, 12 * safePul, 23 * safePul, 0, 0, TAU);
     ctx.fill();
 
     ctx.globalCompositeOperation = "source-over";
-    const lens = ctx.createRadialGradient(0, 0, 1, 0, 0, 16 * pul);
+    const lens = ctx.createRadialGradient(0, 0, 1, 0, 0, 16 * safePul);
     lens.addColorStop(0, `rgba(${shadow},0.82)`);
     lens.addColorStop(0.68, `rgba(${shadow},0.74)`);
     lens.addColorStop(1, `rgba(${shadow},0)`);
     ctx.fillStyle = lens;
-    ctx.beginPath(); ctx.arc(0, 0, 16 * pul, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(0, 0, 16 * safePul, 0, TAU); ctx.fill();
 
     ctx.globalCompositeOperation = lightMode ? "source-over" : "lighter";
-    const pinch = ctx.createRadialGradient(0, 0, 0, 0, 0, 16 * pul);
+    const pinch = ctx.createRadialGradient(0, 0, 0, 0, 0, 16 * safePul);
     pinch.addColorStop(0, `rgba(${hot},${0.24 + shimmer * 0.06})`);
     pinch.addColorStop(0.5, `rgba(${violet},0.14)`);
     pinch.addColorStop(1, `rgba(${hot},0)`);
     ctx.fillStyle = pinch;
     ctx.beginPath();
-    ctx.ellipse(0, 0, 15 * pul, 5 * pul, 0, 0, TAU);
+    ctx.ellipse(0, 0, 15 * safePul, 5 * safePul, 0, 0, TAU);
     ctx.fill();
 
     ctx.globalCompositeOperation = "source-over";
     ctx.fillStyle = `rgba(${core},${lightMode ? 0.46 : 0.72})`;
-    ctx.beginPath(); ctx.arc(0, 0, 4.4 * pul, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(0, 0, 4.4 * safePul, 0, TAU); ctx.fill();
     ctx.restore();
   }
 
@@ -1029,8 +1041,9 @@
     // ---- "today" rim: the face of the observable universe ----
     if (currentP > 0.96) {
       // once parked at today, the rim keeps breathing — expansion never stops
-      const breathe = (currentP >= 1 && !reduceMotion) ? 0.8 + 0.2 * Math.sin(tsec * 1.1) : 1;
-      const a = clamp01((currentP - 0.96) / 0.04) * breathe;
+      const pulse = Number.isFinite(tsec) ? Math.sin(tsec * 1.1) : 0;
+      const breathe = (currentP >= 1 && !reduceMotion) ? 0.8 + 0.2 * pulse : 1;
+      const a = Number.isFinite(currentP) ? clamp01((currentP - 0.96) / 0.04) * breathe : 0;
       const ry = todayRimRY();
       const yb = pToY(1);
       ctx.save();
@@ -1123,8 +1136,13 @@
   }
 
   // ---- Overlay update (cards + composition + readout) ---------------------
+  function syncIntroTitle() {
+    const introComplete = siteIntroMode && currentP >= 0.999 && preroll <= 0 && targetP === null;
+    document.body.classList.toggle("intro-complete", introComplete);
+  }
   function syncStartChrome() {
     document.body.classList.toggle("prestart", waiting());
+    syncIntroTitle();
   }
   function updateOverlay(currentP) {
     syncStartChrome();
