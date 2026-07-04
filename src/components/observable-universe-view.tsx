@@ -43,7 +43,7 @@ export function ObservableUniverseView() {
           title="Zoom into the History of Planet Earth"
           className="cosmic-hotspot left-1/2 top-1/2 z-10 h-28 w-28 -translate-x-1/2 -translate-y-1/2 sm:h-32 sm:w-32"
         >
-          <span className="cosmic-hotspot__label">Solar System</span>
+          <span className="cosmic-hotspot__label">Enter Milky Way</span>
         </Link>
         <figcaption className="absolute -bottom-7 left-1/2 w-[min(36rem,calc(100vw-3rem))] -translate-x-1/2 text-center text-[0.62rem] font-medium leading-4 text-slate-500">
           Image by{" "}

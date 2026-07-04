@@ -639,7 +639,7 @@ function HumanPlatformsBridgePanel({
   return (
     <aside
       ref={panelRef}
-      className="scrollbar-hidden pointer-events-auto max-h-[24vh] w-48 overflow-y-auto overscroll-contain bg-black/42 px-6 py-4 text-center text-white shadow-[0_0_28px_rgba(59,130,246,0.16)] backdrop-blur-sm max-lg:w-full max-lg:px-4 max-lg:py-3"
+      className="pointer-events-auto w-[min(32rem,calc(100vw-2rem))] bg-black/42 px-5 py-3 text-white shadow-[0_14px_38px_rgba(0,0,0,0.28)] backdrop-blur-sm max-lg:px-4"
       aria-label="Platforms"
       onPointerEnter={onPanelPointerEnter}
       onPointerLeave={() => {
@@ -654,49 +654,50 @@ function HumanPlatformsBridgePanel({
       onWheelCapture={stopPanelScrollPropagation}
       onTouchMoveCapture={stopPanelScrollPropagation}
     >
-      <h2 className="mb-3 text-2xl font-semibold leading-none text-white max-lg:text-xl">
-        <Link
-          href="/platforms"
-          className="rounded-sm transition-colors hover:text-sky-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300"
-        >
-          Platforms
-        </Link>
-      </h2>
-      <ol className="space-y-1.5">
-        {humanPlatformBridges.map((bridge) => {
-          const isActive = activeBridgeId === bridge.id;
+      <div className="flex flex-col items-center justify-center gap-2">
+        <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-white">
+          <Link
+            href="/platforms"
+            className="rounded-sm transition-colors hover:text-sky-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300"
+          >
+            Platforms
+          </Link>
+        </h2>
+        <ol className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+          {humanPlatformBridges.map((bridge) => {
+            const isActive = activeBridgeId === bridge.id;
 
-          return (
-            <li
-              key={bridge.id}
-              className={[
-                "grid justify-items-center gap-1 py-0.5 transition-all duration-300",
-                isActive ? "scale-[1.02]" : "",
-              ].join(" ")}
-              onPointerEnter={() => onBridgeEnter(bridge)}
-            >
-              <Link
-                href={bridge.href}
-                className="inline-flex items-center justify-center gap-2 text-base font-semibold text-sky-100 underline-offset-4 transition-colors hover:text-white hover:underline focus:outline-none focus-visible:text-white focus-visible:underline"
-                style={{
-                  color: isActive ? bridge.color : undefined,
-                  textShadow: isActive ? `0 0 14px ${bridge.color}` : undefined,
-                }}
+            return (
+              <li
+                key={bridge.id}
+                className={[
+                  "transition-all duration-300",
+                  isActive ? "scale-[1.02]" : "",
+                ].join(" ")}
+                onPointerEnter={() => onBridgeEnter(bridge)}
               >
-                <span
-                  aria-hidden="true"
-                  className={[
-                    "h-1.5 w-1.5 rounded-full transition-opacity duration-300",
-                    isActive ? "opacity-100" : "opacity-45",
-                  ].join(" ")}
-                  style={{ backgroundColor: bridge.color, boxShadow: `0 0 12px ${bridge.color}` }}
-                />
-                {bridge.title}
-              </Link>
-            </li>
-          );
-        })}
-      </ol>
+                <Link
+                  href={bridge.href}
+                  className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-sky-100 underline-offset-4 transition-colors hover:text-white hover:underline focus:outline-none focus-visible:text-white focus-visible:underline"
+                  style={{
+                    color: isActive ? bridge.color : undefined,
+                  }}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={[
+                      "h-1.5 w-1.5 rounded-full transition-opacity duration-300",
+                      isActive ? "opacity-100" : "opacity-45",
+                    ].join(" ")}
+                    style={{ backgroundColor: bridge.color }}
+                  />
+                  {bridge.title}
+                </Link>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
     </aside>
   );
 }
@@ -817,7 +818,7 @@ export function EarthOverlay({
           onPanelPointerLeave={onPanelPointerLeave}
         />
       </div>
-      <div className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 lg:-mt-20 z-[45] flex flex-col items-center gap-4 px-8 max-lg:top-auto max-lg:bottom-6 max-lg:translate-y-0 max-lg:inset-x-4 max-lg:px-0">
+      <div className="pointer-events-none absolute inset-x-0 bottom-24 z-[45] flex flex-col items-center justify-center gap-3 px-8 max-lg:inset-x-4 max-lg:bottom-6 max-lg:px-0">
         <HumanPlatformsBridgePanel
           activeBridgeId={activeBridge?.id ?? null}
           onBridgeEnter={setActiveBridge}

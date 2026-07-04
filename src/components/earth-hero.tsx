@@ -86,15 +86,6 @@ export function EarthHero() {
         </button>
       </div>
 
-      <div className="pointer-events-none absolute bottom-28 right-5 z-40 border border-emerald-200/24 bg-black/46 px-3.5 py-2 text-right shadow-[0_14px_38px_rgba(0,0,0,0.32)] backdrop-blur-md sm:right-6">
-        <p className="text-[0.58rem] font-semibold uppercase tracking-[0.2em] text-emerald-200/80">
-          You are here
-        </p>
-        <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-white">
-          Knowledge Age · Present Earth
-        </p>
-      </div>
-
       <EarthOverlay
         isMetaEarthMerged={isMetaEarthMerged}
         onMetaEarthToggle={toggleMetaEarth}
