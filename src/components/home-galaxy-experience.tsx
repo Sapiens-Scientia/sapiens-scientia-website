@@ -15,7 +15,7 @@ export function HomeGalaxyExperience() {
           <span>History of Planet Earth</span>
           <br />
           <span className="mt-1 inline-block text-lg font-medium text-slate-400 sm:text-2xl">
-            In the Milky Way Galaxy
+            In the Milky Way Galactic Orbit
           </span>
         </h1>
       </div>
@@ -26,7 +26,7 @@ export function HomeGalaxyExperience() {
         title="Zoom into Earth's orbit"
         className="cosmic-hotspot left-1/2 top-[78%] z-[120] h-32 w-32 -translate-x-1/2 -translate-y-1/2 max-lg:top-[74%] max-sm:h-24 max-sm:w-24"
       >
-        <span className="cosmic-hotspot__label">Present Earth</span>
+        <span className="cosmic-hotspot__label">Earth&apos;s Solar Orbit</span>
       </Link>
 
       <div className="pointer-events-none absolute right-5 top-5 z-[130] flex max-w-[min(28rem,calc(100vw-2.5rem))] flex-col items-end gap-3 sm:right-6 sm:top-6">
