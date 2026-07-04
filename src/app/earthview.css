@@ -260,11 +260,11 @@ button {
 
 .cosmic-hierarchy-panel {
   position: absolute;
-  top: 104px;
+  top: calc(50% - min(39vh, 42vw) + 1.25rem);
   left: 16px;
   z-index: 2;
   width: min(234px, calc(100vw - 32px));
-  max-height: min(68vh, 640px);
+  max-height: min(78vh, 640px);
   display: grid;
   gap: 12px;
   padding: 14px;
@@ -281,7 +281,7 @@ button {
 .cosmic-hierarchy-list {
   display: grid;
   gap: 7px;
-  max-height: calc(min(68vh, 640px) - 58px);
+  max-height: calc(min(78vh, 640px) - 58px);
   overflow-y: auto;
   padding-right: 4px;
   scrollbar-width: thin;
