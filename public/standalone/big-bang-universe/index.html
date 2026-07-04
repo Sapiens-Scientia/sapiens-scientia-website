@@ -478,6 +478,10 @@
   document.body.classList.toggle("embedded", embeddedMode);
 
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const observableUniverseImage = new Image();
+  observableUniverseImage.decoding = "async";
+  observableUniverseImage.src = "/images/observable-universe-logarithmic-illustration.png";
+  observableUniverseImage.addEventListener("load", () => requestAnimationFrame(draw));
 
   const SVG_PLAY = '<svg viewBox="0 0 24 24" width="13" height="13"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>';
   const SVG_PAUSE = '<svg viewBox="0 0 24 24" width="13" height="13"><path d="M6 5h4v14H6zM14 5h4v14h-4z" fill="currentColor"/></svg>';
@@ -533,7 +537,7 @@
   const pToY = (p) => topPad + p * usableH;
   // Downward sag of the expanding "now" front (and the bottom rim)
   const sagAt = (hw) => Math.min(hw * 0.06, 26);
-  const todayRimRY = () => Math.max(30, Math.min(maxHW * 0.085, 46));
+  const todayRimRY = () => Math.max(24, Math.min(maxHW * 0.06, 34));
 
   function layout() {
     dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -716,30 +720,67 @@
     return g;
   }
 
-  // Epoch color grading: a whisper of tint that follows the current era
-  const GRADE = [[150, 170, 255], [255, 170, 110], [110, 230, 200]];
-  function gradeRGB(p) {
-    const f = p < 0.5 ? p / 0.5 : (p - 0.5) / 0.5;
-    const a = p < 0.5 ? GRADE[0] : GRADE[1];
-    const b = p < 0.5 ? GRADE[1] : GRADE[2];
-    return [
-      Math.round(a[0] + (b[0] - a[0]) * f),
-      Math.round(a[1] + (b[1] - a[1]) * f),
-      Math.round(a[2] + (b[2] - a[2]) * f),
-    ];
-  }
+  function drawSingularity(x, y, pul, ant, tsec) {
+    const lightMode = document.body.classList.contains("light");
+    const phase = reduceMotion ? 0 : tsec;
+    const shimmer = reduceMotion ? 0 : Math.sin(phase * 1.7) * 0.5 + 0.5;
+    const cool = lightMode ? "66,76,190" : "130,190,255";
+    const hot = lightMode ? "36,180,158" : "80,255,214";
+    const violet = lightMode ? "120,70,210" : "170,116,255";
+    const core = lightMode ? "34,40,112" : "7,9,28";
+    const shadow = lightMode ? "32,36,96" : "2,3,14";
 
-  // Soft lens-flare spike through the singularity
-  function drawSpike(x, y, len, thick, alpha) {
     ctx.save();
     ctx.translate(x, y);
-    ctx.scale(1, thick / len);
-    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, len);
-    g.addColorStop(0, `rgba(${PAL.spike},${alpha})`);
-    g.addColorStop(0.4, `rgba(${PAL.spike},${alpha * 0.45})`);
-    g.addColorStop(1, `rgba(${PAL.spike},0)`);
-    ctx.fillStyle = g;
-    ctx.beginPath(); ctx.arc(0, 0, len, 0, TAU); ctx.fill();
+
+    ctx.globalCompositeOperation = lightMode ? "source-over" : "lighter";
+    const halo = ctx.createRadialGradient(0, 0, 2, 0, 0, 58 * pul);
+    halo.addColorStop(0, `rgba(${hot},${0.34 + shimmer * 0.08})`);
+    halo.addColorStop(0.26, `rgba(${violet},${0.30 + ant * 0.16})`);
+    halo.addColorStop(0.68, `rgba(${cool},${0.18 + ant * 0.10})`);
+    halo.addColorStop(1, `rgba(${cool},0)`);
+    ctx.fillStyle = halo;
+    ctx.beginPath(); ctx.arc(0, 0, 58 * pul, 0, TAU); ctx.fill();
+
+    const caustic = ctx.createRadialGradient(0, 0, 0, 0, 0, 29 * pul);
+    caustic.addColorStop(0, `rgba(${hot},${0.44 + shimmer * 0.08 + ant * 0.10})`);
+    caustic.addColorStop(0.44, `rgba(${violet},${0.24 + ant * 0.08})`);
+    caustic.addColorStop(1, `rgba(${cool},0)`);
+    ctx.fillStyle = caustic;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 29 * pul, 10 * pul, 0, 0, TAU);
+    ctx.fill();
+
+    const verticalCharge = ctx.createRadialGradient(0, 0, 0, 0, 0, 22 * pul);
+    verticalCharge.addColorStop(0, `rgba(${violet},${0.28 + ant * 0.08})`);
+    verticalCharge.addColorStop(0.54, `rgba(${cool},0.14)`);
+    verticalCharge.addColorStop(1, `rgba(${cool},0)`);
+    ctx.fillStyle = verticalCharge;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 12 * pul, 23 * pul, 0, 0, TAU);
+    ctx.fill();
+
+    ctx.globalCompositeOperation = "source-over";
+    const lens = ctx.createRadialGradient(0, 0, 1, 0, 0, 16 * pul);
+    lens.addColorStop(0, `rgba(${shadow},0.82)`);
+    lens.addColorStop(0.68, `rgba(${shadow},0.74)`);
+    lens.addColorStop(1, `rgba(${shadow},0)`);
+    ctx.fillStyle = lens;
+    ctx.beginPath(); ctx.arc(0, 0, 16 * pul, 0, TAU); ctx.fill();
+
+    ctx.globalCompositeOperation = lightMode ? "source-over" : "lighter";
+    const pinch = ctx.createRadialGradient(0, 0, 0, 0, 0, 16 * pul);
+    pinch.addColorStop(0, `rgba(${hot},${0.24 + shimmer * 0.06})`);
+    pinch.addColorStop(0.5, `rgba(${violet},0.14)`);
+    pinch.addColorStop(1, `rgba(${hot},0)`);
+    ctx.fillStyle = pinch;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 15 * pul, 5 * pul, 0, 0, TAU);
+    ctx.fill();
+
+    ctx.globalCompositeOperation = "source-over";
+    ctx.fillStyle = `rgba(${core},${lightMode ? 0.46 : 0.72})`;
+    ctx.beginPath(); ctx.arc(0, 0, 4.4 * pul, 0, TAU); ctx.fill();
     ctx.restore();
   }
 
@@ -966,33 +1007,6 @@
     }
     ctx.restore();
 
-    // ---- time probe: hairline + age pill under the cursor ----
-    if (probe !== null && probe <= currentP) {
-      const py = pToY(probe), phw = funnelHW(probe);
-      ctx.save();
-      ctx.strokeStyle = "rgba(255,255,255,0.6)"; ctx.lineWidth = 1;
-      ctx.shadowColor = "rgba(200,220,255,0.8)"; ctx.shadowBlur = 6;
-      ctx.setLineDash([4, 5]);
-      ctx.beginPath(); ctx.moveTo(centerX - phw, py); ctx.lineTo(centerX + phw, py); ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.shadowBlur = 0;
-      const label = formatAge(pToTime(invWarp(probe)));
-      ctx.font = "600 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
-      const tw2 = ctx.measureText(label).width;
-      // pill sits beside the funnel edge; falls back above the line when cramped
-      let lx = centerX + phw + 12, ly = py;
-      if (lx + tw2 + 18 > W) { lx = centerX - tw2 / 2; ly = py - 18; }
-      const bx = lx - 8, by = ly - 10, bw = tw2 + 16, bh = 20;
-      ctx.fillStyle = PAL.pillBg;
-      ctx.strokeStyle = PAL.pillBrd; ctx.lineWidth = 1;
-      ctx.beginPath();
-      if (ctx.roundRect) ctx.roundRect(bx, by, bw, bh, 10); else ctx.rect(bx, by, bw, bh);
-      ctx.fill(); ctx.stroke();
-      ctx.fillStyle = PAL.pillInk; ctx.textAlign = "left"; ctx.textBaseline = "middle";
-      ctx.fillText(label, lx, ly + 0.5);
-      ctx.restore();
-    }
-
     // ---- expanding "now" front (arced, glowing) ----
     if (currentP < 0.997) {
       ctx.save();
@@ -1021,13 +1035,30 @@
       const yb = pToY(1);
       ctx.save();
       ctx.globalCompositeOperation = PAL.partComp;
-      ctx.globalAlpha = a * 0.10;
-      const fill = ctx.createRadialGradient(centerX, yb, 0, centerX, yb, maxHW);
-      fill.addColorStop(0, `rgba(${PAL.todayRimHi},0.22)`);
-      fill.addColorStop(0.62, `rgba(${PAL.todayRim},0.10)`);
-      fill.addColorStop(1, `rgba(${PAL.todayRim},0)`);
-      ctx.fillStyle = fill;
-      ctx.beginPath(); ctx.ellipse(centerX, yb, maxHW, ry, 0, 0, TAU); ctx.fill();
+      if (observableUniverseImage.complete && observableUniverseImage.naturalWidth > 0) {
+        ctx.save();
+        ctx.beginPath(); ctx.ellipse(centerX, yb, maxHW, ry, 0, 0, TAU); ctx.clip();
+        ctx.translate(centerX, yb);
+        ctx.rotate(-0.12);
+        ctx.globalAlpha = a * (document.body.classList.contains("light") ? 0.64 : 0.78);
+        ctx.drawImage(observableUniverseImage, -maxHW, -maxHW, maxHW * 2, maxHW * 2);
+        ctx.restore();
+        const veil = ctx.createRadialGradient(centerX, yb, 0, centerX, yb, maxHW);
+        veil.addColorStop(0, `rgba(${PAL.todayRimHi},0.16)`);
+        veil.addColorStop(0.48, `rgba(${PAL.todayRim},0.06)`);
+        veil.addColorStop(1, `rgba(${PAL.todayRim},0)`);
+        ctx.globalAlpha = a * 0.52;
+        ctx.fillStyle = veil;
+        ctx.beginPath(); ctx.ellipse(centerX, yb, maxHW, ry, 0, 0, TAU); ctx.fill();
+      } else {
+        ctx.globalAlpha = a * 0.10;
+        const fill = ctx.createRadialGradient(centerX, yb, 0, centerX, yb, maxHW);
+        fill.addColorStop(0, `rgba(${PAL.todayRimHi},0.22)`);
+        fill.addColorStop(0.62, `rgba(${PAL.todayRim},0.10)`);
+        fill.addColorStop(1, `rgba(${PAL.todayRim},0)`);
+        ctx.fillStyle = fill;
+        ctx.beginPath(); ctx.ellipse(centerX, yb, maxHW, ry, 0, 0, TAU); ctx.fill();
+      }
       const rim = ctx.createLinearGradient(centerX - maxHW, 0, centerX + maxHW, 0);
       rim.addColorStop(0, `rgba(${PAL.todayRim},0)`);
       rim.addColorStop(0.16, `rgba(${PAL.todayRim},${a * 0.72})`);
@@ -1068,38 +1099,18 @@
       ctx.restore();
     }
 
-    // ---- the singularity: pulsing bloom + lens spikes ----
+    // ---- the singularity: abstract event horizon + gravitational lens ----
     ctx.save();
-    ctx.globalCompositeOperation = PAL.singComp;
     const ant = preroll > 0 ? 1 - preroll / PREROLL_T : 0; // pre-bang anticipation
-    let pul = reduceMotion ? 1 : 1 + 0.12 * Math.sin(tsec * 2.1);
-    if (ant > 0) pul *= 1 + 0.25 * ant * Math.sin(tsec * 13); // shiver builds
-    const gc = gradeRGB(currentP); // the halo remembers what era it has reached
-    const glow = ctx.createRadialGradient(centerX, topPad, 0, centerX, topPad, 26 * pul);
-    const lift = (v) => Math.max(0, Math.min(255, v + PAL.haloLift));
-    glow.addColorStop(0, `rgba(${PAL.singCore},0.85)`);
-    glow.addColorStop(0.3, `rgba(${lift(gc[0])},${lift(gc[1])},${lift(gc[2])},0.45)`);
-    glow.addColorStop(1, `rgba(${gc[0]},${gc[1]},${gc[2]},0)`);
-    ctx.fillStyle = glow;
-    ctx.beginPath(); ctx.arc(centerX, topPad, 26 * pul, 0, TAU); ctx.fill();
-    drawSpike(centerX, topPad, 58 * pul, 2.4, 0.32);
-    ctx.save(); ctx.translate(centerX, topPad); ctx.rotate(Math.PI / 2); ctx.translate(-centerX, -topPad);
-    drawSpike(centerX, topPad, 36 * pul, 2.4, 0.26);
-    ctx.restore();
-    // the void inhales: a ring collapses into the singularity before the bang
+    let pul = reduceMotion ? 1 : 1 + 0.045 * Math.sin(tsec * 1.35);
+    if (ant > 0) pul *= 1 + 0.18 * ant * Math.sin(tsec * 8.5); // shiver builds
+    drawSingularity(centerX, topPad, pul, ant, tsec);
+    // The void inhales: a collapse ring appears only during ignition.
     if (ant > 0 && !reduceMotion) {
       const r = (1 - ant) * 150 + 6;
       ctx.globalAlpha = ant * 0.55;
       ctx.strokeStyle = PAL.ring; ctx.lineWidth = 1.2;
       ctx.beginPath(); ctx.ellipse(centerX, topPad, r, r * 0.55, 0, 0, TAU); ctx.stroke();
-      ctx.globalAlpha = 1;
-    }
-    if (waiting()) {
-      const hintA = reduceMotion ? 0.82 : 0.54 + 0.22 * Math.sin(tsec * 2.2);
-      ctx.globalAlpha = hintA;
-      ctx.strokeStyle = `rgba(${PAL.todayRimHi},0.42)`;
-      ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.ellipse(centerX, topPad, 43, 26, 0, 0, TAU); ctx.stroke();
       ctx.globalAlpha = 1;
     }
     ctx.restore();
@@ -1300,9 +1311,7 @@
     else if (e.code === "KeyT") { themeBtn.click(); }
   });
 
-  // Time probe: hover the revealed universe to read its age, click to travel.
   // Clicking the waiting singularity ignites the whole thing.
-  let probe = null;
   const nearSingularity = (e) => {
     const dx = e.clientX - centerX, dy = e.clientY - topPad;
     return dx * dx + dy * dy < 48 * 48;
@@ -1323,19 +1332,14 @@
     }
   };
   canvas.addEventListener("mousemove", (e) => {
-    const vy = (e.clientY - topPad) / usableH;
-    const inside = vy >= 0 && vy <= Math.min(1, currentP) &&
-                   Math.abs(e.clientX - centerX) <= funnelHW(vy) + 10;
-    probe = inside ? vy : null;
     canvas.style.cursor = (waiting() && nearSingularity(e)) ? "pointer"
                         : nearTodayRim(e) ? "pointer"
-                        : inside ? "crosshair" : "default";
+                        : "default";
   });
-  canvas.addEventListener("mouseout", () => { probe = null; canvas.style.cursor = "default"; });
+  canvas.addEventListener("mouseout", () => { canvas.style.cursor = "default"; });
   canvas.addEventListener("click", (e) => {
     if (waiting() && nearSingularity(e)) { ignite(); return; }
     if (nearTodayRim(e)) { enterObservableUniverse(); return; }
-    if (probe !== null) travelTo(probe);
   });
 
   // No visibilitychange time-reset needed: dt is capped at 60ms per frame, so
