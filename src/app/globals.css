@@ -1028,16 +1028,7 @@ canvas {
 }
 
 .cosmic-hotspot::before {
-  inset: 12%;
-  background: radial-gradient(
-    circle,
-    rgb(var(--hotspot-color) / 0.36),
-    rgb(var(--hotspot-color) / 0.13) 34%,
-    transparent 72%
-  );
-  filter: blur(8px);
-  opacity: 0.82;
-  animation: cosmic-object-glow 3.6s ease-in-out infinite;
+  display: none;
 }
 
 .cosmic-hotspot::after {
@@ -1047,7 +1038,6 @@ canvas {
 .cosmic-hotspot:hover,
 .cosmic-hotspot:focus-visible {
   scale: 1.04;
-  filter: drop-shadow(0 0 16px rgb(var(--hotspot-color) / 0.48));
 }
 
 .cosmic-hotspot__label {
@@ -1078,24 +1068,6 @@ canvas {
   border-color: rgb(var(--hotspot-color) / 0.72);
   color: #ffffff;
   opacity: 1;
-}
-
-@keyframes cosmic-object-glow {
-  0%,
-  100% {
-    opacity: 0.45;
-    transform: scale(0.92);
-  }
-  50% {
-    opacity: 0.9;
-    transform: scale(1.1);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .cosmic-hotspot::before {
-    animation: none;
-  }
 }
 
 /* Homepage "Enter the map" call-to-action. A vivid gradient pill that gently
