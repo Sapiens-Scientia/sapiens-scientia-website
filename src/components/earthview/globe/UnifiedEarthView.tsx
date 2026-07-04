@@ -1441,7 +1441,7 @@ function GalaxyHistoryModel({
     )
     return (
         <group>
-            <GalaxyDisk position={galaxyDiskPosition} isDark={isDark} size={galaxyDiskSize} rotationDeg={galaxyDiskRotationDeg - 50} />
+            <GalaxyDisk position={galaxyDiskPosition} isDark={isDark} size={galaxyDiskSize} rotationDeg={galaxyDiskRotationDeg - 70} />
             <Line
                 points={[new THREE.Vector3(0, historyStartPoint.y + 0.5, 0), new THREE.Vector3(0, futureEndPoint.y - 0.5, 0)]}
                 color={isDark ? '#64748b' : '#94a3b8'}
