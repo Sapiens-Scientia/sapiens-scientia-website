@@ -184,16 +184,6 @@ export function CurrentEarthSunlightExperience() {
           </h1>
         </div>
 
-        <Link
-          href="/meta-earth"
-          aria-label="Zoom from current Earth sunlight into Meta Earth"
-          title="Zoom into Meta Earth"
-          className="cosmic-hotspot left-1/2 top-1/2 z-[120] h-[min(34rem,56vw)] w-[min(34rem,56vw)] -translate-x-1/2 -translate-y-1/2 max-sm:h-[74vw] max-sm:w-[74vw]"
-          style={{ "--hotspot-color": "45 212 191" } as React.CSSProperties}
-        >
-          <span className="cosmic-hotspot__label">Enter Meta Earth</span>
-        </Link>
-
         <div className="pointer-events-none absolute right-5 top-5 z-[130] flex max-w-[min(28rem,calc(100vw-2.5rem))] flex-col items-end gap-3 sm:right-6 sm:top-6">
           <Link
             href="/meta-earth"

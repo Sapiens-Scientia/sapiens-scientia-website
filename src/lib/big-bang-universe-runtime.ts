@@ -432,6 +432,7 @@ export function mountBigBangUniverse(root, options = {}) {
   let preroll = 0;     // seconds of held breath before the bang
   let focusVy = 0, focusA = 0; // glow band lighting up a visited moment
   let singularityHover = false, singularityHoverA = 0;
+  let todayRimHover = false, todayRimHoverA = 0;
   function bang() {
     if (reduceMotion) return;
     flashA = 0.85;
@@ -764,45 +765,47 @@ export function mountBigBangUniverse(root, options = {}) {
       const pulse = Number.isFinite(tsec) ? Math.sin(tsec * 1.1) : 0;
       const breathe = (currentP >= 1 && !reduceMotion) ? 0.8 + 0.2 * pulse : 1;
       const a = Number.isFinite(currentP) ? clamp01((currentP - 0.96) / 0.04) * breathe : 0;
-      const ry = todayRimRY();
+      const hoverA = siteIntroMode ? todayRimHoverA : 0;
+      const rx = maxHW * (1 + hoverA * 0.035);
+      const ry = todayRimRY() * (1 + hoverA * 0.42);
       const yb = pToY(1);
       ctx.save();
       ctx.globalCompositeOperation = PAL.partComp;
       if (observableUniverseImage.complete && observableUniverseImage.naturalWidth > 0) {
         ctx.save();
-        ctx.beginPath(); ctx.ellipse(centerX, yb, maxHW, ry, 0, 0, TAU); ctx.clip();
+        ctx.beginPath(); ctx.ellipse(centerX, yb, rx, ry, 0, 0, TAU); ctx.clip();
         ctx.translate(centerX, yb);
         ctx.rotate(-0.12);
-        ctx.globalAlpha = a * (root.classList.contains("light") ? 0.64 : 0.78);
-        ctx.drawImage(observableUniverseImage, -maxHW, -maxHW, maxHW * 2, maxHW * 2);
+        ctx.globalAlpha = a * (root.classList.contains("light") ? 0.64 : 0.78) * (1 + hoverA * 0.2);
+        ctx.drawImage(observableUniverseImage, -rx, -rx, rx * 2, rx * 2);
         ctx.restore();
-        const veil = ctx.createRadialGradient(centerX, yb, 0, centerX, yb, maxHW);
-        veil.addColorStop(0, `rgba(${PAL.todayRimHi},0.16)`);
-        veil.addColorStop(0.48, `rgba(${PAL.todayRim},0.06)`);
+        const veil = ctx.createRadialGradient(centerX, yb, 0, centerX, yb, rx);
+        veil.addColorStop(0, `rgba(${PAL.todayRimHi},${0.16 + hoverA * 0.08})`);
+        veil.addColorStop(0.48, `rgba(${PAL.todayRim},${0.06 + hoverA * 0.04})`);
         veil.addColorStop(1, `rgba(${PAL.todayRim},0)`);
         ctx.globalAlpha = a * 0.52;
         ctx.fillStyle = veil;
-        ctx.beginPath(); ctx.ellipse(centerX, yb, maxHW, ry, 0, 0, TAU); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(centerX, yb, rx, ry, 0, 0, TAU); ctx.fill();
       } else {
         ctx.globalAlpha = a * 0.10;
-        const fill = ctx.createRadialGradient(centerX, yb, 0, centerX, yb, maxHW);
-        fill.addColorStop(0, `rgba(${PAL.todayRimHi},0.22)`);
-        fill.addColorStop(0.62, `rgba(${PAL.todayRim},0.10)`);
+        const fill = ctx.createRadialGradient(centerX, yb, 0, centerX, yb, rx);
+        fill.addColorStop(0, `rgba(${PAL.todayRimHi},${0.22 + hoverA * 0.08})`);
+        fill.addColorStop(0.62, `rgba(${PAL.todayRim},${0.10 + hoverA * 0.04})`);
         fill.addColorStop(1, `rgba(${PAL.todayRim},0)`);
         ctx.fillStyle = fill;
-        ctx.beginPath(); ctx.ellipse(centerX, yb, maxHW, ry, 0, 0, TAU); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(centerX, yb, rx, ry, 0, 0, TAU); ctx.fill();
       }
-      const rim = ctx.createLinearGradient(centerX - maxHW, 0, centerX + maxHW, 0);
+      const rim = ctx.createLinearGradient(centerX - rx, 0, centerX + rx, 0);
       rim.addColorStop(0, `rgba(${PAL.todayRim},0)`);
       rim.addColorStop(0.16, `rgba(${PAL.todayRim},${a * 0.72})`);
       rim.addColorStop(0.5, `rgba(${PAL.todayRimHi},${a})`);
       rim.addColorStop(0.84, `rgba(${PAL.todayRim},${a * 0.72})`);
       rim.addColorStop(1, `rgba(${PAL.todayRim},0)`);
       ctx.strokeStyle = rim;
-      ctx.shadowColor = `rgb(${PAL.todayRim})`; ctx.shadowBlur = 16;
+      ctx.shadowColor = `rgb(${PAL.todayRim})`; ctx.shadowBlur = 16 + hoverA * 14;
       ctx.globalAlpha = a;
-      ctx.lineWidth = 3.8;
-      ctx.beginPath(); ctx.ellipse(centerX, yb, maxHW, ry, 0, 0, TAU); ctx.stroke();
+      ctx.lineWidth = 3.8 + hoverA * 1.8;
+      ctx.beginPath(); ctx.ellipse(centerX, yb, rx, ry, 0, 0, TAU); ctx.stroke();
       ctx.shadowBlur = 0;
       // the payoff: what this rim actually is
       if (currentP >= 0.995) {
@@ -942,6 +945,8 @@ export function mountBigBangUniverse(root, options = {}) {
     if (targetP === null) focusA = Math.max(0, focusA - wdt * 0.0005);
     const hoverTarget = singularityHover ? 1 : 0;
     singularityHoverA += (hoverTarget - singularityHoverA) * (reduceMotion ? 1 : 1 - Math.exp(-wdt * 0.012));
+    const rimHoverTarget = todayRimHover ? 1 : 0;
+    todayRimHoverA += (rimHoverTarget - todayRimHoverA) * (reduceMotion ? 1 : 1 - Math.exp(-wdt * 0.014));
 
     draw(currentP, tsec);
     updateOverlay(currentP);
@@ -1079,12 +1084,12 @@ export function mountBigBangUniverse(root, options = {}) {
   };
   const nearTodayRim = (e) => {
     if (!siteIntroMode || currentP < 0.995) return false;
-    const rx = Math.max(maxHW, 1);
-    const ry = Math.max(todayRimRY(), 30);
+    const rx = Math.max(maxHW * 1.04, 1);
+    const ry = Math.max(todayRimRY() * 1.9, 58);
     const point = eventPoint(e);
     const dx = (point.x - centerX) / rx;
     const dy = (point.y - pToY(1)) / ry;
-    return dx * dx + dy * dy <= 1.12;
+    return dx * dx + dy * dy <= 1;
   };
   const enterObservableUniverse = () => {
     if (options.onEnterObservableUniverse) {
@@ -1095,13 +1100,15 @@ export function mountBigBangUniverse(root, options = {}) {
   };
   listen(canvas, "mousemove", (e) => {
     singularityHover = nearSingularity(e);
+    todayRimHover = nearTodayRim(e);
     root.dataset.singularityHover = singularityHover ? "true" : "false";
     canvas.style.cursor = (waiting() && singularityHover) ? "pointer"
-                        : nearTodayRim(e) ? "pointer"
+                        : todayRimHover ? "pointer"
                         : "default";
   });
   listen(canvas, "mouseout", () => {
     singularityHover = false;
+    todayRimHover = false;
     root.dataset.singularityHover = "false";
     canvas.style.cursor = "default";
   });
