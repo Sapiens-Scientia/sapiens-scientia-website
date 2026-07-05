@@ -35,17 +35,15 @@ npm run build
 
 The site is mostly static pages with client-side interactive islands.
 
-- `src/app/page.tsx` renders the homepage shell as a full-screen iframe of the
-  standalone Big Bang Universe canvas runtime in site-intro mode.
-- `src/app/projects/big-bang-universe/page.tsx` renders a React/Next project
-  page shell around that same canvas runtime with `?embedded=1`, so the public
-  project route keeps the site navigation, page rhythm, and footer while the
-  canvas animation remains isolated in `public/standalone/big-bang-universe/`.
-- `src/app/layout.tsx` renders the sitewide `UniverseTimeline`, a fixed
-  bottom rail of colored universe-history milestones that floats over all
-  routes and links into `/chronos`.
-- The homepage Big Bang Universe iframe navigates to `/observable-universe`
-  when the user clicks the bottom/today rim of the completed history bell.
+- `src/app/page.tsx` renders the Big Bang Universe canvas runtime directly as
+  the React client component `BigBangUniverseExperience` in site-intro mode.
+- `src/app/projects/big-bang-universe/page.tsx` renders the same integrated
+  `BigBangUniverseExperience` inside a React/Next project page shell in embedded
+  mode, so the public project route keeps the site navigation, page rhythm, and
+  footer without using an iframe.
+- The integrated homepage Big Bang Universe runtime navigates to
+  `/observable-universe` through the Next router when the user clicks the
+  bottom/today rim of the completed history bell.
 - `src/app/history-of-planet-earth/page.tsx` renders the Galaxy 3D history
   view as its own public route.
 - `src/app/earth-orbit/page.tsx` renders the EarthView orbit scene as the
@@ -63,11 +61,19 @@ The site is mostly static pages with client-side interactive islands.
 
 The homepage is the most sensitive surface.
 
-- `public/standalone/big-bang-universe/index.html`: Big Bang Universe canvas
-  runtime. The homepage loads it with `?siteIntro=1`, which enables the
-  bottom/today rim click-through into `/observable-universe`; the public project
-  route embeds the same runtime inside a React site shell with `?embedded=1`,
-  which hides the runtime's duplicate internal title.
+- `src/components/big-bang-universe-experience.tsx`: React-owned DOM shell for
+  the Big Bang Universe canvas runtime. The homepage uses `siteIntro`, which
+  enables the bottom/today rim click-through into `/observable-universe`; the
+  public project route uses `embedded`, which hides the runtime's duplicate
+  internal title.
+- `src/lib/big-bang-universe-runtime.ts`: mechanically ported imperative canvas
+  runtime from the former standalone HTML file. It mounts into the React shell
+  and owns canvas drawing, card generation, controls, and animation state.
+- `src/app/big-bang-universe.css`: scoped CSS for the integrated Big Bang
+  Universe runtime. It is imported by the root layout with the other global CSS.
+- `public/standalone/big-bang-universe/index.html`: legacy standalone copy kept
+  as a static compatibility artifact; it is no longer used by the homepage or
+  the public Big Bang project page.
 - `src/components/home-galaxy-view.tsx`: duplicated Galaxy-only EarthView scene
   used by `/history-of-planet-earth` so `/projects/earthview` keeps its
   standalone app wrapper unchanged.
@@ -76,8 +82,6 @@ The homepage is the most sensitive surface.
 - `src/components/home-orbit-experience.tsx`: full-screen EarthView orbit shell
   used by `/earth-orbit` with reset, tilt-view, and tilt-strip controls.
 - `src/components/earth-hero.tsx`: full-screen Meta Earth hero shell and React Three Fiber canvas.
-- `src/components/universe-timeline.tsx`: sitewide fixed universe-history
-  timeline rendered from the root layout.
 - `src/components/earth-scene.tsx`: Three.js objects and animation.
 - `src/components/earth-overlay.tsx`: panels, clock, timeline, popouts, and bridge connectors.
 - `src/components/home-nav.tsx`: compact nav shown over the hero.
@@ -95,9 +99,6 @@ into this website rather than embedding the separate app in an iframe.
   is imported by the root layout.
 - Runtime textures are copied into `public/earth-blue-marble-5400x2700.jpg` and
   `public/assets/milky-way.jpg`.
-- The sitewide `UniverseTimeline` is hidden on `/earth-orbit` and
-  `/projects/earthview` so it does not cover EarthView-style 3D controls or
-  orbit annotations.
 
 ## Shared Page System
 

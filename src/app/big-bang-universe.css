@@ -1,0 +1,229 @@
+/* Integrated Big Bang Universe runtime. Source ported from public/standalone/big-bang-universe/index.html. */
+.big-bang-universe {
+    --page: #000000;
+    --ink: #eaf0ff;
+    --muted: #97a3c9;
+    --panel-brd: rgba(140, 160, 255, 0.16);
+    --accent: #8fb3ff;
+    --accent-contrast: #08122b;
+    --glass1: rgba(20, 24, 52, .72);
+    --glass2: rgba(9, 11, 28, .55);
+    --glass1-hover: rgba(28, 33, 68, .8);
+    --glass2-hover: rgba(12, 15, 36, .65);
+    --bar1: rgba(16, 19, 44, .6);
+    --bar2: rgba(7, 9, 24, .5);
+    --btnbg: rgba(255, 255, 255, .045);
+    --btnhover: rgba(255, 255, 255, .11);
+    --btnglow: rgba(143, 179, 255, .6);
+    --track: rgba(255, 255, 255, .13);
+    --thumb: #fff;
+    --thumbglow: rgba(160, 190, 255, .95);
+    --tipbg: rgba(10, 13, 32, .92);
+    --tipink: #dfe7ff;
+    --tipbrd: rgba(160, 180, 255, .4);
+    --hint: rgba(151, 163, 201, .55);
+    --hintb: rgba(200, 212, 245, .7);
+    --shadow: rgba(0, 0, 0, .7);
+    --compbar-bg: #000;
+    --compbar-ring: rgba(255, 255, 255, .07);
+    --title-grad: linear-gradient(92deg, #ffffff 10%, #aebfff 35%, #8fe3cf 55%, #e8bfff 75%, #ffffff 95%);
+  }
+  .big-bang-universe.light {
+    --page: #ffffff;
+    --ink: #1c2340;
+    --muted: #5c6688;
+    --panel-brd: rgba(70, 85, 160, .2);
+    --accent: #4a63d8;
+    --accent-contrast: #ffffff;
+    --glass1: rgba(255, 255, 255, .78);
+    --glass2: rgba(243, 245, 252, .62);
+    --glass1-hover: rgba(255, 255, 255, .92);
+    --glass2-hover: rgba(240, 243, 252, .78);
+    --bar1: rgba(255, 255, 255, .72);
+    --bar2: rgba(243, 245, 252, .55);
+    --btnbg: rgba(30, 40, 90, .05);
+    --btnhover: rgba(74, 99, 216, .12);
+    --btnglow: rgba(74, 99, 216, .35);
+    --track: rgba(30, 40, 90, .14);
+    --thumb: #2c3a80;
+    --thumbglow: rgba(74, 99, 216, .55);
+    --tipbg: rgba(255, 255, 255, .95);
+    --tipink: #1c2340;
+    --tipbrd: rgba(70, 85, 160, .35);
+    --hint: rgba(80, 90, 130, .6);
+    --hintb: rgba(40, 50, 90, .8);
+    --shadow: rgba(60, 70, 140, .3);
+    --compbar-bg: #e8eaf4;
+    --compbar-ring: rgba(0, 0, 0, .06);
+    --title-grad: linear-gradient(92deg, #141a3e 10%, #4a63d8 40%, #1f9e82 60%, #7a4ad8 80%, #141a3e 95%);
+  }
+  .big-bang-universe.embedded #title { display: none; }
+  .big-bang-universe.embedded { min-height: 0; }
+  .big-bang-universe.site-intro:not(.intro-complete) #title {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+    visibility: hidden;
+  }
+  .big-bang-universe.prestart #composition,
+  .big-bang-universe.prestart #controls {
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+  }
+  .big-bang-universe, .big-bang-universe * { box-sizing: border-box; }
+  .big-bang-universe {
+    margin: 0; padding: 0; height: 100%; overflow: hidden;
+    background: var(--page);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .big-bang-universe #stage { position: absolute; inset: 0; }
+  .big-bang-universe canvas { position: absolute; inset: 0; display: block; }
+
+  /* ---- Title ---- */
+  .big-bang-universe #title {
+    position: absolute; top: 24px; left: 50%; z-index: 5;
+    width: min(34rem, calc(100vw - 2.5rem));
+    transform: translateX(-50%);
+    pointer-events: none; text-align: center;
+    transition: opacity .6s ease, transform .6s ease, visibility .6s ease;
+  }
+  .big-bang-universe #title h1 {
+    margin: 0; font-size: clamp(24px, 3.3vw, 40px); font-weight: 750; letter-spacing: 0;
+    line-height: 1;
+    background: var(--title-grad);
+    background-size: 220% 100%;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: sheen 16s ease-in-out infinite alternate;
+  }
+  @keyframes sheen { from { background-position: 0% 0; } to { background-position: 100% 0; } }
+  @media (prefers-reduced-motion: reduce) { .big-bang-universe #title h1 { animation: none; } }
+  .big-bang-universe #title p {
+    margin: 8px 0 0; font-size: clamp(11px, 1.4vw, 14px); color: var(--muted); line-height: 1.4;
+    text-transform: uppercase; letter-spacing: .18em;
+  }
+
+  /* ---- Composition panel ---- */
+  .big-bang-universe #composition {
+    position: absolute; top: 84px; right: 18px; z-index: 6;
+    width: 228px; padding: 13px 14px 12px;
+    background: linear-gradient(160deg, var(--glass1), var(--glass2));
+    border: 1px solid var(--panel-brd);
+    border-radius: 14px; backdrop-filter: blur(14px) saturate(1.4);
+    box-shadow: 0 10px 34px -14px var(--shadow);
+  }
+  .big-bang-universe #composition h2 { margin: 0 0 3px; font-size: 11.5px; font-weight: 650; letter-spacing: .5px; }
+  .big-bang-universe #comp-era { font-size: 10.5px; color: var(--muted); margin-bottom: 10px; min-height: 13px;
+              text-transform: uppercase; letter-spacing: .08em; }
+  .big-bang-universe #comp-bar {
+    display: flex; height: 14px; width: 100%; border-radius: 7px; overflow: hidden;
+    background: var(--compbar-bg); box-shadow: inset 0 0 0 1px var(--compbar-ring);
+  }
+  .big-bang-universe #comp-bar > span { height: 100%; transition: width .18s linear; }
+  .big-bang-universe .seg-rad { background: linear-gradient(#ffd27f, #ff8a5c); }
+  .big-bang-universe .seg-mat { background: linear-gradient(#8fb3ff, #6b7bff); }
+  .big-bang-universe .seg-de  { background: linear-gradient(#9a7bff, #66e0c0); }
+  .big-bang-universe #comp-legend { margin-top: 10px; display: grid; gap: 5px; }
+  .big-bang-universe .lg { display: flex; align-items: center; font-size: 11px; color: var(--muted); }
+  .big-bang-universe .lg i { width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; flex: none; }
+  .big-bang-universe .lg b { color: var(--ink); font-weight: 600; margin-left: auto; font-variant-numeric: tabular-nums; }
+
+  /* ---- Milestone cards ---- */
+  .big-bang-universe .card {
+    position: absolute; z-index: 4; width: 214px;
+    padding: 9px 12px 10px; border-radius: 11px;
+    background: linear-gradient(135deg, var(--glass1), var(--glass2));
+    border: 1px solid var(--panel-brd);
+    border-left: 2px solid var(--mcol);
+    backdrop-filter: blur(10px) saturate(1.3);
+    box-shadow: 0 6px 26px -10px var(--shadow);
+    opacity: 0; transform: translateY(8px);
+    transition: opacity .55s ease, transform .55s cubic-bezier(.2,.7,.3,1.15),
+                box-shadow .4s ease, border-color .3s ease, background .3s ease;
+    pointer-events: none; cursor: pointer;
+  }
+  .big-bang-universe .card.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  .big-bang-universe .card.pop { box-shadow: 0 0 0 1px var(--mcol), 0 0 26px -4px var(--mcol); }
+  .big-bang-universe .card:hover {
+    border-color: var(--mcol);
+    transform: translateY(-2px) scale(1.015);
+    box-shadow: 0 10px 32px -8px var(--shadow), 0 0 20px -6px var(--mcol);
+    background: linear-gradient(135deg, var(--glass1-hover), var(--glass2-hover));
+  }
+  .big-bang-universe .card .ct { font-size: 12.5px; font-weight: 650; display: flex; align-items: center; gap: 7px; }
+  .big-bang-universe .card .ct i { width: 7px; height: 7px; border-radius: 50%; background: var(--mcol);
+                box-shadow: 0 0 9px var(--mcol); flex: none; }
+  .big-bang-universe .card .ctime { font-size: 10.5px; color: var(--accent); margin: 3px 0 3px;
+                 font-variant-numeric: tabular-nums; letter-spacing: .04em; }
+  .big-bang-universe .card .cdesc { font-size: 11px; color: var(--muted); line-height: 1.4; }
+
+  /* ---- Controls ---- */
+  .big-bang-universe #controls {
+    position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%);
+    z-index: 7; width: min(780px, calc(100% - 32px));
+    display: flex; align-items: center; gap: 13px;
+    padding: 10px 16px;
+    background: linear-gradient(160deg, var(--bar1), var(--bar2));
+    border: 1px solid var(--panel-brd); border-radius: 17px;
+    backdrop-filter: blur(16px) saturate(1.4);
+    box-shadow: 0 12px 40px -16px var(--shadow);
+  }
+  .big-bang-universe.site-intro #controls {
+    display: none;
+  }
+  .big-bang-universe .btn {
+    appearance: none; border: 1px solid var(--panel-brd); background: var(--btnbg);
+    color: var(--ink); cursor: pointer; line-height: 1;
+    transition: background .15s, border-color .15s, box-shadow .2s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .big-bang-universe .btn:hover { background: var(--btnhover); box-shadow: 0 0 14px -4px var(--btnglow); }
+  .big-bang-universe .btn.icon { width: 34px; height: 34px; border-radius: 50%; flex: none; }
+  .big-bang-universe .btn.icon svg { display: block; }
+  .big-bang-universe #age { font-variant-numeric: tabular-nums; font-size: 12.5px; min-width: 152px;
+         color: var(--ink); white-space: nowrap; }
+  .big-bang-universe #temp { font-variant-numeric: tabular-nums; font-size: 12.5px; min-width: 96px;
+          color: var(--ink); white-space: nowrap; }
+  .big-bang-universe #age small, .big-bang-universe #temp small { color: var(--muted); font-size: 9.5px; text-transform: uppercase; letter-spacing: .12em; margin-right: 2px; }
+  .big-bang-universe #scrubwrap { position: relative; flex: 1; height: 24px; display: flex; align-items: center; }
+  .big-bang-universe #scrub {
+    -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent) var(--fill, 0%), var(--track) var(--fill, 0%));
+    outline: none; cursor: pointer; margin: 0;
+  }
+  .big-bang-universe #scrub::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 13px; height: 13px; border-radius: 50%; background: var(--thumb);
+    box-shadow: 0 0 10px var(--thumbglow), 0 0 0 3px var(--track); cursor: pointer;
+  }
+  .big-bang-universe #scrub::-moz-range-thumb {
+    width: 13px; height: 13px; border-radius: 50%; background: var(--thumb); border: none;
+    box-shadow: 0 0 10px var(--thumbglow), 0 0 0 3px var(--track); cursor: pointer;
+  }
+  .big-bang-universe .tick { position: absolute; top: 50%; width: 4px; height: 4px; margin: -2px 0 0 -2px;
+          border-radius: 50%; opacity: .8; pointer-events: none; }
+  .big-bang-universe #scrubtip {
+    position: absolute; bottom: 24px; transform: translateX(-50%);
+    padding: 4px 9px; border-radius: 8px; white-space: nowrap;
+    background: var(--tipbg); border: 1px solid var(--tipbrd);
+    font-size: 10.5px; color: var(--tipink); font-variant-numeric: tabular-nums;
+    opacity: 0; transition: opacity .15s ease; pointer-events: none;
+    box-shadow: 0 4px 16px -6px var(--shadow);
+  }
+  .big-bang-universe .speeds { display: flex; gap: 4px; }
+  .big-bang-universe .speeds .btn { padding: 7px 9px; font-size: 11.5px; border-radius: 9px; font-weight: 600; }
+  .big-bang-universe .speeds .btn.active { background: var(--accent); color: var(--accent-contrast); border-color: var(--accent); }
+
+  @media (max-width: 720px) {
+    .big-bang-universe #title { top: 80px; width: min(24rem, calc(100vw - 2rem)); }
+    .big-bang-universe #title h1 { font-size: 26px; }
+    .big-bang-universe #title p { font-size: 10px; letter-spacing: .14em; }
+    .big-bang-universe #composition { width: 192px; padding: 10px 11px 9px; }
+    .big-bang-universe .card { width: 150px; }
+    .big-bang-universe .card .cdesc { display: none; }
+    .big-bang-universe #controls { flex-wrap: wrap; justify-content: center; gap: 8px; }
+    .big-bang-universe #scrubwrap { order: 5; flex-basis: 100%; }
+    .big-bang-universe #age, .big-bang-universe #temp { min-width: 0; }
+    .big-bang-universe #comp-legend { display: none; }
+    .big-bang-universe #comp-era { margin-bottom: 8px; }
+  }

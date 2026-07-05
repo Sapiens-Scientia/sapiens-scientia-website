@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BigBangUniverseExperience } from "@/components/big-bang-universe-experience";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteNav } from "@/components/site-nav";
 
@@ -56,11 +57,7 @@ export default function BigBangUniversePage() {
           aria-label="Interactive Big Bang Universe diagram"
           className="relative min-h-[680px] overflow-hidden border border-white/10 bg-black shadow-[0_0_44px_rgba(15,23,42,0.45)] lg:h-[min(76vh,900px)]"
         >
-          <iframe
-            src="/standalone/big-bang-universe/index.html?embedded=1"
-            title="Interactive Big Bang Universe diagram"
-            className="absolute inset-0 block h-full w-full border-0"
-          />
+          <BigBangUniverseExperience embedded className="absolute inset-0 min-h-0" />
         </section>
 
         <div className="flex flex-col gap-3 border-t border-white/10 pt-5 text-sm leading-6 text-slate-400 sm:flex-row sm:items-center sm:justify-between">
