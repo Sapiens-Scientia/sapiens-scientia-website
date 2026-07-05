@@ -101,27 +101,27 @@ export function HomeOrbitExperience() {
             <span>Earth Orbit</span>
             <br />
             <span className="mt-1 inline-block text-lg font-medium text-slate-400 sm:text-2xl">
-              From planetary year to Meta Earth
+              From planetary year to current sunlight
             </span>
           </h1>
         </div>
 
         <Link
-          href="/meta-earth"
-          aria-label="Zoom from Earth's orbit into Meta Earth"
-          title="Zoom into Meta Earth"
+          href="/current-earth-sunlight"
+          aria-label="Zoom from Earth's orbit into current Earth sunlight"
+          title="Zoom into current Earth sunlight"
           className="cosmic-hotspot left-1/2 top-[74%] z-[120] h-24 w-24 -translate-x-1/2 -translate-y-1/2 max-sm:top-[72%] max-sm:h-20 max-sm:w-20"
           style={{ "--hotspot-color": "52 211 153" } as React.CSSProperties}
         >
-          <span className="cosmic-hotspot__label">Earth</span>
+          <span className="cosmic-hotspot__label">Current Earth Sunlight</span>
         </Link>
 
         <div className="pointer-events-none absolute right-5 top-5 z-[130] flex max-w-[min(28rem,calc(100vw-2.5rem))] flex-col items-end gap-3 sm:right-6 sm:top-6">
           <Link
-            href="/meta-earth"
+            href="/current-earth-sunlight"
             className="pointer-events-auto w-fit border border-sky-200/30 bg-black/58 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-sky-100 shadow-[0_16px_36px_rgba(0,0,0,0.3)] backdrop-blur-md transition-colors hover:border-sky-100/60 hover:bg-black/72 hover:text-white focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-sky-200"
           >
-            Enter Meta Earth
+            Enter Earth Sunlight
           </Link>
         </div>
       </section>

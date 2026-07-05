@@ -195,6 +195,7 @@ export function mountBigBangUniverse(root, options = {}) {
   const tempEl = root.querySelector("#temp");
   const playBtn = root.querySelector("#playBtn");
   const restartBtn = root.querySelector("#restartBtn");
+  const skipAnimationBtn = root.querySelector("#skipAnimationBtn");
   const segRad = root.querySelector("#seg-rad"), segMat = root.querySelector("#seg-mat"), segDe = root.querySelector("#seg-de");
   const vRad = root.querySelector("#v-rad"), vMat = root.querySelector("#v-mat"), vDe = root.querySelector("#v-de");
   const eraEl = root.querySelector("#comp-era");
@@ -430,6 +431,7 @@ export function mountBigBangUniverse(root, options = {}) {
   const PREROLL_T = 1.5;
   let preroll = 0;     // seconds of held breath before the bang
   let focusVy = 0, focusA = 0; // glow band lighting up a visited moment
+  let singularityHover = false, singularityHoverA = 0;
   function bang() {
     if (reduceMotion) return;
     flashA = 0.85;
@@ -448,9 +450,10 @@ export function mountBigBangUniverse(root, options = {}) {
     return g;
   }
 
-  function drawSingularity(x, y, pul, ant, tsec) {
+  function drawSingularity(x, y, pul, ant, tsec, hover = 0) {
     const lightMode = root.classList.contains("light");
     const safePul = Number.isFinite(pul) ? Math.max(0.01, pul) : 1;
+    const hoverA = clamp01(hover);
     const phase = reduceMotion || !Number.isFinite(tsec) ? 0 : tsec;
     const shimmer = reduceMotion ? 0 : Math.sin(phase * 1.7) * 0.5 + 0.5;
     const cool = lightMode ? "66,76,190" : "130,190,255";
@@ -463,17 +466,17 @@ export function mountBigBangUniverse(root, options = {}) {
     ctx.translate(x, y);
 
     ctx.globalCompositeOperation = lightMode ? "source-over" : "lighter";
-    const halo = ctx.createRadialGradient(0, 0, 2, 0, 0, 58 * safePul);
-    halo.addColorStop(0, `rgba(${hot},${0.34 + shimmer * 0.08})`);
-    halo.addColorStop(0.26, `rgba(${violet},${0.30 + ant * 0.16})`);
-    halo.addColorStop(0.68, `rgba(${cool},${0.18 + ant * 0.10})`);
+    const halo = ctx.createRadialGradient(0, 0, 2, 0, 0, 58 * safePul * (1 + hoverA * 0.16));
+    halo.addColorStop(0, `rgba(${hot},${0.34 + shimmer * 0.08 + hoverA * 0.14})`);
+    halo.addColorStop(0.26, `rgba(${violet},${0.30 + ant * 0.16 + hoverA * 0.12})`);
+    halo.addColorStop(0.68, `rgba(${cool},${0.18 + ant * 0.10 + hoverA * 0.10})`);
     halo.addColorStop(1, `rgba(${cool},0)`);
     ctx.fillStyle = halo;
-    ctx.beginPath(); ctx.arc(0, 0, 58 * safePul, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(0, 0, 58 * safePul * (1 + hoverA * 0.16), 0, TAU); ctx.fill();
 
     const caustic = ctx.createRadialGradient(0, 0, 0, 0, 0, 29 * safePul);
-    caustic.addColorStop(0, `rgba(${hot},${0.44 + shimmer * 0.08 + ant * 0.10})`);
-    caustic.addColorStop(0.44, `rgba(${violet},${0.24 + ant * 0.08})`);
+    caustic.addColorStop(0, `rgba(${hot},${0.44 + shimmer * 0.08 + ant * 0.10 + hoverA * 0.12})`);
+    caustic.addColorStop(0.44, `rgba(${violet},${0.24 + ant * 0.08 + hoverA * 0.08})`);
     caustic.addColorStop(1, `rgba(${cool},0)`);
     ctx.fillStyle = caustic;
     ctx.beginPath();
@@ -481,8 +484,8 @@ export function mountBigBangUniverse(root, options = {}) {
     ctx.fill();
 
     const verticalCharge = ctx.createRadialGradient(0, 0, 0, 0, 0, 22 * safePul);
-    verticalCharge.addColorStop(0, `rgba(${violet},${0.28 + ant * 0.08})`);
-    verticalCharge.addColorStop(0.54, `rgba(${cool},0.14)`);
+    verticalCharge.addColorStop(0, `rgba(${violet},${0.28 + ant * 0.08 + hoverA * 0.10})`);
+    verticalCharge.addColorStop(0.54, `rgba(${cool},${0.14 + hoverA * 0.08})`);
     verticalCharge.addColorStop(1, `rgba(${cool},0)`);
     ctx.fillStyle = verticalCharge;
     ctx.beginPath();
@@ -499,8 +502,8 @@ export function mountBigBangUniverse(root, options = {}) {
 
     ctx.globalCompositeOperation = lightMode ? "source-over" : "lighter";
     const pinch = ctx.createRadialGradient(0, 0, 0, 0, 0, 16 * safePul);
-    pinch.addColorStop(0, `rgba(${hot},${0.24 + shimmer * 0.06})`);
-    pinch.addColorStop(0.5, `rgba(${violet},0.14)`);
+    pinch.addColorStop(0, `rgba(${hot},${0.24 + shimmer * 0.06 + hoverA * 0.12})`);
+    pinch.addColorStop(0.5, `rgba(${violet},${0.14 + hoverA * 0.08})`);
     pinch.addColorStop(1, `rgba(${hot},0)`);
     ctx.fillStyle = pinch;
     ctx.beginPath();
@@ -509,7 +512,7 @@ export function mountBigBangUniverse(root, options = {}) {
 
     ctx.globalCompositeOperation = "source-over";
     ctx.fillStyle = `rgba(${core},${lightMode ? 0.46 : 0.72})`;
-    ctx.beginPath(); ctx.arc(0, 0, 4.4 * safePul, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(0, 0, 4.4 * safePul * (1 + hoverA * 0.18), 0, TAU); ctx.fill();
     ctx.restore();
   }
 
@@ -834,7 +837,8 @@ export function mountBigBangUniverse(root, options = {}) {
     const ant = preroll > 0 ? 1 - preroll / PREROLL_T : 0; // pre-bang anticipation
     let pul = reduceMotion ? 1 : 1 + 0.045 * Math.sin(tsec * 1.35);
     if (ant > 0) pul *= 1 + 0.18 * ant * Math.sin(tsec * 8.5); // shiver builds
-    drawSingularity(centerX, topPad, pul, ant, tsec);
+    pul *= 1 + singularityHoverA * 0.16;
+    drawSingularity(centerX, topPad, pul, ant, tsec, singularityHoverA);
     // The void inhales: a collapse ring appears only during ignition.
     if (ant > 0 && !reduceMotion) {
       const r = (1 - ant) * 150 + 6;
@@ -936,6 +940,8 @@ export function mountBigBangUniverse(root, options = {}) {
     flashA = Math.max(0, flashA - wdt * 0.0011);
     cmbGlow = Math.max(0, cmbGlow - wdt * 0.0006);
     if (targetP === null) focusA = Math.max(0, focusA - wdt * 0.0005);
+    const hoverTarget = singularityHover ? 1 : 0;
+    singularityHoverA += (hoverTarget - singularityHoverA) * (reduceMotion ? 1 : 1 - Math.exp(-wdt * 0.012));
 
     draw(currentP, tsec);
     updateOverlay(currentP);
@@ -948,6 +954,13 @@ export function mountBigBangUniverse(root, options = {}) {
     preroll = reduceMotion ? 0 : PREROLL_T;
     syncPlay();
   }
+  function skipToEnd() {
+    currentP = 1; prevP = 1; targetP = null; cmbGlow = 0; focusA = 0; flashA = 0;
+    playing = false;
+    preroll = 0;
+    syncPlay();
+    syncStartChrome();
+  }
   function syncPlay() { playBtn.innerHTML = playing ? SVG_PAUSE : SVG_PLAY; }
 
   // ---- Events -------------------------------------------------------------
@@ -958,6 +971,7 @@ export function mountBigBangUniverse(root, options = {}) {
     playing = true;
     last = performance.now();
     syncPlay();
+    syncStartChrome();
   }
   function togglePlay() {
     if (currentP >= 1) { resetRun(); return; }
@@ -968,6 +982,7 @@ export function mountBigBangUniverse(root, options = {}) {
   }
   listen(playBtn, "click", togglePlay);
   listen(restartBtn, "click", () => { resetRun(); last = performance.now(); });
+  if (skipAnimationBtn) listen(skipAnimationBtn, "click", skipToEnd);
 
   listen(scrub, "input", () => {
     scrubbing = true; targetP = null; preroll = 0;
@@ -1079,11 +1094,17 @@ export function mountBigBangUniverse(root, options = {}) {
     }
   };
   listen(canvas, "mousemove", (e) => {
-    canvas.style.cursor = (waiting() && nearSingularity(e)) ? "pointer"
+    singularityHover = nearSingularity(e);
+    root.dataset.singularityHover = singularityHover ? "true" : "false";
+    canvas.style.cursor = (waiting() && singularityHover) ? "pointer"
                         : nearTodayRim(e) ? "pointer"
                         : "default";
   });
-  listen(canvas, "mouseout", () => { canvas.style.cursor = "default"; });
+  listen(canvas, "mouseout", () => {
+    singularityHover = false;
+    root.dataset.singularityHover = "false";
+    canvas.style.cursor = "default";
+  });
   listen(canvas, "click", (e) => {
     if (waiting() && nearSingularity(e)) { ignite(); return; }
     if (nearTodayRim(e)) { enterObservableUniverse(); return; }

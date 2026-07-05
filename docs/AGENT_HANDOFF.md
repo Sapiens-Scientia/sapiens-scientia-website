@@ -11,7 +11,8 @@ This file records practical handoff context for future agents working on the Sap
   navigates into the Observable Universe view at `/observable-universe`. From
   there the central target ring links to the Galaxy view / History of Planet
   Earth at `/history-of-planet-earth`, which links onward through Earth Orbit at
-  `/earth-orbit` before Meta Earth.
+  `/earth-orbit`, Current Earth Sunlight at `/current-earth-sunlight`, and then
+  Meta Earth.
 - `/meta-earth` is the former homepage: a full-screen 3D experience with overlay
   panels, time controls, theme support, and platform bridge interactions.
 - The main platform model is `Persona`, `Societas`, `Terra`, with `Salus` and `Domus` nested inside Persona, `Soma` nested inside Salus, and `Morbus` nested inside Soma.
@@ -43,6 +44,10 @@ If the implementation reveals a conceptual mismatch or durable constraint, updat
   scene used by `/earth-orbit`. It reuses the lower-level EarthView
   `UnifiedEarthView` in `orbit` mode with reset, tilt-view, and tilt-strip
   controls.
+- `src/components/current-earth-sunlight-experience.tsx` is the flow-specific
+  current Earth sunlight scene used by `/current-earth-sunlight`. It reuses the
+  lower-level EarthView `UnifiedEarthView` in `globe` mode with the copied
+  EarthView 3D globe animation controls.
 - `src/components/universe-timeline.tsx` is rendered from `src/app/layout.tsx`
   as the sitewide fixed bottom Universe Timeline. It intentionally floats above
   most routes, links to `/chronos`, and uses a horizontally scrollable milestone

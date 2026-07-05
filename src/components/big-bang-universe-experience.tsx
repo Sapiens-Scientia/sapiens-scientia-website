@@ -45,6 +45,12 @@ export function BigBangUniverseExperience({
       <div id="stage">
         <canvas id="c" />
 
+        {siteIntro ? (
+          <button id="skipAnimationBtn" type="button">
+            Skip animation
+          </button>
+        ) : null}
+
         <div id="title">
           <h1>The History of the Universe</h1>
           <p>13.8 billion years · logarithmic time</p>

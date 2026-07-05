@@ -47,7 +47,9 @@ The site is mostly static pages with client-side interactive islands.
 - `src/app/history-of-planet-earth/page.tsx` renders the Galaxy 3D history
   view as its own public route.
 - `src/app/earth-orbit/page.tsx` renders the EarthView orbit scene as the
-  intermediate zoom step between Galaxy history and Meta Earth.
+  intermediate zoom step between Galaxy history and current Earth sunlight.
+- `src/app/current-earth-sunlight/page.tsx` renders an EarthView globe scene
+  showing the current sunlight terminator before entering Meta Earth.
 - `src/app/meta-earth/page.tsx` renders `MetaEarthExperience`, the former
   homepage Physical Earth / Digital Halo / Meta Earth product surface.
 - `EarthHero` is a client component because it owns the Meta Earth 3D canvas, theme state, timeline state, and pointer interlock between overlays and orbit controls.
@@ -81,6 +83,9 @@ The homepage is the most sensitive surface.
   with the clear Earth Orbit link.
 - `src/components/home-orbit-experience.tsx`: full-screen EarthView orbit shell
   used by `/earth-orbit` with reset, tilt-view, and tilt-strip controls.
+- `src/components/current-earth-sunlight-experience.tsx`: full-screen
+  EarthView globe shell used by `/current-earth-sunlight` with the current
+  sunlight terminator and copied EarthView globe animation controls.
 - `src/components/earth-hero.tsx`: full-screen Meta Earth hero shell and React Three Fiber canvas.
 - `src/components/earth-scene.tsx`: Three.js objects and animation.
 - `src/components/earth-overlay.tsx`: panels, clock, timeline, popouts, and bridge connectors.

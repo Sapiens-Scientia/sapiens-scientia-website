@@ -9,7 +9,8 @@ This is the current public route inventory for the Sapiens Scientia website.
 | `/` | `src/app/page.tsx` | Homepage Big Bang intro that leads into the Observable Universe view. |
 | `/observable-universe` | `src/app/observable-universe/page.tsx` | Observable Universe scale view with a central zoom target into the History of Planet Earth. |
 | `/history-of-planet-earth` | `src/app/history-of-planet-earth/page.tsx` | Galaxy 3D view of Earth's history in the Milky Way, with links back to Observable Universe and onward to Earth Orbit. |
-| `/earth-orbit` | `src/app/earth-orbit/page.tsx` | EarthView orbit scene linking the galaxy-scale History of Planet Earth route into Meta Earth. |
+| `/earth-orbit` | `src/app/earth-orbit/page.tsx` | EarthView orbit scene linking the galaxy-scale History of Planet Earth route into current Earth sunlight. |
+| `/current-earth-sunlight` | `src/app/current-earth-sunlight/page.tsx` | EarthView globe scene showing current Earth sunlight before entering Meta Earth. |
 | `/meta-earth` | `src/app/meta-earth/page.tsx` | Meta Earth page with the original Physical Earth / Digital Halo / Meta Earth hero and overview content. |
 | `/scales` | `src/app/scales/page.tsx` | Ladder of Scale, from particles to the Sun. |
 | `/chronos` | `src/app/chronos/page.tsx` | Arc of Time, from the Big Bang to the present. |
