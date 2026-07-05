@@ -626,6 +626,204 @@ function GlobePoleDecor({ isDark, theme }: { isDark: boolean; theme: ThemeMode }
     )
 }
 
+function GlobeLatitudeReferenceLines({ isDark, theme }: { isDark: boolean; theme: ThemeMode }) {
+    const surfaceRadius = 1.012
+    const equatorColor = isDark ? '#e2e8f0' : theme === 'sepia' ? '#57534e' : '#475569'
+    const tropicColor = isDark ? '#fde68a' : theme === 'sepia' ? '#b45309' : '#d97706'
+    const polarColor = isDark ? '#67e8f9' : theme === 'sepia' ? '#0f766e' : '#0891b2'
+    const outline = isDark ? '#020617' : '#ffffff'
+    const lines = useMemo(() => ([
+        { key: 'equator', label: 'Equator', lat: 0, labelLng: -136, color: equatorColor, opacity: isDark ? 0.7 : 0.58, lineWidth: 1.42 },
+        { key: 'tropic-cancer', label: 'Tropic of Cancer', lat: AXIAL_TILT_DEG, labelLng: -128, color: tropicColor, opacity: isDark ? 0.78 : 0.62 },
+        { key: 'tropic-capricorn', label: 'Tropic of Capricorn', lat: -AXIAL_TILT_DEG, labelLng: -130, color: tropicColor, opacity: isDark ? 0.78 : 0.62 },
+        { key: 'arctic-circle', label: 'Arctic Circle', lat: 90 - AXIAL_TILT_DEG, labelLng: -72, color: polarColor, opacity: isDark ? 0.76 : 0.58 },
+        { key: 'antarctic-circle', label: 'Antarctic Circle', lat: AXIAL_TILT_DEG - 90, labelLat: -61, labelLng: -118, color: polarColor, opacity: isDark ? 0.76 : 0.58 },
+    ]), [equatorColor, isDark, polarColor, tropicColor])
+
+    const latitudeRings = useMemo(() => lines.map((line) => {
+        const points: THREE.Vector3[] = []
+        for (let i = 0; i <= 192; i++) {
+            points.push(latLngToEarthPoint(line.lat, (i / 192) * 360, surfaceRadius))
+        }
+        return {
+            ...line,
+            points,
+            labelPoint: latLngToEarthPoint(line.labelLat ?? line.lat, line.labelLng, 1.065),
+        }
+    }), [lines])
+
+    return (
+        <group>
+            {latitudeRings.map((line) => (
+                <Line
+                    key={line.key}
+                    points={line.points}
+                    color={line.color}
+                    lineWidth={line.lineWidth ?? 1.28}
+                    transparent
+                    opacity={line.opacity}
+                    depthTest
+                    depthWrite={false}
+                />
+            ))}
+            {latitudeRings.map((line) => (
+                <Billboard key={`${line.key}-label`} position={line.labelPoint}>
+                    <Text
+                        fontSize={0.028}
+                        color={line.color}
+                        anchorX="center"
+                        anchorY="middle"
+                        outlineWidth={0.0024}
+                        outlineColor={outline}
+                    >
+                        {line.label}
+                    </Text>
+                </Billboard>
+            ))}
+        </group>
+    )
+}
+
+function GlobeSubsolarTrack({
+    year,
+    rotationDate,
+    northDirection,
+    isDark,
+    theme,
+}: {
+    year: number
+    rotationDate: Date
+    northDirection?: THREE.Vector3
+    isDark: boolean
+    theme: ThemeMode
+}) {
+    const markerColor = isDark ? '#fde68a' : '#d97706'
+    const markerGlowColor = isDark ? '#f97316' : '#facc15'
+    const tiltQuaternion = useMemo(() => (
+        northDirection
+            ? makeEarthTiltQuaternionForNorthDirection(northDirection)
+            : makeEarthTiltQuaternion(year)
+    ), [northDirection, year])
+
+    const { points, colors, currentPoint, sunRays, trackLabelPoint } = useMemo(() => {
+        const surfaceRadius = 1.018
+        const trackPoints: THREE.Vector3[] = []
+        const trackColors: [number, number, number][] = []
+        const sampleCount = 192
+        const sameTime = (sampleProgress: number) => {
+            const start = new Date(year, 0, 1).getTime()
+            const end = new Date(year + 1, 0, 1).getTime()
+            const sample = new Date(start + (end - start) * sampleProgress)
+            sample.setUTCHours(
+                rotationDate.getUTCHours(),
+                rotationDate.getUTCMinutes(),
+                rotationDate.getUTCSeconds(),
+                rotationDate.getUTCMilliseconds(),
+            )
+            return sample
+        }
+        const pointForDate = (date: Date) => {
+            const progress = getOrbitalProgress(date)
+            const sunDirection = getSunDirectionFromEarth(progress)
+            const spinAngle = getDailySpinAngle(date, tiltQuaternion, sunDirection)
+            return sunDirection
+                .clone()
+                .applyQuaternion(tiltQuaternion.clone().invert())
+                .applyAxisAngle(ECLIPTIC_NORTH, -spinAngle)
+                .normalize()
+                .multiplyScalar(surfaceRadius)
+        }
+
+        for (let i = 0; i <= sampleCount; i++) {
+            const p = i / sampleCount
+            trackPoints.push(pointForDate(sameTime(p)))
+            const [r, g, b] = getSeasonColor(year, p)
+            const lift = isDark ? 0.1 : theme === 'sepia' ? 0.03 : 0.06
+            trackColors.push([Math.min(1, r + lift), Math.min(1, g + lift), Math.min(1, b + lift)])
+        }
+
+        const current = pointForDate(rotationDate)
+        const normal = current.clone().normalize()
+        let u = new THREE.Vector3(0, 1, 0).projectOnPlane(normal).normalize()
+        if (u.lengthSq() < 0.001) u = new THREE.Vector3(1, 0, 0).projectOnPlane(normal).normalize()
+        const v = new THREE.Vector3().crossVectors(normal, u).normalize()
+        const rays = Array.from({ length: 8 }, (_, index) => {
+            const angle = (index / 8) * Math.PI * 2
+            const direction = u.clone().multiplyScalar(Math.cos(angle)).add(v.clone().multiplyScalar(Math.sin(angle))).normalize()
+            return [
+                current.clone().add(direction.clone().multiplyScalar(0.022)),
+                current.clone().add(direction.clone().multiplyScalar(0.052)),
+            ]
+        })
+
+        return {
+            points: trackPoints,
+            colors: trackColors,
+            currentPoint: current,
+            sunRays: rays,
+            trackLabelPoint: trackPoints[Math.floor(sampleCount * 0.72)].clone().multiplyScalar(1.055),
+        }
+    }, [isDark, rotationDate, theme, tiltQuaternion, year])
+
+    return (
+        <group>
+            <Line
+                points={points}
+                vertexColors={colors}
+                lineWidth={1.95}
+                transparent
+                opacity={isDark ? 0.92 : 0.78}
+                depthTest
+                depthWrite={false}
+            />
+            {sunRays.map((ray, index) => (
+                <Line
+                    key={`subsolar-ray-${index}`}
+                    points={ray}
+                    color={markerColor}
+                    lineWidth={1.35}
+                    transparent
+                    opacity={0.96}
+                    depthTest
+                    depthWrite={false}
+                />
+            ))}
+            <mesh position={currentPoint}>
+                <sphereGeometry args={[0.019, 20, 20]} />
+                <meshBasicMaterial color={markerColor} transparent opacity={0.98} depthTest />
+            </mesh>
+            <mesh position={currentPoint.clone().multiplyScalar(1.001)}>
+                <sphereGeometry args={[0.029, 20, 20]} />
+                <meshBasicMaterial color={markerGlowColor} transparent opacity={isDark ? 0.24 : 0.18} depthTest depthWrite={false} />
+            </mesh>
+            <Billboard position={trackLabelPoint}>
+                <Text
+                    fontSize={0.026}
+                    color={markerGlowColor}
+                    anchorX="center"
+                    anchorY="middle"
+                    outlineWidth={0.0024}
+                    outlineColor={isDark ? '#020617' : '#ffffff'}
+                >
+                    Subsolar annual track
+                </Text>
+            </Billboard>
+            <Billboard position={currentPoint.clone().multiplyScalar(1.085)}>
+                <Text
+                    fontSize={0.024}
+                    color={markerColor}
+                    anchorX="center"
+                    anchorY="bottom"
+                    outlineWidth={0.0024}
+                    outlineColor={isDark ? '#020617' : '#ffffff'}
+                >
+                    Current subsolar point
+                </Text>
+            </Billboard>
+        </group>
+    )
+}
+
 function NorthPoleYearPathRing({
     earthPos,
     earthRadius,
@@ -817,6 +1015,8 @@ function EarthBody({
                 <group ref={spinRef}>
                     <EarthTexture isDark={isDark} theme={theme} rotationOffset={textureRotationOffset} />
                     {mode === 'globe' && homeCoords && <LocalRotationPath coords={homeCoords} isDark={isDark} theme={theme} />}
+                    {mode === 'globe' && <GlobeLatitudeReferenceLines isDark={isDark} theme={theme} />}
+                    {mode === 'globe' && <GlobeSubsolarTrack year={year} rotationDate={rotationDate} northDirection={northDirection} isDark={isDark} theme={theme} />}
                     {mode === 'globe' && <GlobePoleDecor isDark={isDark} theme={theme} />}
                 </group>
                 {mode === 'globe' ? (
