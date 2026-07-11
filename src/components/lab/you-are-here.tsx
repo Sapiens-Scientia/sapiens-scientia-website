@@ -168,6 +168,23 @@ function latLngToVec(lat: number, lng: number, r = 1) {
   );
 }
 
+// Orbital position helpers, matching the tuned geometry of the site's
+// EarthView scenes: progress 0..1 through the calendar year, and the ring
+// convention angle = progress·2π + π/2 with z negated.
+function getOrbitalProgress(date: Date) {
+  const y = date.getFullYear();
+  const start = new Date(y, 0, 1).getTime();
+  const end = new Date(y + 1, 0, 1).getTime();
+  return (date.getTime() - start) / (end - start);
+}
+function progressForDate(year: number, monthIndex: number, day: number) {
+  return getOrbitalProgress(new Date(year, monthIndex, day));
+}
+function orbitPos(progress: number, radius: number, y = 0) {
+  const a = progress * Math.PI * 2 + Math.PI / 2;
+  return new THREE.Vector3(Math.cos(a) * radius, y, -Math.sin(a) * radius);
+}
+
 // The real subsolar point (±~1° without the equation of time — good enough
 // for an honest terminator).
 function subsolarDirection(date: Date) {
@@ -227,8 +244,8 @@ function formatAgo(agoMa: number) {
 // beats between them. Starts after the pivot's beat of black.
 const pToLogM = piecewise([
   [0.602, 26.95], [0.63, 26.2], [0.657, 24.6], [0.695, 22.9], [0.739, 20.9],
-  [0.763, 19.55], [0.783, 18.85], [0.807, 17.9], [0.84, 14.6], [0.856, 13.35],
-  [0.891, 12.35], [0.915, 10.2], [0.938, 7.35], [1.0, 7.18],
+  [0.763, 19.55], [0.783, 18.85], [0.807, 17.9], [0.84, 14.6], [0.853, 13.4],
+  [0.874, 12.6], [0.893, 11.78], [0.906, 11.6], [0.92, 9.9], [0.938, 7.35], [1.0, 7.18],
 ]);
 
 type Beat = {
@@ -267,7 +284,8 @@ const BEATS: Beat[] = [
   { from: 0.741, to: 0.776, title: "The Milky Way", sub: "The spiral we watched assemble — a hundred thousand light-years, several hundred billion stars. You live between two arms." },
   { from: 0.781, to: 0.808, title: "The neighborhood", sub: "Every star any human eye has ever seen, unaided, lives inside this one small bright bubble." },
   { from: 0.812, to: 0.848, title: "And in between", sub: "Almost all of everything is this: nothing. Cold, clean, patient vacuum." },
-  { from: 0.852, to: 0.905, title: "One ordinary star", sub: "The sun we watched ignite, with its eight worlds. Yours is the third — the damp one." },
+  { from: 0.852, to: 0.886, title: "One ordinary star", sub: "The sun we watched ignite, with its eight worlds. Yours is the third — the damp one." },
+  { from: 0.89, to: 0.912, title: "One year, from above", sub: "Earth's whole orbit, annotated: the months are places on this ring, and “today” is a location. There you are, on it." },
   { from: 0.917, to: 0.936, title: "Earth, live", sub: "The daylight on this globe is where daylight actually is, this second." },
   { from: 0.941, to: 0.97, title: "And after 13.8 billion years…", live: true },
   { from: 0.973, to: 1.01, title: "You are the universe, 13.8 billion years in, looking back at itself.", sub: "Every “here” is the center. This one is yours." },
@@ -280,6 +298,7 @@ const ADDRESS: { p: number; line: string; note: string }[] = [
   { p: 0.742, line: "MILKY WAY GALAXY", note: "9×10²⁰ m" },
   { p: 0.78, line: "ORION–CYGNUS ARM", note: "~10¹⁹ m" },
   { p: 0.858, line: "THE SOLAR SYSTEM", note: "~10¹³ m" },
+  { p: 0.897, line: "EARTH ORBIT", note: "3×10¹¹ m" },
   { p: 0.911, line: "EARTH", note: "1.27×10⁷ m" },
   { p: 0.945, line: "@COORDS@", note: "" },
   { p: 0.958, line: "NOW", note: "@TIME@" },
@@ -292,7 +311,8 @@ const TIME_TICKS: [number, string][] = [
 ];
 const SCALE_TICKS: [number, string][] = [
   [26.9, "observable universe"], [24.7, "Laniakea"], [23.0, "Local Group"],
-  [21.0, "Milky Way"], [19.0, "the neighborhood"], [13.1, "Solar System"], [7.35, "Earth"],
+  [21.0, "Milky Way"], [19.0, "the neighborhood"], [13.1, "Solar System"],
+  [11.75, "Earth's orbit"], [7.35, "Earth"],
 ];
 const TIME_RANGE: [number, number] = [-43, 17.64];
 const SCALE_RANGE: [number, number] = [27.2, 7.0];
@@ -770,6 +790,40 @@ export function YouAreHereExperience() {
 
     const dot = track(makeDotTexture());
 
+    // Canvas-rendered text as billboarded sprites, for in-scene annotations
+    // (month names, solstices, latitude lines, hours — the tuned chartwork of
+    // the site's EarthView scenes, regenerated for this single canvas).
+    const makeLabel = (text: string, color: string, height: number) => {
+      const fs = 46;
+      const pad = 14;
+      const probe = document.createElement("canvas").getContext("2d")!;
+      probe.font = `600 ${fs}px system-ui, -apple-system, sans-serif`;
+      const w = Math.ceil(probe.measureText(text).width) + pad * 2;
+      const c = document.createElement("canvas");
+      c.width = w;
+      c.height = fs + pad * 2;
+      const g = c.getContext("2d")!;
+      g.font = `600 ${fs}px system-ui, -apple-system, sans-serif`;
+      g.textAlign = "center";
+      g.textBaseline = "middle";
+      g.shadowColor = "rgba(0,0,0,0.9)";
+      g.shadowBlur = 8;
+      g.fillStyle = color;
+      g.fillText(text, w / 2, c.height / 2);
+      const tex = track(new THREE.CanvasTexture(c));
+      tex.colorSpace = THREE.SRGBColorSpace;
+      const mat = track(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
+      const sprite = new THREE.Sprite(mat);
+      sprite.scale.set(height * (c.width / c.height), height, 1);
+      return { sprite, mat };
+    };
+
+    // The solar system and the annotated orbit share this tilt so their rings
+    // stay geometrically coincident while both are visible; it then swings
+    // toward face-on for chart legibility as the year-ring takes the frame.
+    const eclipticTilt = (logM: number) =>
+      lerp(0.42, 0.95, smooth01(mapRange(logM, 12.6, 11.9)));
+
     // -- persistent background stars ---------------------------------------
     const bg = makePointCloud(1700, 0.09, dot, 0.55);
     track(bg.points.geometry); track(bg.material);
@@ -1171,10 +1225,9 @@ export function YouAreHereExperience() {
         markerMat.opacity *= w;
         ringMat.opacity *= w;
       };
-      // tip the disc toward the camera; rotate the focus identically so the
-      // sun's seat stays pinned to the zoom line
+      // tip the disc toward the camera; the quaternion-aware pinning keeps the
+      // sun's seat on the zoom line
       galaxySet.group.rotation.x = -1.0;
-      galaxySet.focus.applyEuler(new THREE.Euler(-1.0, 0, 0));
     }
 
     // 5) the stellar neighborhood (a tunnel of naked-eye stars) ---------- 10^19
@@ -1205,13 +1258,9 @@ export function YouAreHereExperience() {
 
     // 6) the Solar System ---------------------------------------------- 10^13.1
     // Natural units: Neptune's orbit at r=4 → 4.5e12 m; frame ≈ 9e12 m.
-    const dayOfYear = (() => {
-      const now = new Date();
-      return (now.getTime() - Date.UTC(now.getUTCFullYear(), 0, 0)) / 86400000;
-    })();
-    const earthAngle = ((dayOfYear - 80) / 365.25) * Math.PI * 2 + Math.PI;
+    const nowProgress = getOrbitalProgress(new Date());
     const AUu = 4 / 30; // scene units per AU
-    const earthFocus = new THREE.Vector3(Math.cos(earthAngle) * AUu, 0, Math.sin(earthAngle) * AUu);
+    const earthFocus = orbitPos(nowProgress, AUu);
     const solarSet = addSet(13.1, earthFocus.clone());
     {
       const sunTex = track(makeSunTexture());
@@ -1244,11 +1293,15 @@ export function YouAreHereExperience() {
         }
         const geo = track(new THREE.BufferGeometry().setFromPoints(pts));
         solarSet.group.add(new THREE.LineLoop(geo, idx === 2 ? earthRingMat : ringMat));
-        const ang = idx === 2 ? earthAngle : rng() * Math.PI * 2;
-        const mat = track(new THREE.MeshBasicMaterial({ color }));
+        const mat = track(new THREE.MeshBasicMaterial({ color, transparent: true }));
         const dotMesh = new THREE.Mesh(track(new THREE.SphereGeometry(size, 12, 12)), mat);
-        dotMesh.position.set(Math.cos(ang) * r, 0, Math.sin(ang) * r);
+        if (idx === 2) dotMesh.position.copy(orbitPos(nowProgress, r));
+        else {
+          const ang = rng() * Math.PI * 2;
+          dotMesh.position.set(Math.cos(ang) * r, 0, Math.sin(ang) * r);
+        }
         solarSet.group.add(dotMesh);
+        fadeMat(solarSet, mat, 1);
       });
       solarSet.group.rotation.x = 0.42; // a three-quarter view of the ecliptic
       fadeMat(solarSet, sunMat, 1);
@@ -1257,10 +1310,110 @@ export function YouAreHereExperience() {
       solarSet.update = (_t, s) => {
         // keep the sun's glow from swallowing the view as we dive past it
         sun.scale.setScalar(0.7 / Math.pow(Math.max(s, 1), 0.4));
+        solarSet.group.rotation.x = eclipticTilt(13.1 - Math.log10(s));
       };
     }
-    // rotate the focus into the tilted frame so the earth-dot stays pinned
-    solarSet.focus.applyEuler(new THREE.Euler(0.42, 0, 0));
+
+    // 6·b) Earth's orbit, annotated — the year as a place --------------- 10^11.75
+    // Regenerated from the site's Earth Orbit scene: the gold band, season
+    // arcs on the real equinox/solstice dates, month labels, and Earth at its
+    // true position today. Ring radius is chosen so this circle coincides
+    // exactly with the solar set's amber Earth-ring during the crossfade.
+    const ORBIT_R = 2.98;
+    const orbitSet = addSet(11.75, orbitPos(nowProgress, ORBIT_R));
+    {
+      const yearNow = new Date().getFullYear();
+      const pSpring = progressForDate(yearNow, 2, 20);
+      const pSummer = progressForDate(yearNow, 5, 21);
+      const pAutumn = progressForDate(yearNow, 8, 22);
+      const pWinter = progressForDate(yearNow, 11, 21);
+
+      const bandMat = track(new THREE.MeshBasicMaterial({
+        color: 0xb8a86a, transparent: true, opacity: 0.09, side: THREE.DoubleSide, depthWrite: false,
+      }));
+      const band = new THREE.Mesh(track(new THREE.RingGeometry(ORBIT_R * 0.86, ORBIT_R * 1.15, 128)), bandMat);
+      band.rotation.x = -Math.PI / 2;
+      orbitSet.group.add(band);
+      fadeMat(orbitSet, bandMat, 0.09);
+
+      const seasonArcs: [number, number, number][] = [
+        [0, pSpring, 0x38bdf8], [pSpring, pSummer, 0x22c55e], [pSummer, pAutumn, 0xfacc15],
+        [pAutumn, pWinter, 0xf97316], [pWinter, 1, 0x38bdf8],
+      ];
+      for (const [from, to, color] of seasonArcs) {
+        const pts: THREE.Vector3[] = [];
+        for (let k = 0; k <= 48; k++) pts.push(orbitPos(from + ((to - from) * k) / 48, ORBIT_R));
+        const mat = track(new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.85, depthWrite: false }));
+        orbitSet.group.add(new THREE.Line(track(new THREE.BufferGeometry().setFromPoints(pts)), mat));
+        fadeMat(orbitSet, mat, 0.85);
+      }
+
+      const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const tickMat = track(new THREE.LineBasicMaterial({ color: 0xd8cfc0, transparent: true, opacity: 0.5, depthWrite: false }));
+      const tickPts: THREE.Vector3[] = [];
+      MONTHS.forEach((name, m) => {
+        const pStart = progressForDate(yearNow, m, 1);
+        tickPts.push(orbitPos(pStart, ORBIT_R - 0.09), orbitPos(pStart, ORBIT_R + 0.09));
+        const label = makeLabel(name, "#c9c2b4", 0.22);
+        label.sprite.position.copy(orbitPos(progressForDate(yearNow, m, 15), ORBIT_R + 0.44));
+        orbitSet.group.add(label.sprite);
+        fadeMat(orbitSet, label.mat, 0.92);
+      });
+      orbitSet.group.add(new THREE.LineSegments(track(new THREE.BufferGeometry().setFromPoints(tickPts)), tickMat));
+      fadeMat(orbitSet, tickMat, 0.5);
+
+      const seasonEvents: [number, string, string][] = [
+        [pSpring, "Mar equinox", "#22c55e"], [pSummer, "Jun solstice", "#facc15"],
+        [pAutumn, "Sep equinox", "#f97316"], [pWinter, "Dec solstice", "#38bdf8"],
+      ];
+      for (const [pe, name, color] of seasonEvents) {
+        const mat = track(new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.95, depthWrite: false }));
+        orbitSet.group.add(new THREE.Line(track(new THREE.BufferGeometry().setFromPoints([
+          orbitPos(pe, ORBIT_R - 0.14), orbitPos(pe, ORBIT_R + 0.14),
+        ])), mat));
+        fadeMat(orbitSet, mat, 0.95);
+        const label = makeLabel(name, color, 0.18);
+        label.sprite.position.copy(orbitPos(pe, ORBIT_R - 0.58));
+        orbitSet.group.add(label.sprite);
+        fadeMat(orbitSet, label.mat, 0.95);
+      }
+
+      const orbitSunMat = track(new THREE.SpriteMaterial({
+        map: track(makeSunTexture()), transparent: true, opacity: 1,
+        depthWrite: false, blending: THREE.AdditiveBlending,
+      }));
+      const orbitSun = new THREE.Sprite(orbitSunMat);
+      orbitSun.scale.setScalar(0.62);
+      orbitSet.group.add(orbitSun);
+      fadeMat(orbitSet, orbitSunMat, 1);
+      const dateLabel = makeLabel(
+        new Date().toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }),
+        "#fde68a", 0.26,
+      );
+      dateLabel.sprite.position.set(0, 0.74, 0);
+      orbitSet.group.add(dateLabel.sprite);
+      fadeMat(orbitSet, dateLabel.mat, 0.95);
+
+      const orbitEarthMat = track(new THREE.MeshBasicMaterial({ color: 0x6f9fd8, transparent: true, opacity: 1 }));
+      const orbitEarth = new THREE.Mesh(track(new THREE.SphereGeometry(0.075, 16, 16)), orbitEarthMat);
+      orbitEarth.position.copy(orbitPos(nowProgress, ORBIT_R));
+      orbitSet.group.add(orbitEarth);
+      fadeMat(orbitSet, orbitEarthMat, 1);
+      const sunLineMat = track(new THREE.LineBasicMaterial({ color: 0xf2ece1, transparent: true, opacity: 0.14, depthWrite: false }));
+      orbitSet.group.add(new THREE.Line(track(new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(0, 0, 0), orbitPos(nowProgress, ORBIT_R),
+      ])), sunLineMat));
+      fadeMat(orbitSet, sunLineMat, 0.14);
+      const earthLabel = makeLabel("Earth · today", "#9cc4f0", 0.2);
+      earthLabel.sprite.position.copy(orbitPos(nowProgress, ORBIT_R)).add(new THREE.Vector3(0, 0.32, 0));
+      orbitSet.group.add(earthLabel.sprite);
+      fadeMat(orbitSet, earthLabel.mat, 0.95);
+
+      orbitSet.group.rotation.x = 0.42;
+      orbitSet.update = (_t, s) => {
+        orbitSet.group.rotation.x = eclipticTilt(11.75 - Math.log10(s));
+      };
+    }
 
     // 7) Earth, live ----------------------------------------------------- 10^7.35
     const earthSet = addSet(7.35, new THREE.Vector3(0, 0, 0));
@@ -1346,14 +1499,110 @@ export function YouAreHereExperience() {
       moon.position.set(Math.cos(moonA) * moonR, 0, Math.sin(moonA) * moonR);
       moonSystem.add(moon);
 
+      // --- arrival chartwork, regenerated from the Current Earth Sunlight
+      // scene: latitude reference lines, the live subsolar point, and a
+      // sun-locked ring of local solar time. These fade in only once the
+      // globe itself has the frame.
+      const annotMats: { m: THREE.Material & { opacity: number }; base: number }[] = [];
+      const annot = (m: THREE.Material & { opacity: number }, base: number) => {
+        fadeMat(earthSet, m, base);
+        annotMats.push({ m, base });
+      };
+
+      const LATS: [number, string, string, number][] = [
+        [0, "#e2e8f0", "equator", -32],
+        [23.44, "#fde68a", "Tropic of Cancer", -24],
+        [-23.44, "#fde68a", "Tropic of Capricorn", -30],
+        [66.56, "#67e8f9", "Arctic Circle", -64],
+        [-66.56, "#67e8f9", "Antarctic Circle", -96],
+      ];
+      for (const [lat, color, name, labelLng] of LATS) {
+        const pts: THREE.Vector3[] = [];
+        for (let k = 0; k <= 128; k++) pts.push(latLngToVec(lat, (k / 128) * 360, 2.235));
+        const mat = track(new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.5, depthWrite: false }));
+        earthSpin.add(new THREE.LineLoop(track(new THREE.BufferGeometry().setFromPoints(pts)), mat));
+        annot(mat, 0.5);
+        const label = makeLabel(name, color, 0.1);
+        label.sprite.position.copy(latLngToVec(lat, labelLng, 2.37));
+        earthSpin.add(label.sprite);
+        annot(label.mat, 0.85);
+      }
+
+      const subsolarGroup = new THREE.Group();
+      earthSpin.add(subsolarGroup);
+      const ssDotMat = track(new THREE.MeshBasicMaterial({
+        color: 0xffb454, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false,
+      }));
+      subsolarGroup.add(new THREE.Mesh(track(new THREE.SphereGeometry(0.04, 12, 12)), ssDotMat));
+      annot(ssDotMat, 0.95);
+      const ssRayMat = track(new THREE.LineBasicMaterial({ color: 0xffd27f, transparent: true, opacity: 0.85, depthWrite: false }));
+      const rayPts: THREE.Vector3[] = [];
+      for (let k = 0; k < 8; k++) {
+        const a = (k / 8) * Math.PI * 2;
+        rayPts.push(
+          new THREE.Vector3(Math.cos(a) * 0.07, Math.sin(a) * 0.07, 0),
+          new THREE.Vector3(Math.cos(a) * 0.16, Math.sin(a) * 0.16, 0),
+        );
+      }
+      subsolarGroup.add(new THREE.LineSegments(track(new THREE.BufferGeometry().setFromPoints(rayPts)), ssRayMat));
+      annot(ssRayMat, 0.85);
+      const ssLabel = makeLabel("subsolar point", "#ffd27f", 0.1);
+      ssLabel.sprite.position.set(0, -0.24, 0.06);
+      subsolarGroup.add(ssLabel.sprite);
+      annot(ssLabel.mat, 0.9);
+
+      const hourRing = new THREE.Group();
+      earthSet.group.add(hourRing);
+      const hourCircleMat = track(new THREE.LineBasicMaterial({ color: 0xc9c2b4, transparent: true, opacity: 0.18, depthWrite: false }));
+      const circlePts: THREE.Vector3[] = [];
+      for (let k = 0; k <= 96; k++) {
+        const a = (k / 96) * Math.PI * 2;
+        circlePts.push(new THREE.Vector3(Math.cos(a) * 3.05, 0, -Math.sin(a) * 3.05));
+      }
+      hourRing.add(new THREE.LineLoop(track(new THREE.BufferGeometry().setFromPoints(circlePts)), hourCircleMat));
+      annot(hourCircleMat, 0.18);
+      const hourTickMat = track(new THREE.LineBasicMaterial({ color: 0xc9c2b4, transparent: true, opacity: 0.5, depthWrite: false }));
+      const hourPts: THREE.Vector3[] = [];
+      for (let hIdx = 0; hIdx < 24; hIdx++) {
+        const a = (hIdx / 24) * Math.PI * 2;
+        const r1 = hIdx % 6 === 0 ? 3.32 : 3.18;
+        hourPts.push(
+          new THREE.Vector3(Math.cos(a) * 3.05, 0, -Math.sin(a) * 3.05),
+          new THREE.Vector3(Math.cos(a) * r1, 0, -Math.sin(a) * r1),
+        );
+      }
+      hourRing.add(new THREE.LineSegments(track(new THREE.BufferGeometry().setFromPoints(hourPts)), hourTickMat));
+      annot(hourTickMat, 0.5);
+      const HOURS: [number, string][] = [[0, "noon"], [6, "6 pm"], [12, "midnight"], [18, "6 am"]];
+      for (const [h, name] of HOURS) {
+        const a = (h / 24) * Math.PI * 2;
+        const label = makeLabel(name, "#c9c2b4", 0.16);
+        label.sprite.position.set(Math.cos(a) * 3.62, 0, -Math.sin(a) * 3.62);
+        hourRing.add(label.sprite);
+        annot(label.mat, 0.9);
+      }
+
       fadeMat(earthSet, pinMat, 0.95);
       fadeMat(earthSet, pulseMat, 0.5);
       fadeMat(earthSet, moonRingMat, 0.14);
       fadeMat(earthSet, atmoMat, 1);
-      earthSet.update = (t) => {
-        if (earthMat) earthMat.uniforms.sunDir.value = subsolarDirection(new Date());
+      const zAxis = new THREE.Vector3(0, 0, 1);
+      const tmpSun = new THREE.Vector3();
+      earthSet.update = (t, s) => {
+        const sub = subsolarDirection(new Date());
+        if (earthMat) earthMat.uniforms.sunDir.value = sub;
         const k = reduceMotion ? 1 : 1 + 0.5 * Math.sin(t * 2.2);
         pulse.scale.setScalar(k);
+        // the subsolar marker rides the real sun across the earth-fixed globe
+        subsolarGroup.position.copy(sub).multiplyScalar(2.24);
+        subsolarGroup.quaternion.setFromUnitVectors(zAxis, sub);
+        // local solar time is sun-locked, not earth-fixed: keep noon at the
+        // sun's azimuth even while the globe turns to face the reader's pin
+        tmpSun.copy(sub).applyQuaternion(earthSpin.quaternion);
+        hourRing.rotation.y = Math.atan2(-tmpSun.z, tmpSun.x);
+        // chartwork only once the globe has the frame
+        const annotK = smooth01(mapRange(Math.log10(s), -0.3, 0.0));
+        for (const entry of annotMats) entry.m.opacity *= annotK;
       };
       // the Moon's orbit is 60 Earth-radii wide, so this set must wake long
       // before the globe itself fills the frame — and it never leaves
@@ -1366,6 +1615,7 @@ export function YouAreHereExperience() {
     const fadeWindow = (x: number) =>
       smooth01((x + 2.05) / 0.85) * (1 - smooth01((x - 0.62) / 0.95));
 
+    const pinTmp = new THREE.Vector3();
     const setStackVisible = (p: number, t: number, stackAlpha: number) => {
       const logM = pToLogM(p);
       for (const set of stack) {
@@ -1375,7 +1625,10 @@ export function YouAreHereExperience() {
         if (a <= 0.004 || s < 0.0012 || s > 70) { set.group.visible = false; continue; }
         set.group.visible = true;
         set.group.scale.setScalar(s);
-        set.group.position.copy(set.focus).multiplyScalar(-s);
+        // pin the focus to the zoom line through the group's own rotation, so
+        // tilted (even tilting) sets stay glued to the descent
+        pinTmp.copy(set.focus).applyQuaternion(set.group.quaternion).multiplyScalar(-s);
+        set.group.position.copy(pinTmp);
         for (const f of set.fades) f.mat.opacity = f.base * a;
         set.update?.(t, s);
       }
