@@ -325,6 +325,86 @@ function makeDotTexture() {
   return tex;
 }
 
+/** Procedural moon: regolith mottling, dark maria, cratered, a few ray systems. */
+function makeMoonTexture() {
+  const w = 1024;
+  const h = 512;
+  const c = document.createElement("canvas");
+  c.width = w;
+  c.height = h;
+  const g = c.getContext("2d")!;
+  const rng = mulberry32(77);
+  g.fillStyle = "#b9b5ac";
+  g.fillRect(0, 0, w, h);
+  // large-scale tonal variation
+  for (let i = 0; i < 70; i++) {
+    const x = rng() * w;
+    const y = rng() * h;
+    const r = 40 + rng() * 160;
+    const v = 168 + Math.floor(rng() * 42);
+    const grad = g.createRadialGradient(x, y, 0, x, y, r);
+    grad.addColorStop(0, `rgba(${v},${v - 3},${v - 10},0.16)`);
+    grad.addColorStop(1, "rgba(0,0,0,0)");
+    g.fillStyle = grad;
+    g.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+  // maria: clustered dark basalt plains
+  for (let i = 0; i < 9; i++) {
+    const x = rng() * w;
+    const y = h * (0.18 + rng() * 0.5);
+    const r = 50 + rng() * 110;
+    for (let k = 0; k < 5; k++) {
+      const ox = x + (rng() - 0.5) * r * 1.4;
+      const oy = y + (rng() - 0.5) * r * 0.9;
+      const rr = r * (0.4 + rng() * 0.6);
+      const grad = g.createRadialGradient(ox, oy, 0, ox, oy, rr);
+      grad.addColorStop(0, "rgba(86,84,83,0.32)");
+      grad.addColorStop(0.7, "rgba(92,90,88,0.2)");
+      grad.addColorStop(1, "rgba(0,0,0,0)");
+      g.fillStyle = grad;
+      g.fillRect(ox - rr, oy - rr, rr * 2, rr * 2);
+    }
+  }
+  // craters, power-law sized, lit from the upper left
+  for (let i = 0; i < 430; i++) {
+    const x = rng() * w;
+    const y = rng() * h;
+    const r = 1.5 + Math.pow(rng(), 2.6) * 26;
+    const floor = g.createRadialGradient(x, y, 0, x, y, r);
+    floor.addColorStop(0, "rgba(70,68,66,0.36)");
+    floor.addColorStop(0.75, "rgba(80,78,76,0.22)");
+    floor.addColorStop(1, "rgba(0,0,0,0)");
+    g.fillStyle = floor;
+    g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = `rgba(232,229,222,${0.22 + rng() * 0.24})`;
+    g.lineWidth = Math.max(1, r * 0.16);
+    g.beginPath(); g.arc(x, y, r * 0.92, Math.PI * 0.8, Math.PI * 1.7); g.stroke();
+    g.strokeStyle = `rgba(55,53,50,${0.18 + rng() * 0.2})`;
+    g.beginPath(); g.arc(x, y, r * 0.92, Math.PI * -0.2, Math.PI * 0.7); g.stroke();
+  }
+  // a few young craters with bright ray systems
+  for (let i = 0; i < 3; i++) {
+    const x = rng() * w;
+    const y = h * (0.25 + rng() * 0.5);
+    const rays = 9 + Math.floor(rng() * 6);
+    for (let k = 0; k < rays; k++) {
+      const a = rng() * Math.PI * 2;
+      const len = 30 + rng() * 90;
+      const ray = g.createLinearGradient(x, y, x + Math.cos(a) * len, y + Math.sin(a) * len);
+      ray.addColorStop(0, "rgba(235,232,225,0.26)");
+      ray.addColorStop(1, "rgba(235,232,225,0)");
+      g.strokeStyle = ray;
+      g.lineWidth = 1.6;
+      g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len); g.stroke();
+    }
+    g.fillStyle = "rgba(240,238,230,0.5)";
+    g.beginPath(); g.arc(x, y, 4 + rng() * 4, 0, Math.PI * 2); g.fill();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
 function makeSunTexture() {
   const c = document.createElement("canvas");
   c.width = c.height = 128;
@@ -531,6 +611,20 @@ const DEEP_TIME_FRAG = `
     float lit = pow(clamp(d * 0.55 + 0.45, 0.0, 1.0), 1.35);
     col = col * (0.32 + 0.88 * lit) + vec3(1.0, 0.42, 0.1) * cracks * uMolten * 0.85;
     gl_FragColor = vec4(col, uOpacity);
+  }
+`;
+// The moon, lit with the same wrapped lighting as the deep-time Earth.
+const MOON_FRAG = `
+  uniform sampler2D map;
+  uniform vec3 sunDir;
+  uniform float uOpacity;
+  varying vec3 vNormal;
+  varying vec2 vUv;
+  void main() {
+    vec3 tex = texture2D(map, vUv).rgb;
+    float d = dot(normalize(vNormal), normalize(sunDir));
+    float lit = pow(clamp(d * 0.55 + 0.45, 0.0, 1.0), 1.3);
+    gl_FragColor = vec4(tex * (0.2 + 0.95 * lit), uOpacity);
   }
 `;
 const ATMO_VERT = `
@@ -856,8 +950,18 @@ export function YouAreHereExperience() {
     });
     const timeEarth = new THREE.Mesh(track(new THREE.SphereGeometry(2.0, 56, 56)), timeEarthMat);
     timeEarthGroup.add(timeEarth);
-    const timeMoonMat = track(new THREE.MeshBasicMaterial({ color: 0x9a968e, transparent: true, opacity: 0 }));
-    const timeMoon = new THREE.Mesh(track(new THREE.SphereGeometry(0.14, 14, 14)), timeMoonMat);
+    const moonTex = track(makeMoonTexture());
+    const timeMoonMat = track(new THREE.ShaderMaterial({
+      vertexShader: EARTH_VERT,
+      fragmentShader: MOON_FRAG,
+      transparent: true,
+      uniforms: {
+        map: { value: moonTex },
+        sunDir: { value: new THREE.Vector3(1, 0.25, 0.85).normalize() },
+        uOpacity: { value: 0 },
+      },
+    }));
+    const timeMoon = new THREE.Mesh(track(new THREE.SphereGeometry(0.2, 24, 24)), timeMoonMat);
     timeEarthGroup.add(timeMoon);
 
     // -- Movement II: the nested zoom stack ---------------------------------
@@ -1220,8 +1324,16 @@ export function YouAreHereExperience() {
         moonPts.push(new THREE.Vector3(Math.cos(a) * moonR, 0, Math.sin(a) * moonR));
       }
       moonSystem.add(new THREE.LineLoop(track(new THREE.BufferGeometry().setFromPoints(moonPts)), moonRingMat));
-      const moonMat = track(new THREE.MeshBasicMaterial({ color: 0xb8b4ac }));
-      const moon = new THREE.Mesh(track(new THREE.SphereGeometry(0.6, 16, 16)), moonMat);
+      const moonMat = track(new THREE.ShaderMaterial({
+        vertexShader: EARTH_VERT,
+        fragmentShader: MOON_FRAG,
+        uniforms: {
+          map: { value: moonTex },
+          sunDir: { value: subsolarDirection(new Date()) },
+          uOpacity: { value: 1 },
+        },
+      }));
+      const moon = new THREE.Mesh(track(new THREE.SphereGeometry(0.6, 24, 24)), moonMat);
       const moonA = Math.PI * 0.3;
       moon.position.set(Math.cos(moonA) * moonR, 0, Math.sin(moonA) * moonR);
       moonSystem.add(moon);
@@ -1509,13 +1621,22 @@ export function YouAreHereExperience() {
         timeEarthMat.uniforms.uGreen.value = smooth01(mapRange(agoMa, 470, 380));
         timeEarthMat.uniforms.uModern.value = smooth01(mapRange(agoMa, 130, 35));
         const moonIn = smooth01(mapRange(p, 0.402, 0.428));
-        timeMoonMat.opacity = earthTimeA * moonIn;
+        timeMoonMat.uniforms.uOpacity.value = earthTimeA * moonIn;
         const moonR = lerp(2.7, 3.7, clamp01((EARTH_AGE_MA - agoMa) / EARTH_AGE_MA));
         const moonAng = reduceMotion ? 1.2 : t * 0.32;
         timeMoon.position.set(
           Math.cos(moonAng) * moonR,
           Math.sin(moonAng * 0.9) * 0.4,
           Math.sin(moonAng) * moonR,
+        );
+        timeMoon.rotation.y = -moonAng; // tidally locked: one face kept homeward
+        // the lock rotates the moon's object space, so carry the sun with it
+        const ca2 = Math.cos(moonAng);
+        const sa2 = Math.sin(moonAng);
+        (timeMoonMat.uniforms.sunDir.value as THREE.Vector3).set(
+          1.0 * ca2 + 0.85 * sa2,
+          0.25,
+          -1.0 * sa2 + 0.85 * ca2,
         );
       }
 
