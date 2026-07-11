@@ -224,14 +224,22 @@ function formatAgo(agoMa: number) {
 
 // Scroll fraction → log10(metres across the view). Movements II & III.
 // Dwells sit on each address line; the long plunges land on the "emptiness"
-// beats between them.
+// beats between them. Starts after the pivot's beat of black.
 const pToLogM = piecewise([
-  [0.578, 27.2], [0.619, 26.2], [0.657, 24.6], [0.695, 22.9], [0.739, 20.9],
+  [0.602, 26.95], [0.63, 26.2], [0.657, 24.6], [0.695, 22.9], [0.739, 20.9],
   [0.763, 19.55], [0.783, 18.85], [0.807, 17.9], [0.84, 14.6], [0.856, 13.35],
   [0.891, 12.35], [0.915, 10.2], [0.938, 7.35], [1.0, 7.18],
 ]);
 
-type Beat = { from: number; to: number; title: string; sub?: string; live?: boolean };
+type Beat = {
+  from: number;
+  to: number;
+  title: string;
+  sub?: string;
+  live?: boolean;
+  /** Renders as a full-center chapter card — a hard reset between movements. */
+  chapter?: boolean;
+};
 
 const BEATS: Beat[] = [
   // Movement I — cosmic time
@@ -250,10 +258,10 @@ const BEATS: Beat[] = [
   { from: 0.504, to: 0.528, title: "538 million years ago", sub: "The Cambrian explosion: eyes, shells, spines. The ocean invents almost every kind of body at once." },
   { from: 0.532, to: 0.549, title: "The age of dinosaurs", sub: "They run the planet for 160 million years — until one very bad afternoon, 66 million years ago." },
   { from: 0.552, to: 0.568, title: "300,000 years ago", sub: "Homo sapiens. Every city, book, and name fits inside the last sliver of this timeline." },
-  // pivot
-  { from: 0.574, to: 0.603, title: "That brings us to tonight.", sub: "Time stops scrolling here. Space starts — let's find where this little world actually sits." },
+  // pivot — a hard chapter break between time and space
+  { from: 0.572, to: 0.607, chapter: true, title: "That brings us to the present universe.", sub: "All of time has passed — the clock reads tonight. Now we cross space instead: from everything we can see, down to you." },
   // Movement II — the descent
-  { from: 0.609, to: 0.65, title: "The observable universe", sub: "93 billion light-years of cosmic web — every thread a chain of galaxies. Your address starts here." },
+  { from: 0.612, to: 0.65, title: "The observable universe", sub: "93 billion light-years of cosmic web — every thread a chain of galaxies. Your address starts here." },
   { from: 0.658, to: 0.69, title: "Laniakea", sub: "“Immeasurable heaven”: a hundred thousand galaxies drifting the same slow current. One of them matters to you." },
   { from: 0.696, to: 0.735, title: "The Local Group", sub: "The spiral ahead is home. The other big one arrives in about four billion years. No rush." },
   { from: 0.741, to: 0.776, title: "The Milky Way", sub: "The spiral we watched assemble — a hundred thousand light-years, several hundred billion stars. You live between two arms." },
@@ -266,7 +274,7 @@ const BEATS: Beat[] = [
 ];
 
 const ADDRESS: { p: number; line: string; note: string }[] = [
-  { p: 0.619, line: "OBSERVABLE UNIVERSE", note: "8.8×10²⁶ m" },
+  { p: 0.628, line: "OBSERVABLE UNIVERSE", note: "8.8×10²⁶ m" },
   { p: 0.66, line: "LANIAKEA SUPERCLUSTER", note: "~5×10²⁴ m" },
   { p: 0.698, line: "THE LOCAL GROUP", note: "~10²³ m" },
   { p: 0.742, line: "MILKY WAY GALAXY", note: "9×10²⁰ m" },
@@ -1467,7 +1475,7 @@ export function YouAreHereExperience() {
     const updateChrome = (p: number) => {
       // altimeter
       const mode: AltimeterMode =
-        p < 0.365 ? "time" : p < 0.574 ? "geo" : p < 0.938 ? "scale" : "now";
+        p < 0.365 ? "time" : p < 0.594 ? "geo" : p < 0.938 ? "scale" : "now";
       setAltMode(mode);
       if (cursorRef.current) {
         let f = 0;
@@ -1545,7 +1553,8 @@ export function YouAreHereExperience() {
       }
       const p = smoothRef.current;
 
-      const stackAlpha = smooth01(mapRange(p, 0.572, 0.607));
+      // the space stack waits out the pivot's beat of black before fading in
+      const stackAlpha = smooth01(mapRange(p, 0.602, 0.634));
 
       // Movement I — cosmic time on the particle fuse
       const fuseAlpha = 1 - smooth01(mapRange(p, 0.242, 0.278));
@@ -1595,11 +1604,13 @@ export function YouAreHereExperience() {
       }
 
       const agoMa = pToAgoMa(p);
-      const earthTimeA = winP(p, 0.371, 0.4, 0.578, 0.614);
+      // the aged Earth leaves completely before the space movement begins —
+      // a beat of pure black marks the chapter break
+      const earthTimeA = winP(p, 0.371, 0.4, 0.572, 0.596);
       timeEarthGroup.visible = earthTimeA > 0.004;
       if (timeEarthGroup.visible) {
         const grow = lerp(0.35, 1.0, smooth01(mapRange(p, 0.371, 0.408)));
-        const recede = 1 - smooth01(mapRange(p, 0.578, 0.614)) * 0.985;
+        const recede = 1 - smooth01(mapRange(p, 0.572, 0.596)) * 0.985;
         timeEarthGroup.scale.setScalar(grow * recede);
         timeEarth.rotation.y = reduceMotion ? 0 : t * 0.05;
         timeEarthMat.uniforms.uOpacity.value = earthTimeA;
@@ -1776,6 +1787,7 @@ export function YouAreHereExperience() {
         @keyframes yahRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes yahLine { from { opacity: 0; transform: translateX(8px); } to { opacity: 1; transform: translateX(0); } }
         @keyframes yahPulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
+        @keyframes yahFade { from { opacity: 0; } to { opacity: 1; } }
         .yah ::selection { background: rgba(255, 180, 84, 0.35); }
       `}</style>
 
@@ -1841,6 +1853,8 @@ export function YouAreHereExperience() {
           {/* spacetime altimeter */}
           <div className="pointer-events-none absolute left-5 top-1/2 z-40 hidden h-[62vh] -translate-y-1/2 sm:block">
             <div className="relative h-full w-px bg-[#f2ece1]/15">
+              {/* keyed by mode so each coordinate system visibly re-arms */}
+              <div key={altMode} className="absolute inset-0 [animation:yahFade_1.1s_ease_both]">
               {altMode === "geo" ? (
                 // the geologic time scale: four eons, oldest at the top
                 GEO_EONS.map((eon) => {
@@ -1878,13 +1892,17 @@ export function YouAreHereExperience() {
                   now
                 </div>
               )}
+              </div>
               <div
                 ref={cursorRef}
                 className="absolute -left-[3px] h-[7px] w-[7px] -translate-y-1/2 rounded-full bg-[#ffb454] shadow-[0_0_12px_rgba(255,180,84,0.9)]"
                 style={{ top: "0%" }}
               />
             </div>
-            <div className="absolute -left-1 top-[-26px] text-[9px] font-bold uppercase tracking-[0.24em] text-[#8a8378]">
+            <div
+              key={`cap-${altMode}`}
+              className="absolute -left-1 top-[-26px] text-[9px] font-bold uppercase tracking-[0.24em] text-[#8a8378] [animation:yahFade_1.1s_ease_both]"
+            >
               {altMode === "time" ? "time" : altMode === "geo" ? "earth" : altMode === "scale" ? "size" : "·"}
             </div>
           </div>
@@ -1936,7 +1954,25 @@ export function YouAreHereExperience() {
           </div>
 
           {/* narration */}
-          {beat ? (
+          {beat && beat.chapter ? (
+            // the chapter card: a hard reset between the time and space movements
+            <div
+              key={beatIdx}
+              className="pointer-events-none absolute left-1/2 top-1/2 z-40 w-[min(40rem,calc(100vw-3rem))] -translate-x-1/2 -translate-y-1/2 text-center [animation:yahRise_1.1s_ease_both]"
+            >
+              <div className="mx-auto mb-6 h-px w-24 bg-[#ffb454]/45" />
+              <div className="text-[10px] font-bold uppercase tracking-[0.32em] text-[#ffb454]/90">
+                13.8 billion years · complete
+              </div>
+              <h2 className="mt-5 text-3xl font-light leading-tight tracking-tight text-[#f2ece1] drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)] sm:text-5xl">
+                {beat.title}
+              </h2>
+              {beat.sub ? (
+                <p className="mx-auto mt-5 max-w-lg text-sm leading-6 text-[#c9c2b4] sm:text-base">{beat.sub}</p>
+              ) : null}
+              <div className="mx-auto mt-6 h-px w-24 bg-[#ffb454]/45" />
+            </div>
+          ) : beat ? (
             <div
               key={beatIdx}
               className="pointer-events-none absolute bottom-[16vh] left-1/2 z-40 w-[min(38rem,calc(100vw-3rem))] -translate-x-1/2 text-center [animation:yahRise_0.9s_ease_both]"
