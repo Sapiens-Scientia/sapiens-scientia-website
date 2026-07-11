@@ -436,13 +436,17 @@ const EARTH_FRAG = `
     float d = dot(normalize(vNormal), normalize(sunDir));
     float lit = smoothstep(-0.10, 0.12, d);
     float band = smoothstep(-0.14, 0.0, d) * smoothstep(0.16, 0.0, d);
-    vec3 night = day * 0.05 + vec3(0.008, 0.014, 0.035);
-    vec3 col = mix(night, day * 1.06, lit) + vec3(1.0, 0.45, 0.16) * band * 0.22;
+    vec3 night = day * 0.14 + vec3(0.014, 0.024, 0.06);
+    vec3 col = mix(night, day * 1.24, lit) + vec3(1.0, 0.45, 0.16) * band * 0.22;
     gl_FragColor = vec4(col, 1.0);
   }
 `;
 // Deep-time Earth: the same globe aged by uniforms — molten Hadean crust with
-// glowing cracks, orange Archean haze, Cryogenian ice creeping from the poles.
+// glowing cracks, orange Archean haze, Cryogenian ice creeping from the poles,
+// and PROCEDURAL CONTINENTS that drift, gather into supercontinents, and split
+// (a noise field on the sphere whose domain crawls with uDrift and clusters
+// toward one hemisphere with uGather). The real blue marble only fades in for
+// the recent past, when the plates approach their modern seats.
 const DEEP_TIME_FRAG = `
   uniform sampler2D map;
   uniform vec3 sunDir;
@@ -452,6 +456,11 @@ const DEEP_TIME_FRAG = `
   uniform float uOpacity;
   uniform float uTime;
   uniform float uHasMap;
+  uniform float uDrift;
+  uniform float uGather;
+  uniform float uSea;
+  uniform float uGreen;
+  uniform float uModern;
   varying vec3 vNormal;
   varying vec2 vUv;
   float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -466,8 +475,47 @@ const DEEP_TIME_FRAG = `
     for (int k = 0; k < 4; k++) { v += a * noise(p); p *= 2.17; a *= 0.5; }
     return v;
   }
+  float hash3(vec3 p) { return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
+  float noise3(vec3 p) {
+    vec3 i = floor(p); vec3 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    float n000 = hash3(i);
+    float n100 = hash3(i + vec3(1.0, 0.0, 0.0));
+    float n010 = hash3(i + vec3(0.0, 1.0, 0.0));
+    float n110 = hash3(i + vec3(1.0, 1.0, 0.0));
+    float n001 = hash3(i + vec3(0.0, 0.0, 1.0));
+    float n101 = hash3(i + vec3(1.0, 0.0, 1.0));
+    float n011 = hash3(i + vec3(0.0, 1.0, 1.0));
+    float n111 = hash3(i + vec3(1.0, 1.0, 1.0));
+    return mix(mix(mix(n000, n100, f.x), mix(n010, n110, f.x), f.y),
+               mix(mix(n001, n101, f.x), mix(n011, n111, f.x), f.y), f.z);
+  }
+  float fbm3(vec3 p) {
+    float v = 0.0; float a = 0.5;
+    for (int k = 0; k < 5; k++) { v += a * noise3(p); p *= 2.07; a *= 0.5; }
+    return v;
+  }
   void main() {
-    vec3 day = mix(vec3(0.05, 0.09, 0.16), texture2D(map, vUv).rgb, uHasMap);
+    // ancient world: continents as a drifting, warping noise field
+    vec3 sp = normalize(vNormal);
+    float ca = cos(uDrift); float sa = sin(uDrift);
+    vec3 rp = vec3(sp.x * ca - sp.z * sa, sp.y, sp.x * sa + sp.z * ca);
+    float warp = fbm3(sp * 1.6 + uDrift * 0.35);
+    vec3 q = rp * 2.1 + (warp - 0.5) * 1.3;
+    float field = fbm3(q)
+      + uGather * (0.22 * dot(rp, normalize(vec3(0.8, 0.25, -0.45))) + 0.06);
+    float land = smoothstep(uSea, uSea + 0.045, field);
+    float shallow = smoothstep(uSea - 0.055, uSea, field) - land;
+    vec3 rock = vec3(0.48, 0.37, 0.27);
+    vec3 veg = vec3(0.19, 0.36, 0.16);
+    float vegMask = uGreen * smoothstep(0.42, 0.72, fbm3(q * 1.7 + 3.1));
+    vec3 landCol = mix(rock, veg, vegMask);
+    vec3 ocean = vec3(0.035, 0.11, 0.24);
+    vec3 shallowCol = vec3(0.08, 0.22, 0.34);
+    vec3 ancient = mix(mix(ocean, shallowCol, clamp(shallow * 2.2, 0.0, 1.0)), landCol, land);
+    // modern world, only for the recent past
+    vec3 modern = mix(vec3(0.05, 0.09, 0.16), texture2D(map, vUv).rgb, uHasMap);
+    vec3 day = mix(ancient, modern, uModern);
     float n = fbm(vUv * vec2(9.0, 5.0) + uTime * 0.008);
     float cracks = smoothstep(0.52, 0.74, n);
     vec3 molten = mix(vec3(0.09, 0.025, 0.012), vec3(1.0, 0.34, 0.05) * 1.7, cracks);
@@ -477,9 +525,11 @@ const DEEP_TIME_FRAG = `
     float iceLine = 1.0 - uIce * 1.15;
     float iceMask = smoothstep(iceLine, iceLine + 0.14, lat + (fbm(vUv * 6.0) - 0.5) * 0.22) * step(0.01, uIce);
     col = mix(col, vec3(0.88, 0.93, 1.0), iceMask);
+    // wrapped lighting: a soft terminator and a readable night side, so the
+    // globe stays legible while still reading as lit from one side
     float d = dot(normalize(vNormal), normalize(sunDir));
-    float lit = clamp(d, 0.0, 1.0);
-    col = col * (0.14 + 0.92 * lit) + vec3(1.0, 0.42, 0.1) * cracks * uMolten * 0.85;
+    float lit = pow(clamp(d * 0.55 + 0.45, 0.0, 1.0), 1.35);
+    col = col * (0.32 + 0.88 * lit) + vec3(1.0, 0.42, 0.1) * cracks * uMolten * 0.85;
     gl_FragColor = vec4(col, uOpacity);
   }
 `;
@@ -791,6 +841,11 @@ export function YouAreHereExperience() {
         uOpacity: { value: 0 },
         uTime: { value: 0 },
         uHasMap: { value: 0 },
+        uDrift: { value: 0 },
+        uGather: { value: 0 },
+        uSea: { value: 0.6 },
+        uGreen: { value: 0 },
+        uModern: { value: 0 },
       },
     }));
     new THREE.TextureLoader().load("/earth-blue-marble-5400x2700.jpg", (tex) => {
@@ -1387,9 +1442,10 @@ export function YouAreHereExperience() {
         fuse.material.opacity = fuseAlpha;
         updateFuse(pToLogT(p), t);
       } else {
-        // impact flashes: Theia carving off the Moon, and the K-Pg afternoon
-        const theia = Math.exp(-Math.pow((p - 0.3995) / 0.005, 2)) * 0.5;
-        const kpg = Math.exp(-Math.pow((p - 0.5465) / 0.0042, 2)) * 0.34;
+        // impact flashes: Theia carving off the Moon, and the K-Pg afternoon —
+        // sharp pulses, not washes
+        const theia = Math.exp(-Math.pow((p - 0.3995) / 0.0035, 2)) * 0.4;
+        const kpg = Math.exp(-Math.pow((p - 0.5465) / 0.0022, 2)) * 0.22;
         flashMat.opacity = theia + kpg;
       }
 
@@ -1440,6 +1496,18 @@ export function YouAreHereExperience() {
         timeEarthMat.uniforms.uHaze.value =
           smooth01(mapRange(agoMa, 2350, 2650)) * (1 - smooth01(mapRange(agoMa, 3850, 4150)));
         timeEarthMat.uniforms.uIce.value = 0.92 * Math.exp(-Math.pow((agoMa - 690) / 95, 2));
+        // continental drift: the plates crawl continuously; land gathers into
+        // supercontinents (Kenorland → Rodinia → Pangaea) and disperses again;
+        // continents grow with time; green arrives with land plants; the real
+        // map only fades in near the present
+        timeEarthMat.uniforms.uDrift.value = (EARTH_AGE_MA - agoMa) * 0.0011;
+        timeEarthMat.uniforms.uGather.value =
+          0.55 * Math.exp(-Math.pow((agoMa - 2650) / 320, 2)) +
+          0.8 * Math.exp(-Math.pow((agoMa - 1050) / 240, 2)) +
+          0.95 * Math.exp(-Math.pow((agoMa - 285) / 105, 2));
+        timeEarthMat.uniforms.uSea.value = lerp(0.615, 0.525, smooth01(mapRange(agoMa, 4000, 700)));
+        timeEarthMat.uniforms.uGreen.value = smooth01(mapRange(agoMa, 470, 380));
+        timeEarthMat.uniforms.uModern.value = smooth01(mapRange(agoMa, 130, 35));
         const moonIn = smooth01(mapRange(p, 0.402, 0.428));
         timeMoonMat.opacity = earthTimeA * moonIn;
         const moonR = lerp(2.7, 3.7, clamp01((EARTH_AGE_MA - agoMa) / EARTH_AGE_MA));
