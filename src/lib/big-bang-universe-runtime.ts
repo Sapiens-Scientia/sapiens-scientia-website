@@ -21,6 +21,9 @@ export function mountBigBangUniverse(root, options = {}) {
   const TAU = Math.PI * 2;
   const siteIntroMode = Boolean(options.siteIntroMode);
   const embeddedMode = Boolean(options.embeddedMode);
+  // Journey mode: an external scroll driver owns currentP via the returned
+  // controller. Internal playback, controls, and click navigation stand down.
+  const journeyMode = Boolean(options.journeyMode);
 
   // time (s) <-> progress (0..1), logarithmic
   const timeToP = (t) => (Math.log10(t) - L0) / LR;
@@ -203,6 +206,7 @@ export function mountBigBangUniverse(root, options = {}) {
   const compEl = root.querySelector("#composition");
   root.classList.toggle("site-intro", siteIntroMode);
   root.classList.toggle("embedded", embeddedMode);
+  root.classList.toggle("journey", journeyMode);
 
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const observableUniverseImage = new Image();
@@ -279,10 +283,12 @@ export function mountBigBangUniverse(root, options = {}) {
     const mobile = W < 720;
     compEl.style.top = (mobile ? 14 : 18) + "px";
     topPad = embeddedMode ? (mobile ? 60 : 54) : (mobile ? 154 : 128);
-    // Leave room below the present-day rim for its labels. In site-intro mode
-    // the controls are hidden, so reserve explicit space for the click prompt.
-    const controlsH = siteIntroMode ? 0 : controlsEl.offsetHeight;
-    const bottomReserve = siteIntroMode ? (mobile ? 86 : 78) : controlsH + 14 + 46;
+    // Leave room below the present-day rim for its labels. In site-intro and
+    // journey modes the controls are hidden, so reserve explicit space for the
+    // click prompt / rim labels instead.
+    const chromeless = siteIntroMode || journeyMode;
+    const controlsH = chromeless ? 0 : controlsEl.offsetHeight;
+    const bottomReserve = chromeless ? (mobile ? 86 : 78) : controlsH + 14 + 46;
     usableH = H - topPad - bottomReserve;
     maxHW = Math.min(W * 0.44, centerX - (mobile ? 24 : 244));
     cardW = mobile ? 150 : 214;
@@ -292,7 +298,7 @@ export function mountBigBangUniverse(root, options = {}) {
 
   function computeCardLayout() {
     // lowest allowed card BOTTOM edge sits above the controls or intro gutter
-    const bottomInset = siteIntroMode ? 34 : controlsEl.offsetHeight + 34;
+    const bottomInset = (siteIntroMode || journeyMode) ? 34 : controlsEl.offsetHeight + 34;
     const bottomLimit = H - bottomInset;
     const pad = 12;              // vertical gap between adjacent cards
     // Set widths first so wrapped heights measure correctly, then read heights.
@@ -820,8 +826,8 @@ export function mountBigBangUniverse(root, options = {}) {
           ctx.shadowBlur = 0;
           ctx.fillText(label, centerX, yb - 2);
         }
-        if (siteIntroMode) {
-          const prompt = "ENTER OBSERVABLE UNIVERSE";
+        if (siteIntroMode || journeyMode) {
+          const prompt = journeyMode ? "SCROLL INTO THE OBSERVABLE UNIVERSE" : "ENTER OBSERVABLE UNIVERSE";
           if (ctx.measureText(prompt).width < maxHW * 2 - 40) {
             ctx.globalAlpha = la * 0.72;
             ctx.fillStyle = `rgb(${PAL.todayRimHi})`;
@@ -903,6 +909,12 @@ export function mountBigBangUniverse(root, options = {}) {
   }
 
   function travelTo(vy) {
+    if (journeyMode) {
+      // The scroll driver owns progress; hand the destination to the page so
+      // clicking a milestone card scrolls the journey to that cosmic moment.
+      if (options.onMilestoneTravel) options.onMilestoneTravel(clamp01(vy));
+      return;
+    }
     targetP = clamp01(vy);
     playing = false;
     preroll = 0;
@@ -1102,7 +1114,7 @@ export function mountBigBangUniverse(root, options = {}) {
     singularityHover = nearSingularity(e);
     todayRimHover = nearTodayRim(e);
     root.dataset.singularityHover = singularityHover ? "true" : "false";
-    canvas.style.cursor = (waiting() && singularityHover) ? "pointer"
+    canvas.style.cursor = (waiting() && singularityHover && !journeyMode) ? "pointer"
                         : todayRimHover ? "pointer"
                         : "default";
   });
@@ -1113,7 +1125,7 @@ export function mountBigBangUniverse(root, options = {}) {
     canvas.style.cursor = "default";
   });
   listen(canvas, "click", (e) => {
-    if (waiting() && nearSingularity(e)) { ignite(); return; }
+    if (waiting() && nearSingularity(e)) { if (!journeyMode) ignite(); return; }
     if (nearTodayRim(e)) { enterObservableUniverse(); return; }
   });
 
@@ -1129,18 +1141,43 @@ export function mountBigBangUniverse(root, options = {}) {
     resizeObserver.observe(controlsEl);
   }
 
+  // ---- External drive (journey mode) ---------------------------------------
+  // A scroll driver can own currentP directly. Cinematic crossings (bang flash,
+  // CMB glow) still fire when the driver moves forward across them.
+  function setProgress(p) {
+    const to = clamp01(p);
+    preroll = 0; targetP = null; playing = false; scrubbing = false;
+    if (to > currentP) {
+      if (currentP <= 0.0005 && to > 0.0005) bang();
+      crossings(currentP, to);
+    }
+    prevP = currentP = to;
+  }
+
+  // The present-day rim ellipse in root-relative CSS pixels, so an overlay can
+  // take over exactly where the canvas drew the observable universe image.
+  function getTodayRimRect() {
+    return { cx: centerX, cy: pToY(1), rx: maxHW, ry: todayRimRY(), rotation: -0.12 };
+  }
+
+  function getReadout() {
+    const t = pToTime(invWarp(currentP));
+    return { ageLabel: formatAge(t), tempLabel: formatTemp(tempAt(t)) };
+  }
+
   // ---- Go -----------------------------------------------------------------
   layout();
-  if (reduceMotion) { playing = false; currentP = 1; }
+  if (reduceMotion && !journeyMode) { playing = false; currentP = 1; }
   else playing = false; // the universe waits for a click on the singularity
   applyHash(); // a shared #t link lands straight on the moment
   syncPlay();
   syncStartChrome();
   animationFrameId = requestAnimationFrame(frame);
-  return () => {
+  const dispose = () => {
     disposed = true;
     abort.abort();
     if (animationFrameId) cancelAnimationFrame(animationFrameId);
     if (resizeObserver) resizeObserver.disconnect();
   };
+  return { dispose, setProgress, getTodayRimRect, getReadout };
 }

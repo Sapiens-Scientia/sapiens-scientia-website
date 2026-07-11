@@ -2382,6 +2382,7 @@ function UnifiedScene({
     selectedGalaxyEventKey,
     galaxyDiskSize,
     galaxyDiskRotationDeg,
+    interactive = true,
 }: {
     mode: EarthVisualizationMode
     isDark: boolean
@@ -2399,6 +2400,7 @@ function UnifiedScene({
     selectedGalaxyEventKey?: string | null
     galaxyDiskSize?: number
     galaxyDiskRotationDeg?: number
+    interactive?: boolean
 }) {
     const { camera } = useThree()
     const sceneDate = useMemo(() => new Date(Date.now() + dateOffsetMs), [dateOffsetMs])
@@ -2518,6 +2520,7 @@ function UnifiedScene({
             <OrbitControls
                 key={controlsModeKey}
                 ref={controlsRef}
+                enabled={interactive}
                 enableZoom
                 enablePan
                 minDistance={mode === 'globe' ? 1.5 : mode === 'orbit' ? 1 : 2}
@@ -2561,9 +2564,13 @@ interface UnifiedEarthViewProps {
     homeCoords?: EarthCoords
     timezone: string
     timezoneRingScale?: number
+    /** When false, orbit controls are disabled so an outer scroll driver owns input. */
+    interactive?: boolean
+    /** When true, the frameloop stops so a hidden view costs no GPU time. */
+    paused?: boolean
 }
 
-export function UnifiedEarthView({ className, style, mode, dateOffsetMs = 0, rotationOffsetMs = 0, sunOrbitProgress = 0, sunOrbitActive = false, isDarkOverride, orbitTiltView = false, orbitTiltStripsVisible = true, resetViewKey = 0, selectedGalaxyEventKey, galaxyDiskSize, galaxyDiskRotationDeg, homeCoords, timezone, timezoneRingScale = 1 }: UnifiedEarthViewProps) {
+export function UnifiedEarthView({ className, style, mode, dateOffsetMs = 0, rotationOffsetMs = 0, sunOrbitProgress = 0, sunOrbitActive = false, isDarkOverride, orbitTiltView = false, orbitTiltStripsVisible = true, resetViewKey = 0, selectedGalaxyEventKey, galaxyDiskSize, galaxyDiskRotationDeg, homeCoords, timezone, timezoneRingScale = 1, interactive = true, paused = false }: UnifiedEarthViewProps) {
     const { isDark, theme } = useAppContext()
     const [ready, setReady] = useState(false)
     const [contextResetKey, setContextResetKey] = useState(0)
@@ -2593,6 +2600,7 @@ export function UnifiedEarthView({ className, style, mode, dateOffsetMs = 0, rot
                 onCreated={handleCreated}
                 gl={{ antialias: true, alpha: true }}
                 dpr={[1, 1.5]}
+                frameloop={paused ? 'never' : 'always'}
                 style={{
                     background: bgColor,
                     opacity: ready ? 1 : 0,
@@ -2600,7 +2608,7 @@ export function UnifiedEarthView({ className, style, mode, dateOffsetMs = 0, rot
                 }}
             >
                 <SceneBackground color={bgColor} />
-                <UnifiedScene mode={mode} isDark={sceneIsDark} theme={theme} dateOffsetMs={dateOffsetMs} rotationOffsetMs={rotationOffsetMs} sunOrbitProgress={sunOrbitProgress} sunOrbitActive={sunOrbitActive} homeCoords={homeCoords} timezone={timezone} timezoneRingScale={timezoneRingScale} orbitTiltView={orbitTiltView} orbitTiltStripsVisible={orbitTiltStripsVisible} resetViewKey={resetViewKey} selectedGalaxyEventKey={selectedGalaxyEventKey} galaxyDiskSize={galaxyDiskSize} galaxyDiskRotationDeg={galaxyDiskRotationDeg} />
+                <UnifiedScene mode={mode} isDark={sceneIsDark} theme={theme} dateOffsetMs={dateOffsetMs} rotationOffsetMs={rotationOffsetMs} sunOrbitProgress={sunOrbitProgress} sunOrbitActive={sunOrbitActive} homeCoords={homeCoords} timezone={timezone} timezoneRingScale={timezoneRingScale} orbitTiltView={orbitTiltView} orbitTiltStripsVisible={orbitTiltStripsVisible} resetViewKey={resetViewKey} selectedGalaxyEventKey={selectedGalaxyEventKey} galaxyDiskSize={galaxyDiskSize} galaxyDiskRotationDeg={galaxyDiskRotationDeg} interactive={interactive} />
             </Canvas>
         </div>
     )

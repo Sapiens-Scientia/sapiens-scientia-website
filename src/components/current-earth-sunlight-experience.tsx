@@ -5,11 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Moon, RotateCcw, Sun } from "lucide-react";
 import { AppProvider } from "@/components/earthview/contexts";
 import { UnifiedEarthView } from "@/components/earthview/globe/UnifiedEarthView";
-
-const DAY_MS = 24 * 60 * 60 * 1000;
-const YEAR_MS = 365 * DAY_MS;
-
-type PreviewMode = "day" | "year-no-spin" | "year-spin" | "sun-year";
+import { useSunlightPreview } from "@/hooks/use-sunlight-preview";
 
 function getBrowserTimezone() {
   try {
@@ -21,53 +17,10 @@ function getBrowserTimezone() {
 
 function CurrentEarthSunlightScene() {
   const [sceneIsDark, setSceneIsDark] = useState(true);
-  const [previewMode, setPreviewMode] = useState<PreviewMode | null>(null);
-  const [dateOffsetMs, setDateOffsetMs] = useState(0);
-  const [rotationOffsetMs, setRotationOffsetMs] = useState(0);
-  const [sunOrbitProgress, setSunOrbitProgress] = useState(0);
+  const { previewMode, dateOffsetMs, rotationOffsetMs, sunOrbitProgress, togglePreview } =
+    useSunlightPreview();
   const [resetViewKey, setResetViewKey] = useState(0);
   const timezone = useMemo(() => getBrowserTimezone(), []);
-
-  useEffect(() => {
-    if (!previewMode) return;
-
-    const durationMs = previewMode === "day" ? 16000 : previewMode === "year-spin" ? 96000 : 48000;
-    const start = performance.now();
-    let frame = 0;
-
-    const animate = (time: number) => {
-      const progress = Math.min(1, (time - start) / durationMs);
-      if (previewMode === "sun-year") {
-        setDateOffsetMs(0);
-        setRotationOffsetMs(0);
-        setSunOrbitProgress(progress);
-      } else {
-        const offsetMs = previewMode === "day" ? progress * DAY_MS : progress * YEAR_MS;
-        setDateOffsetMs(offsetMs);
-        setRotationOffsetMs(previewMode === "year-no-spin" ? 0 : offsetMs);
-        setSunOrbitProgress(0);
-      }
-
-      if (progress < 1) {
-        frame = requestAnimationFrame(animate);
-      } else {
-        setPreviewMode(null);
-        setDateOffsetMs(0);
-        setRotationOffsetMs(0);
-        setSunOrbitProgress(0);
-      }
-    };
-
-    frame = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(frame);
-  }, [previewMode]);
-
-  const togglePreview = (nextMode: PreviewMode) => {
-    setDateOffsetMs(0);
-    setRotationOffsetMs(0);
-    setSunOrbitProgress(0);
-    setPreviewMode((current) => (current === nextMode ? null : nextMode));
-  };
 
   return (
     <main className="earth-shell">

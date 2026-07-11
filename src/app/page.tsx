@@ -1,9 +1,9 @@
-import { BigBangUniverseExperience } from "@/components/big-bang-universe-experience";
+import { CosmicJourney } from "@/components/cosmic-journey";
 
 export default function Home() {
   return (
     <main className="min-h-screen bg-black text-white">
-      <BigBangUniverseExperience siteIntro />
+      <CosmicJourney />
     </main>
   );
 }

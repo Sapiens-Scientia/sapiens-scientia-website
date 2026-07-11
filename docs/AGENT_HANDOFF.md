@@ -6,15 +6,18 @@ This file records practical handoff context for future agents working on the Sap
 
 - The site is a Next.js App Router application using React, Tailwind CSS, and React Three Fiber.
 - Project memory is local to this repository under `docs/`.
-- The homepage starts with the Big Bang Universe standalone animation. In
-  homepage mode, clicking the bottom/today rim of the completed history bell
-  navigates into the Observable Universe view at `/observable-universe`. From
-  there the central target ring links to the Galaxy view / History of Planet
-  Earth at `/history-of-planet-earth`, which links onward through Earth Orbit at
-  `/earth-orbit`, Current Earth Sunlight at `/current-earth-sunlight`, and then
-  Meta Earth.
+- The homepage is `src/components/cosmic-journey.tsx`: one scroll-driven
+  experience that scrubs the Big Bang canvas, morphs the history bell's
+  present-day rim into the observable-universe disc, dives into its center,
+  carries galaxy → orbit → globe on a single `UnifiedEarthView` canvas, and
+  reveals the Meta Earth hero — followed by the overview content and footer.
+  See "Homepage Structure" in `docs/ARCHITECTURE.md` before touching it.
+- The former flow pages remain public routes, linked from each journey act via
+  "Open full view": `/observable-universe`, `/history-of-planet-earth`,
+  `/earth-orbit`, `/current-earth-sunlight`, `/meta-earth`.
 - `/meta-earth` is the former homepage: a full-screen 3D experience with overlay
-  panels, time controls, theme support, and platform bridge interactions.
+  panels, time controls, theme support, and platform bridge interactions. The
+  same `EarthHero` is the journey's final act.
 - The main platform model is `Persona`, `Societas`, `Terra`, with `Salus` and `Domus` nested inside Persona, `Soma` nested inside Salus, and `Morbus` nested inside Soma.
 - Public project routes include the Data Index, EarthView 3D, and Big Bang
   Universe.
@@ -33,9 +36,13 @@ If the implementation reveals a conceptual mismatch or durable constraint, updat
 ## Current Implementation Notes
 
 - `src/components/earth-hero.tsx` owns the Meta Earth hero shell, React Three Fiber canvas, theme toggle, and timeline state.
-- `src/app/page.tsx` wraps the standalone Big Bang Universe HTML app in a
-  full-screen iframe with `?siteIntro=1`; that query enables the completed
-  bell/rim click-through to `/observable-universe`.
+- `src/app/page.tsx` renders `CosmicJourney`. The Big Bang runtime is scrubbed
+  through the controller returned by `mountBigBangUniverse` (`journeyMode`);
+  its `getTodayRimRect` powers the seamless rim → observable-universe-disc
+  handoff, and `getReadout` feeds the journey's spacetime readout.
+- In the journey, the 3D canvases are non-interactive (scroll owns input);
+  orbiting/zooming lives on the standalone routes. Only the final Meta Earth
+  act is fully interactive.
 - `src/components/home-galaxy-view.tsx` is the duplicated Galaxy scene used by
   `/history-of-planet-earth`. It uses the lower-level EarthView
   `UnifiedEarthView` but does not change `/projects/earthview` or its
@@ -48,12 +55,6 @@ If the implementation reveals a conceptual mismatch or durable constraint, updat
   current Earth sunlight scene used by `/current-earth-sunlight`. It reuses the
   lower-level EarthView `UnifiedEarthView` in `globe` mode with the copied
   EarthView 3D globe animation controls.
-- `src/components/universe-timeline.tsx` is rendered from `src/app/layout.tsx`
-  as the sitewide fixed bottom Universe Timeline. It intentionally floats above
-  most routes, links to `/chronos`, and uses a horizontally scrollable milestone
-  rail on narrow screens. It is hidden on `/earth-orbit` and
-  `/projects/earthview` so EarthView-style controls and annotations remain
-  usable.
 - `src/components/earthview/` contains the imported EarthView 3D React/Three
   project. `/projects/earthview` renders it directly rather than using an
   iframe. Keep the copied textures in `public/earth-blue-marble-5400x2700.jpg`

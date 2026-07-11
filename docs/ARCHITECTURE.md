@@ -35,15 +35,19 @@ npm run build
 
 The site is mostly static pages with client-side interactive islands.
 
-- `src/app/page.tsx` renders the Big Bang Universe canvas runtime directly as
-  the React client component `BigBangUniverseExperience` in site-intro mode.
-- `src/app/projects/big-bang-universe/page.tsx` renders the same integrated
+- `src/app/page.tsx` renders `CosmicJourney`, the scroll-driven homepage
+  experience that fuses the former six-page flow (Big Bang → Observable
+  Universe → History of Planet Earth → Earth Orbit → Current Earth Sunlight →
+  Meta Earth) into one continuous sticky-stage journey. See "Homepage
+  Structure" below.
+- `src/app/projects/big-bang-universe/page.tsx` renders the integrated
   `BigBangUniverseExperience` inside a React/Next project page shell in embedded
   mode, so the public project route keeps the site navigation, page rhythm, and
   footer without using an iframe.
-- The integrated homepage Big Bang Universe runtime navigates to
-  `/observable-universe` through the Next router when the user clicks the
-  bottom/today rim of the completed history bell.
+- The standalone flow pages (`/observable-universe`,
+  `/history-of-planet-earth`, `/earth-orbit`, `/current-earth-sunlight`,
+  `/meta-earth`) remain public routes; the journey links to each act's full
+  page via "Open full view".
 - `src/app/history-of-planet-earth/page.tsx` renders the Galaxy 3D history
   view as its own public route.
 - `src/app/earth-orbit/page.tsx` renders the EarthView orbit scene as the
@@ -63,14 +67,32 @@ The site is mostly static pages with client-side interactive islands.
 
 The homepage is the most sensitive surface.
 
+- `src/components/cosmic-journey.tsx`: the whole landing experience. A tall
+  scroll container (~1250vh) drives a sticky full-viewport stage holding four
+  layers: the Big Bang canvas runtime (scroll-scrubbed through a controller),
+  the observable-universe disc (a DOM image that takes over exactly where the
+  canvas drew the present-day rim, then dives into its own center), one shared
+  `UnifiedEarthView` WebGL canvas whose `mode` prop morphs galaxy → orbit →
+  globe (its built-in camera flight carries the zoom), and the Meta Earth
+  `EarthHero`. Scroll progress is smoothed with a time-based exponential
+  follower and applied imperatively via refs; React state changes only at act
+  boundaries and discrete scrub steps. Persistent chrome: chapter rail,
+  spacetime readout, skip button, scroll cue, per-act "Open full view" links.
+  Act overlays fade with opacity only — do not transition `visibility` (it can
+  strand a compositor layer unpainted); inactive acts force their interactive
+  children inert via `[&_*]:!pointer-events-none`.
 - `src/components/big-bang-universe-experience.tsx`: React-owned DOM shell for
-  the Big Bang Universe canvas runtime. The homepage uses `siteIntro`, which
-  enables the bottom/today rim click-through into `/observable-universe`; the
+  the Big Bang Universe canvas runtime. The homepage journey uses `journey`
+  plus `onController`/`onMilestoneTravel` (scroll-scrubbed, controls hidden,
+  card clicks scroll the page); `/observable-universe` deep links still work
+  from `siteIntro` mode, which enables the bottom/today rim click-through; the
   public project route uses `embedded`, which hides the runtime's duplicate
   internal title.
 - `src/lib/big-bang-universe-runtime.ts`: mechanically ported imperative canvas
   runtime from the former standalone HTML file. It mounts into the React shell
-  and owns canvas drawing, card generation, controls, and animation state.
+  and owns canvas drawing, card generation, controls, and animation state. It
+  returns a controller `{ dispose, setProgress, getTodayRimRect, getReadout }`;
+  `journeyMode` hands progress ownership to an external scroll driver.
 - `src/app/big-bang-universe.css`: scoped CSS for the integrated Big Bang
   Universe runtime. It is imported by the root layout with the other global CSS.
 - `public/standalone/big-bang-universe/index.html`: legacy standalone copy kept
@@ -79,6 +101,12 @@ The homepage is the most sensitive surface.
 - `src/components/home-galaxy-view.tsx`: duplicated Galaxy-only EarthView scene
   used by `/history-of-planet-earth` so `/projects/earthview` keeps its
   standalone app wrapper unchanged.
+- `src/components/galaxy-event-browser.tsx`: the Earth Event Browser aside
+  shared by `/history-of-planet-earth` and the homepage journey.
+- `src/hooks/use-sunlight-preview.ts`: the Current Earth Sunlight preview
+  animation state machine shared by `/current-earth-sunlight` and the journey.
+- `UnifiedEarthView` accepts `interactive` (disables orbit controls so a
+  scroll driver owns input) and `paused` (stops the frameloop while hidden).
 - `src/components/home-galaxy-experience.tsx`: full-screen Galaxy history shell
   with the clear Earth Orbit link.
 - `src/components/home-orbit-experience.tsx`: full-screen EarthView orbit shell

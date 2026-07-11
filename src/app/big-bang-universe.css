@@ -199,7 +199,8 @@
     backdrop-filter: blur(16px) saturate(1.4);
     box-shadow: 0 12px 40px -16px var(--shadow);
   }
-  .big-bang-universe.site-intro #controls {
+  .big-bang-universe.site-intro #controls,
+  .big-bang-universe.journey #controls {
     display: none;
   }
   .big-bang-universe .btn {

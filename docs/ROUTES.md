@@ -6,7 +6,7 @@ This is the current public route inventory for the Sapiens Scientia website.
 
 | Route | File | Purpose |
 |---|---|---|
-| `/` | `src/app/page.tsx` | Homepage Big Bang intro that leads into the Observable Universe view. |
+| `/` | `src/app/page.tsx` | Homepage cosmic journey: one scroll-driven experience from the Big Bang through the Observable Universe, Galaxy history, Earth Orbit, and Current Sunlight into Meta Earth, followed by the overview content. |
 | `/observable-universe` | `src/app/observable-universe/page.tsx` | Observable Universe scale view with a central zoom target into the History of Planet Earth. |
 | `/history-of-planet-earth` | `src/app/history-of-planet-earth/page.tsx` | Galaxy 3D view of Earth's history in the Milky Way, with links back to Observable Universe and onward to Earth Orbit. |
 | `/earth-orbit` | `src/app/earth-orbit/page.tsx` | EarthView orbit scene linking the galaxy-scale History of Planet Earth route into current Earth sunlight. |

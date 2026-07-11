@@ -4,31 +4,66 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { mountBigBangUniverse } from "@/lib/big-bang-universe-runtime";
 
+// Handle returned by the runtime so an external driver (the homepage cosmic
+// journey) can scrub cosmic time and read canvas geometry for its handoffs.
+export type BigBangUniverseController = {
+  dispose: () => void;
+  setProgress: (p: number) => void;
+  getTodayRimRect: () => {
+    cx: number;
+    cy: number;
+    rx: number;
+    ry: number;
+    rotation: number;
+  };
+  getReadout: () => { ageLabel: string; tempLabel: string };
+};
+
 type BigBangUniverseExperienceProps = {
   className?: string;
   embedded?: boolean;
   siteIntro?: boolean;
+  journey?: boolean;
+  onController?: (controller: BigBangUniverseController | null) => void;
+  onMilestoneTravel?: (vy: number) => void;
 };
 
 export function BigBangUniverseExperience({
   className = "",
   embedded = false,
   siteIntro = false,
+  journey = false,
+  onController,
+  onMilestoneTravel,
 }: BigBangUniverseExperienceProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const onControllerRef = useRef(onController);
+  const onMilestoneTravelRef = useRef(onMilestoneTravel);
   const router = useRouter();
+
+  useEffect(() => {
+    onControllerRef.current = onController;
+    onMilestoneTravelRef.current = onMilestoneTravel;
+  }, [onController, onMilestoneTravel]);
 
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
 
-    return mountBigBangUniverse(root, {
+    const controller: BigBangUniverseController = mountBigBangUniverse(root, {
       embeddedMode: embedded,
       siteIntroMode: siteIntro,
-      syncHash: !siteIntro,
+      journeyMode: journey,
+      syncHash: !siteIntro && !journey,
       onEnterObservableUniverse: () => router.push("/observable-universe"),
+      onMilestoneTravel: (vy: number) => onMilestoneTravelRef.current?.(vy),
     });
-  }, [embedded, router, siteIntro]);
+    onControllerRef.current?.(controller);
+    return () => {
+      onControllerRef.current?.(null);
+      controller.dispose();
+    };
+  }, [embedded, journey, router, siteIntro]);
 
   return (
     <div
@@ -37,6 +72,7 @@ export function BigBangUniverseExperience({
         "big-bang-universe prestart relative h-full min-h-screen overflow-hidden",
         embedded ? "embedded" : "",
         siteIntro ? "site-intro" : "",
+        journey ? "journey" : "",
         className,
       ]
         .filter(Boolean)
