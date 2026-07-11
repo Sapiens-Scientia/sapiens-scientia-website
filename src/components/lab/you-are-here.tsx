@@ -34,6 +34,9 @@ const smooth01 = (t: number) => {
   return u * u * (3 - 2 * u);
 };
 const mapRange = (v: number, a: number, b: number) => clamp01((v - a) / (b - a || 1));
+/** Fade in over [a,b], hold, fade out over [c,d]. */
+const winP = (p: number, a: number, b: number, c: number, d: number) =>
+  smooth01(mapRange(p, a, b)) * (1 - smooth01(mapRange(p, c, d)));
 
 /** Piecewise-linear map through [x, y] stops (x ascending). Clamps outside. */
 function piecewise(stops: [number, number][]) {
@@ -180,54 +183,99 @@ function subsolarDirection(date: Date) {
 // The script: journey coordinates, narration, and the address label
 // ---------------------------------------------------------------------------
 
-// Scroll fraction → log10(seconds since the Big Bang). Movement I.
+// Scroll fraction → log10(seconds since the Big Bang). Movement I, through
+// the birth of the Milky Way (~17.06) and the Sun (~17.46); after that the
+// clock hands over to Earth-age time below.
 const pToLogT = piecewise([
-  [0.02, -43], [0.055, -35], [0.09, 0], [0.13, 2.26],
-  [0.185, 13.08], [0.235, 15.8], [0.275, 16.8], [0.33, 17.64],
+  [0.02, -43], [0.05, -35], [0.085, 0], [0.115, 2.26],
+  [0.155, 13.08], [0.195, 15.8], [0.24, 16.6], [0.3, 17.06], [0.363, 17.4655],
 ]);
 
-// Scroll fraction → log10(metres across the view). Movement II & III.
+// Scroll fraction → millions of years BEFORE PRESENT, for Earth's own history
+// (Movement I·b). Dwells sit on the geologic beats.
+const pToAgoMa = piecewise([
+  [0.365, 4540], [0.418, 4000], [0.46, 2600], [0.468, 2400], [0.494, 800],
+  [0.5, 650], [0.505, 538.8], [0.53, 252], [0.5465, 66], [0.552, 2.6],
+  [0.556, 0.3], [0.575, 0],
+]);
+
+// The geologic time scale rail (colors shared with the site's galaxy helix).
+const GEO_EONS = [
+  { name: "Hadean", from: 4540, to: 4000, color: "#dc2626" },
+  { name: "Archean", from: 4000, to: 2500, color: "#facc15" },
+  { name: "Proterozoic", from: 2500, to: 538.8, color: "#8b5cf6" },
+  { name: "Phanerozoic", from: 538.8, to: 0, color: "#16a34a" },
+];
+const EARTH_AGE_MA = 4540;
+
+function eonAt(agoMa: number) {
+  if (agoMa > 4000) return "Hadean";
+  if (agoMa > 2500) return "Archean";
+  if (agoMa > 538.8) return "Proterozoic";
+  return "Phanerozoic";
+}
+
+function formatAgo(agoMa: number) {
+  if (agoMa >= 1000) return `${(agoMa / 1000).toFixed(2)} billion years ago`;
+  if (agoMa >= 1) return `${Math.round(agoMa).toLocaleString()} million years ago`;
+  if (agoMa > 0.001) return `${Math.round(agoMa * 1e6).toLocaleString()} years ago`;
+  return "today";
+}
+
+// Scroll fraction → log10(metres across the view). Movements II & III.
 // Dwells sit on each address line; the long plunges land on the "emptiness"
 // beats between them.
 const pToLogM = piecewise([
-  [0.335, 27.2], [0.4, 26.2], [0.46, 24.6], [0.52, 22.9], [0.59, 20.9],
-  [0.628, 19.55], [0.66, 18.85], [0.698, 17.9], [0.75, 14.6], [0.775, 13.35],
-  [0.83, 12.35], [0.868, 10.2], [0.905, 7.35], [1.0, 7.18],
+  [0.578, 27.2], [0.619, 26.2], [0.657, 24.6], [0.695, 22.9], [0.739, 20.9],
+  [0.763, 19.55], [0.783, 18.85], [0.807, 17.9], [0.84, 14.6], [0.856, 13.35],
+  [0.891, 12.35], [0.915, 10.2], [0.938, 7.35], [1.0, 7.18],
 ]);
 
 type Beat = { from: number; to: number; title: string; sub?: string; live?: boolean };
 
 const BEATS: Beat[] = [
-  { from: 0.0, to: 0.032, title: "This is everything there is.", sub: "Every galaxy, every atom of you — in a point smaller than small. Scroll, and let it begin." },
-  { from: 0.04, to: 0.082, title: "10⁻³⁵ seconds", sub: "Space itself tears outward, doubling and doubling, faster than light." },
-  { from: 0.09, to: 0.13, title: "Three minutes in", sub: "The universe is a furnace forging the first nuclei — hydrogen and helium, the stuff of every future sun." },
-  { from: 0.15, to: 0.202, title: "380,000 years", sub: "The fog clears and light gets loose. That first flash is still all around you — part of the static between radio stations." },
-  { from: 0.21, to: 0.258, title: "The dark ages", sub: "A hundred million years of nothing but cooling gas. Then, one by one, the lights come on." },
-  { from: 0.266, to: 0.325, title: "The age of galaxies", sub: "Gravity spends billions of years braiding gas into hundreds of billions of galaxies." },
-  { from: 0.338, to: 0.39, title: "That brings us to tonight.", sub: "Time stops scrolling here. Space starts. Let's find you." },
-  { from: 0.396, to: 0.455, title: "The observable universe", sub: "93 billion light-years of cosmic web — every thread a chain of galaxies. Your address starts here." },
-  { from: 0.463, to: 0.515, title: "Laniakea", sub: "“Immeasurable heaven”: a hundred thousand galaxies drifting the same slow current. One of them matters to you." },
-  { from: 0.523, to: 0.585, title: "The Local Group", sub: "The spiral ahead is home. The other big one arrives in about four billion years. No rush." },
-  { from: 0.593, to: 0.647, title: "The Milky Way", sub: "A hundred thousand light-years, several hundred billion stars. You live in the quiet suburbs, between two arms." },
-  { from: 0.653, to: 0.695, title: "The neighborhood", sub: "Every star any human eye has ever seen, unaided, lives inside this one small bright bubble." },
-  { from: 0.7, to: 0.755, title: "And in between", sub: "Almost all of everything is this: nothing. Cold, clean, patient vacuum." },
-  { from: 0.762, to: 0.85, title: "One ordinary star", sub: "Eight worlds. Yours is the third — the damp one." },
-  { from: 0.868, to: 0.902, title: "Earth, live", sub: "The daylight on this globe is where daylight actually is, this second." },
-  { from: 0.908, to: 0.955, title: "And after 13.8 billion years…", live: true },
-  { from: 0.958, to: 1.01, title: "You are the universe, 13.8 billion years in, looking back at itself.", sub: "Every “here” is the center. This one is yours." },
+  // Movement I — cosmic time
+  { from: 0.0, to: 0.028, title: "This is everything there is.", sub: "Every galaxy, every atom of you — in a point smaller than small. Scroll, and let it begin." },
+  { from: 0.032, to: 0.062, title: "10⁻³⁵ seconds", sub: "Space itself tears outward, doubling and doubling, faster than light." },
+  { from: 0.068, to: 0.1, title: "Three minutes in", sub: "The universe is a furnace forging the first nuclei — hydrogen and helium, the stuff of every future sun." },
+  { from: 0.112, to: 0.148, title: "380,000 years", sub: "The fog clears and light gets loose. That first flash is still all around you — part of the static between radio stations." },
+  { from: 0.155, to: 0.19, title: "The dark ages", sub: "A hundred million years of nothing but cooling gas. Then, one by one, the lights come on." },
+  { from: 0.196, to: 0.235, title: "The age of galaxies", sub: "Gravity spends billions of years braiding gas into hundreds of billions of galaxies." },
+  // Movement I·b — home is built
+  { from: 0.245, to: 0.298, title: "Home is built", sub: "Our galaxy assembles itself out of smaller ones. The disc you live in settles into a slow, patient spin." },
+  { from: 0.31, to: 0.36, title: "9.2 billion years in", sub: "A cloud of recycled star-dust collapses. A new sun switches on, and the leftovers dry into worlds." },
+  { from: 0.37, to: 0.418, title: "Earth, day one", sub: "A ball of molten rock under a rain of asteroids. One collision the size of a planet carves off the Moon." },
+  { from: 0.428, to: 0.46, title: "3.7 billion years ago", sub: "In the young oceans, chemistry learns to copy itself. It has not stopped since." },
+  { from: 0.468, to: 0.499, title: "2.4 billion years ago", sub: "Microbes exhale a new atmosphere. The sky turns blue — and the planet nearly freezes solid for the trouble." },
+  { from: 0.504, to: 0.528, title: "538 million years ago", sub: "The Cambrian explosion: eyes, shells, spines. The ocean invents almost every kind of body at once." },
+  { from: 0.532, to: 0.549, title: "The age of dinosaurs", sub: "They run the planet for 160 million years — until one very bad afternoon, 66 million years ago." },
+  { from: 0.552, to: 0.568, title: "300,000 years ago", sub: "Homo sapiens. Every city, book, and name fits inside the last sliver of this timeline." },
+  // pivot
+  { from: 0.574, to: 0.603, title: "That brings us to tonight.", sub: "Time stops scrolling here. Space starts — let's find where this little world actually sits." },
+  // Movement II — the descent
+  { from: 0.609, to: 0.65, title: "The observable universe", sub: "93 billion light-years of cosmic web — every thread a chain of galaxies. Your address starts here." },
+  { from: 0.658, to: 0.69, title: "Laniakea", sub: "“Immeasurable heaven”: a hundred thousand galaxies drifting the same slow current. One of them matters to you." },
+  { from: 0.696, to: 0.735, title: "The Local Group", sub: "The spiral ahead is home. The other big one arrives in about four billion years. No rush." },
+  { from: 0.741, to: 0.776, title: "The Milky Way", sub: "The spiral we watched assemble — a hundred thousand light-years, several hundred billion stars. You live between two arms." },
+  { from: 0.781, to: 0.808, title: "The neighborhood", sub: "Every star any human eye has ever seen, unaided, lives inside this one small bright bubble." },
+  { from: 0.812, to: 0.848, title: "And in between", sub: "Almost all of everything is this: nothing. Cold, clean, patient vacuum." },
+  { from: 0.852, to: 0.905, title: "One ordinary star", sub: "The sun we watched ignite, with its eight worlds. Yours is the third — the damp one." },
+  { from: 0.917, to: 0.936, title: "Earth, live", sub: "The daylight on this globe is where daylight actually is, this second." },
+  { from: 0.941, to: 0.97, title: "And after 13.8 billion years…", live: true },
+  { from: 0.973, to: 1.01, title: "You are the universe, 13.8 billion years in, looking back at itself.", sub: "Every “here” is the center. This one is yours." },
 ];
 
 const ADDRESS: { p: number; line: string; note: string }[] = [
-  { p: 0.4, line: "OBSERVABLE UNIVERSE", note: "8.8×10²⁶ m" },
-  { p: 0.465, line: "LANIAKEA SUPERCLUSTER", note: "~5×10²⁴ m" },
-  { p: 0.525, line: "THE LOCAL GROUP", note: "~10²³ m" },
-  { p: 0.595, line: "MILKY WAY GALAXY", note: "9×10²⁰ m" },
-  { p: 0.655, line: "ORION–CYGNUS ARM", note: "~10¹⁹ m" },
-  { p: 0.768, line: "THE SOLAR SYSTEM", note: "~10¹³ m" },
-  { p: 0.862, line: "EARTH", note: "1.27×10⁷ m" },
-  { p: 0.915, line: "@COORDS@", note: "" },
-  { p: 0.945, line: "NOW", note: "@TIME@" },
-  { p: 0.972, line: "YOU", note: "13.8 billion years in the making" },
+  { p: 0.619, line: "OBSERVABLE UNIVERSE", note: "8.8×10²⁶ m" },
+  { p: 0.66, line: "LANIAKEA SUPERCLUSTER", note: "~5×10²⁴ m" },
+  { p: 0.698, line: "THE LOCAL GROUP", note: "~10²³ m" },
+  { p: 0.742, line: "MILKY WAY GALAXY", note: "9×10²⁰ m" },
+  { p: 0.78, line: "ORION–CYGNUS ARM", note: "~10¹⁹ m" },
+  { p: 0.858, line: "THE SOLAR SYSTEM", note: "~10¹³ m" },
+  { p: 0.911, line: "EARTH", note: "1.27×10⁷ m" },
+  { p: 0.945, line: "@COORDS@", note: "" },
+  { p: 0.958, line: "NOW", note: "@TIME@" },
+  { p: 0.978, line: "YOU", note: "13.8 billion years in the making" },
 ];
 
 const TIME_TICKS: [number, string][] = [
@@ -241,7 +289,7 @@ const SCALE_TICKS: [number, string][] = [
 const TIME_RANGE: [number, number] = [-43, 17.64];
 const SCALE_RANGE: [number, number] = [27.2, 7.0];
 
-const SCROLL_VH = 1500; // scrollable length of the piece, in viewport-heights
+const SCROLL_VH = 2100; // scrollable length of the piece, in viewport-heights
 
 // ---------------------------------------------------------------------------
 // Procedural scenery
@@ -393,6 +441,48 @@ const EARTH_FRAG = `
     gl_FragColor = vec4(col, 1.0);
   }
 `;
+// Deep-time Earth: the same globe aged by uniforms — molten Hadean crust with
+// glowing cracks, orange Archean haze, Cryogenian ice creeping from the poles.
+const DEEP_TIME_FRAG = `
+  uniform sampler2D map;
+  uniform vec3 sunDir;
+  uniform float uMolten;
+  uniform float uHaze;
+  uniform float uIce;
+  uniform float uOpacity;
+  uniform float uTime;
+  uniform float uHasMap;
+  varying vec3 vNormal;
+  varying vec2 vUv;
+  float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float noise(vec2 p) {
+    vec2 i = floor(p); vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x),
+               mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+  }
+  float fbm(vec2 p) {
+    float v = 0.0; float a = 0.5;
+    for (int k = 0; k < 4; k++) { v += a * noise(p); p *= 2.17; a *= 0.5; }
+    return v;
+  }
+  void main() {
+    vec3 day = mix(vec3(0.05, 0.09, 0.16), texture2D(map, vUv).rgb, uHasMap);
+    float n = fbm(vUv * vec2(9.0, 5.0) + uTime * 0.008);
+    float cracks = smoothstep(0.52, 0.74, n);
+    vec3 molten = mix(vec3(0.09, 0.025, 0.012), vec3(1.0, 0.34, 0.05) * 1.7, cracks);
+    vec3 col = mix(day, molten, uMolten);
+    col = mix(col, col * vec3(1.06, 0.74, 0.42) + vec3(0.09, 0.045, 0.0), uHaze);
+    float lat = abs(vUv.y - 0.5) * 2.0;
+    float iceLine = 1.0 - uIce * 1.15;
+    float iceMask = smoothstep(iceLine, iceLine + 0.14, lat + (fbm(vUv * 6.0) - 0.5) * 0.22) * step(0.01, uIce);
+    col = mix(col, vec3(0.88, 0.93, 1.0), iceMask);
+    float d = dot(normalize(vNormal), normalize(sunDir));
+    float lit = clamp(d, 0.0, 1.0);
+    col = col * (0.14 + 0.92 * lit) + vec3(1.0, 0.42, 0.1) * cracks * uMolten * 0.85;
+    gl_FragColor = vec4(col, uOpacity);
+  }
+`;
 const ATMO_VERT = `
   varying vec3 vNormal;
   void main() {
@@ -476,7 +566,7 @@ function makeDrone(): Drone {
 // The component
 // ---------------------------------------------------------------------------
 
-type AltimeterMode = "time" | "scale" | "now";
+type AltimeterMode = "time" | "geo" | "scale" | "now";
 type MirrorState = "off" | "pending" | "on" | "denied";
 
 export function YouAreHereExperience() {
@@ -609,6 +699,111 @@ export function YouAreHereExperience() {
     const flash = new THREE.Mesh(track(new THREE.PlaneGeometry(80, 80)), flashMat);
     flash.position.z = 5;
     scene.add(flash);
+
+    // -- Movement I·b: home is built ----------------------------------------
+    // The Milky Way assembles: stars rain out of scatter into a spiral.
+    const proto = makePointCloud(3200, 0.085, dot, 1);
+    track(proto.points.geometry); track(proto.material);
+    fillSpiralGalaxy(proto, 2.7, 23, 1);
+    const protoTarget = proto.positions.slice();
+    const protoScatter = new Float32Array(protoTarget.length);
+    {
+      const rng = mulberry32(131);
+      for (let i = 0; i < protoScatter.length / 3; i++) {
+        const r = 1.2 + Math.pow(rng(), 0.5) * 2.6;
+        const th = rng() * Math.PI * 2;
+        const ph = Math.acos(2 * rng() - 1);
+        protoScatter[i * 3] = r * Math.sin(ph) * Math.cos(th);
+        protoScatter[i * 3 + 1] = r * Math.cos(ph) * 0.8;
+        protoScatter[i * 3 + 2] = r * Math.sin(ph) * Math.sin(th);
+      }
+    }
+    proto.points.rotation.x = -0.95;
+    proto.points.visible = false;
+    scene.add(proto.points);
+
+    // The Solar System: a cloud collapses into a spinning disc, a sun ignites,
+    // and the leftovers condense into worlds.
+    const NEB_N = 2000;
+    const neb = makePointCloud(NEB_N, 0.09, dot, 1);
+    track(neb.points.geometry); track(neb.material);
+    const nebR = new Float32Array(NEB_N);
+    const nebA0 = new Float32Array(NEB_N);
+    const nebY = new Float32Array(NEB_N);
+    const nebStart = new Float32Array(NEB_N * 3);
+    {
+      const rng = mulberry32(151);
+      for (let i = 0; i < NEB_N; i++) {
+        nebR[i] = 0.28 + Math.pow(rng(), 0.7) * 2.4;
+        nebA0[i] = rng() * Math.PI * 2;
+        nebY[i] = gauss(rng) * 0.05;
+        const r = 0.5 + Math.pow(rng(), 0.6) * 2.9;
+        const th = rng() * Math.PI * 2;
+        const ph = Math.acos(2 * rng() - 1);
+        nebStart[i * 3] = r * Math.sin(ph) * Math.cos(th);
+        nebStart[i * 3 + 1] = r * Math.cos(ph) * 0.85;
+        nebStart[i * 3 + 2] = r * Math.sin(ph) * Math.sin(th);
+        const warm = 0.5 + rng() * 0.5;
+        neb.colors[i * 3] = warm;
+        neb.colors[i * 3 + 1] = warm * 0.82;
+        neb.colors[i * 3 + 2] = warm * 0.64;
+      }
+      neb.points.geometry.attributes.color.needsUpdate = true;
+    }
+    const nebGroup = new THREE.Group();
+    nebGroup.rotation.x = 0.55;
+    nebGroup.visible = false;
+    nebGroup.add(neb.points);
+    const youngSunMat = track(new THREE.SpriteMaterial({
+      map: track(makeSunTexture()), transparent: true, opacity: 0,
+      depthWrite: false, blending: THREE.AdditiveBlending,
+    }));
+    const youngSun = new THREE.Sprite(youngSunMat);
+    nebGroup.add(youngSun);
+    const nebPlanets: THREE.MeshBasicMaterial[] = [];
+    ([
+      [0.62, 0x9c9488, 0.028], [0.95, 0xd9b98a, 0.04],
+      [1.3, 0x6f9fd8, 0.05], [1.9, 0xc86a4a, 0.036],
+    ] as const).forEach(([r, color, size], i) => {
+      const mat = track(new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0 }));
+      const mesh = new THREE.Mesh(track(new THREE.SphereGeometry(size, 12, 12)), mat);
+      const ang = 1.1 + i * 1.7;
+      mesh.position.set(Math.cos(ang) * r, 0, Math.sin(ang) * r);
+      nebGroup.add(mesh);
+      nebPlanets.push(mat);
+    });
+    scene.add(nebGroup);
+
+    // The young Earth, aging through the geologic time scale, with its Moon.
+    const timeEarthGroup = new THREE.Group();
+    timeEarthGroup.visible = false;
+    scene.add(timeEarthGroup);
+    const timeEarthMat = track(new THREE.ShaderMaterial({
+      vertexShader: EARTH_VERT,
+      fragmentShader: DEEP_TIME_FRAG,
+      transparent: true,
+      uniforms: {
+        map: { value: null },
+        sunDir: { value: new THREE.Vector3(1, 0.25, 0.85).normalize() },
+        uMolten: { value: 1 },
+        uHaze: { value: 0 },
+        uIce: { value: 0 },
+        uOpacity: { value: 0 },
+        uTime: { value: 0 },
+        uHasMap: { value: 0 },
+      },
+    }));
+    new THREE.TextureLoader().load("/earth-blue-marble-5400x2700.jpg", (tex) => {
+      tex.colorSpace = THREE.SRGBColorSpace;
+      track(tex);
+      timeEarthMat.uniforms.map.value = tex;
+      timeEarthMat.uniforms.uHasMap.value = 1;
+    });
+    const timeEarth = new THREE.Mesh(track(new THREE.SphereGeometry(2.0, 56, 56)), timeEarthMat);
+    timeEarthGroup.add(timeEarth);
+    const timeMoonMat = track(new THREE.MeshBasicMaterial({ color: 0x9a968e, transparent: true, opacity: 0 }));
+    const timeMoon = new THREE.Mesh(track(new THREE.SphereGeometry(0.14, 14, 14)), timeMoonMat);
+    timeEarthGroup.add(timeMoon);
 
     // -- Movement II: the nested zoom stack ---------------------------------
     type ZoomSet = {
@@ -1059,7 +1254,7 @@ export function YouAreHereExperience() {
       if (!el) return;
       const logM = pToLogM(p);
       const s = Math.pow(10, galaxySet.ref - logM);
-      const visible = p > 0.335 && p < 0.7 && s > 0.35 && s < 6 && galaxySet.group.visible;
+      const visible = p > 0.578 && p < 0.81 && s > 0.35 && s < 6 && galaxySet.group.visible;
       if (!visible) { el.style.opacity = "0"; return; }
       vec.copy(sunMarker.position);
       galaxySet.group.localToWorld(vec);
@@ -1104,11 +1299,13 @@ export function YouAreHereExperience() {
 
     const updateChrome = (p: number) => {
       // altimeter
-      const mode: AltimeterMode = p < 0.338 ? "time" : p < 0.908 ? "scale" : "now";
+      const mode: AltimeterMode =
+        p < 0.365 ? "time" : p < 0.574 ? "geo" : p < 0.938 ? "scale" : "now";
       setAltMode(mode);
       if (cursorRef.current) {
         let f = 0;
         if (mode === "time") f = mapRange(pToLogT(p), TIME_RANGE[0], TIME_RANGE[1]);
+        else if (mode === "geo") f = (EARTH_AGE_MA - pToAgoMa(p)) / EARTH_AGE_MA;
         else if (mode === "scale") f = mapRange(pToLogM(p), SCALE_RANGE[0], SCALE_RANGE[1]);
         else f = 1;
         cursorRef.current.style.top = `${(f * 100).toFixed(2)}%`;
@@ -1119,7 +1316,12 @@ export function YouAreHereExperience() {
         if (mode === "time") {
           const logT = pToLogT(p);
           big.textContent = formatAge(logT);
-          small.textContent = `after the beginning · ~${formatTemp(logT)}`;
+          small.textContent =
+            logT > 16.2 ? "after the beginning" : `after the beginning · ~${formatTemp(logT)}`;
+        } else if (mode === "geo") {
+          const ago = pToAgoMa(p);
+          big.textContent = formatAgo(ago);
+          small.textContent = `${eonAt(ago)} Eon · the geologic time scale`;
         } else if (mode === "scale") {
           const logM = pToLogM(p);
           big.textContent = formatSpan(logM);
@@ -1151,7 +1353,7 @@ export function YouAreHereExperience() {
         addrTimeRef.current.textContent = new Date().toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" });
       }
       setStarted(p > 0.004);
-      setArrived(p > 0.9);
+      setArrived(p > 0.935);
       setEnded(p > 0.985);
     };
 
@@ -1176,23 +1378,84 @@ export function YouAreHereExperience() {
       }
       const p = smoothRef.current;
 
-      const stackAlpha = smooth01(mapRange(p, 0.332, 0.372));
+      const stackAlpha = smooth01(mapRange(p, 0.572, 0.607));
 
-      // Movement I
-      const fuseAlpha = 1 - smooth01(mapRange(p, 0.335, 0.378));
+      // Movement I — cosmic time on the particle fuse
+      const fuseAlpha = 1 - smooth01(mapRange(p, 0.242, 0.278));
       fuse.points.visible = fuseAlpha > 0.004;
       if (fuse.points.visible) {
         fuse.material.opacity = fuseAlpha;
         updateFuse(pToLogT(p), t);
       } else {
-        flashMat.opacity = 0;
+        // impact flashes: Theia carving off the Moon, and the K-Pg afternoon
+        const theia = Math.exp(-Math.pow((p - 0.3995) / 0.005, 2)) * 0.5;
+        const kpg = Math.exp(-Math.pow((p - 0.5465) / 0.0042, 2)) * 0.34;
+        flashMat.opacity = theia + kpg;
+      }
+
+      // Movement I·b — home is built
+      const protoA = winP(p, 0.242, 0.268, 0.302, 0.338);
+      proto.points.visible = protoA > 0.004;
+      if (proto.points.visible) {
+        proto.material.opacity = protoA;
+        const settle = smooth01(mapRange(p, 0.248, 0.286));
+        for (let i = 0; i < protoTarget.length; i++) {
+          proto.positions[i] = lerp(protoScatter[i], protoTarget[i], settle);
+        }
+        proto.points.geometry.attributes.position.needsUpdate = true;
+        proto.points.rotation.y = reduceMotion ? 0 : t * (0.015 + settle * 0.045);
+      }
+
+      const nebA = winP(p, 0.302, 0.33, 0.373, 0.406);
+      nebGroup.visible = nebA > 0.004;
+      if (nebGroup.visible) {
+        neb.material.opacity = nebA * 0.9;
+        const collapse = smooth01(mapRange(p, 0.308, 0.352));
+        for (let i = 0; i < NEB_N; i++) {
+          const swirl = nebA0[i] + (reduceMotion ? 0 : t * (0.22 / (nebR[i] + 0.25))) + collapse * 2.2;
+          neb.positions[i * 3] = lerp(nebStart[i * 3], Math.cos(swirl) * nebR[i], collapse);
+          neb.positions[i * 3 + 1] = lerp(nebStart[i * 3 + 1], nebY[i], collapse);
+          neb.positions[i * 3 + 2] = lerp(nebStart[i * 3 + 2], Math.sin(swirl) * nebR[i], collapse);
+        }
+        neb.points.geometry.attributes.position.needsUpdate = true;
+        const ignite = smooth01(mapRange(p, 0.318, 0.35));
+        youngSunMat.opacity = nebA * ignite;
+        const pulse = reduceMotion ? 1 : 1 + 0.06 * Math.sin(t * 3.1);
+        youngSun.scale.setScalar(Math.max(0.001, 0.62 * ignite * pulse));
+        const condense = smooth01(mapRange(p, 0.344, 0.365));
+        for (const mat of nebPlanets) mat.opacity = nebA * condense;
+      }
+
+      const agoMa = pToAgoMa(p);
+      const earthTimeA = winP(p, 0.371, 0.4, 0.578, 0.614);
+      timeEarthGroup.visible = earthTimeA > 0.004;
+      if (timeEarthGroup.visible) {
+        const grow = lerp(0.35, 1.0, smooth01(mapRange(p, 0.371, 0.408)));
+        const recede = 1 - smooth01(mapRange(p, 0.578, 0.614)) * 0.985;
+        timeEarthGroup.scale.setScalar(grow * recede);
+        timeEarth.rotation.y = reduceMotion ? 0 : t * 0.05;
+        timeEarthMat.uniforms.uOpacity.value = earthTimeA;
+        timeEarthMat.uniforms.uTime.value = t;
+        timeEarthMat.uniforms.uMolten.value = smooth01(mapRange(agoMa, 3950, 4460));
+        timeEarthMat.uniforms.uHaze.value =
+          smooth01(mapRange(agoMa, 2350, 2650)) * (1 - smooth01(mapRange(agoMa, 3850, 4150)));
+        timeEarthMat.uniforms.uIce.value = 0.92 * Math.exp(-Math.pow((agoMa - 690) / 95, 2));
+        const moonIn = smooth01(mapRange(p, 0.402, 0.428));
+        timeMoonMat.opacity = earthTimeA * moonIn;
+        const moonR = lerp(2.7, 3.7, clamp01((EARTH_AGE_MA - agoMa) / EARTH_AGE_MA));
+        const moonAng = reduceMotion ? 1.2 : t * 0.32;
+        timeMoon.position.set(
+          Math.cos(moonAng) * moonR,
+          Math.sin(moonAng * 0.9) * 0.4,
+          Math.sin(moonAng) * moonR,
+        );
       }
 
       // Movements II & III
       setStackVisible(p, t, stackAlpha);
 
       // Movement III: turn the reader's pin to face the camera
-      const face = smooth01(mapRange(p, 0.905, 0.96));
+      const face = smooth01(mapRange(p, 0.938, 0.968));
       if (face > 0) {
         const dir = beacon.position.clone().normalize();
         beaconTarget.setFromUnitVectors(dir, new THREE.Vector3(0, 0.12, 1).normalize());
@@ -1389,7 +1652,27 @@ export function YouAreHereExperience() {
           {/* spacetime altimeter */}
           <div className="pointer-events-none absolute left-5 top-1/2 z-40 hidden h-[62vh] -translate-y-1/2 sm:block">
             <div className="relative h-full w-px bg-[#f2ece1]/15">
-              {altMode !== "now" ? (
+              {altMode === "geo" ? (
+                // the geologic time scale: four eons, oldest at the top
+                GEO_EONS.map((eon) => {
+                  const top = ((EARTH_AGE_MA - eon.from) / EARTH_AGE_MA) * 100;
+                  const height = ((eon.from - eon.to) / EARTH_AGE_MA) * 100;
+                  return (
+                    <div key={eon.name}>
+                      <div
+                        className="absolute -left-[1px] w-[3px] rounded-full"
+                        style={{ top: `${top}%`, height: `${height}%`, background: eon.color, opacity: 0.8 }}
+                      />
+                      <div
+                        className="absolute left-3.5 -translate-y-1/2 whitespace-nowrap text-[9px] uppercase tracking-[0.18em]"
+                        style={{ top: `${top + height / 2}%`, color: eon.color }}
+                      >
+                        {eon.name}
+                      </div>
+                    </div>
+                  );
+                })
+              ) : altMode !== "now" ? (
                 ticks.map(([v, label]) => {
                   const f = mapRange(v, range[0], range[1]);
                   return (
@@ -1413,7 +1696,7 @@ export function YouAreHereExperience() {
               />
             </div>
             <div className="absolute -left-1 top-[-26px] text-[9px] font-bold uppercase tracking-[0.24em] text-[#8a8378]">
-              {altMode === "time" ? "time" : altMode === "scale" ? "size" : "·"}
+              {altMode === "time" ? "time" : altMode === "geo" ? "earth" : altMode === "scale" ? "size" : "·"}
             </div>
           </div>
 
