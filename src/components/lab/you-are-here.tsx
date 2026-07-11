@@ -21,7 +21,18 @@
 // ============================================================================
 
 import * as THREE from "three";
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { AppProvider } from "@/components/earthview/contexts";
+import { useSunlightPreview } from "@/hooks/use-sunlight-preview";
+
+// The finale borrows the site's full Current Earth Sunlight model — season
+// halo, timezone ring, subsolar annual track and all — loading in as its own
+// layer once the zoom has arrived, beneath the lab's own overlays.
+const SunlightGlobe = dynamic(
+  () => import("@/components/earthview/globe/UnifiedEarthView").then((m) => m.UnifiedEarthView),
+  { ssr: false },
+);
 
 // ---------------------------------------------------------------------------
 // Small math + formatting helpers
@@ -772,6 +783,24 @@ export function YouAreHereExperience() {
   const [soundOn, setSoundOn] = useState(false);
   const [mirror, setMirror] = useState<MirrorState>("off");
   const [geoLabel, setGeoLabel] = useState<"estimated" | "precise">("estimated");
+  // the Current Earth Sunlight finale layer
+  const sunLayerRef = useRef<HTMLDivElement | null>(null);
+  const sunAlphaRef = useRef(0);
+  const mirrorLineRef = useRef<HTMLDivElement | null>(null);
+  const [sunMounted, setSunMounted] = useState(false);
+  const [finaleOn, setFinaleOn] = useState(false);
+  const [homeCoords, setHomeCoords] = useState(() => {
+    const g = guessLocation();
+    return { lat: g.lat, lng: g.lon };
+  });
+  const [finaleTz] = useState(() => {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    } catch {
+      return "UTC";
+    }
+  });
+  const preview = useSunlightPreview();
 
   // ------------------------------------------------------------------ scene
   useEffect(() => {
@@ -1702,6 +1731,16 @@ export function YouAreHereExperience() {
     const projectMirror = () => {
       const el = mirrorWinRef.current;
       if (!el) return;
+      // once the full sunlight model owns the frame, the porthole docks as a
+      // small picture-in-picture beside it instead of hanging from the lab pin
+      if (mirrorOnRef.current && sunAlphaRef.current > 0.5) {
+        if (mirrorLineRef.current) mirrorLineRef.current.style.display = "none";
+        el.style.left = "max(16%, 104px)";
+        el.style.top = "56%";
+        el.style.opacity = "1";
+        return;
+      }
+      if (mirrorLineRef.current) mirrorLineRef.current.style.display = "";
       if (!mirrorOnRef.current || !earthSet.group.visible) {
         el.style.opacity = "0";
         return;
@@ -1786,6 +1825,8 @@ export function YouAreHereExperience() {
       setStarted(p > 0.004);
       setArrived(p > 0.935);
       setEnded(p > 0.985);
+      setSunMounted(p > 0.93);
+      setFinaleOn(p > 0.952);
     };
 
     let raf = 0;
@@ -1923,6 +1964,11 @@ export function YouAreHereExperience() {
       // ambient drift
       bg.points.rotation.y = (reduceMotion ? 0 : t * 0.0035) + p * 0.35;
 
+      // the full sunlight model loads in over the arrival globe
+      const sunA = smooth01(mapRange(p, 0.952, 0.975));
+      sunAlphaRef.current = sunA;
+      if (sunLayerRef.current) sunLayerRef.current.style.opacity = String(sunA);
+
       droneRef.current?.set(p);
       projectMarker(p);
       projectMirror();
@@ -1975,6 +2021,7 @@ export function YouAreHereExperience() {
       (pos) => {
         geoRef.current = { lat: pos.coords.latitude, lon: pos.coords.longitude, precise: true };
         apiRef.current?.setBeacon(pos.coords.latitude, pos.coords.longitude);
+        setHomeCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
         setGeoLabel("precise");
       },
       () => { /* declined — the clock estimate stands */ },
@@ -2055,7 +2102,7 @@ export function YouAreHereExperience() {
             className="pointer-events-none absolute z-30 flex -translate-x-1/2 flex-col items-center transition-opacity duration-1000"
             style={{ opacity: 0, left: "50%", top: "58%" }}
           >
-            <div className="h-8 w-px bg-gradient-to-b from-[#ffb454]/75 to-[#ffb454]/20" />
+            <div ref={mirrorLineRef} className="h-8 w-px bg-gradient-to-b from-[#ffb454]/75 to-[#ffb454]/20" />
             <div
               className="relative overflow-hidden rounded-full border border-[#ffb454]/50 shadow-[0_0_36px_rgba(255,180,84,0.3)]"
               style={{
@@ -2086,6 +2133,33 @@ export function YouAreHereExperience() {
 
           {/* the cosmos */}
           <div ref={canvasHostRef} className="pointer-events-none absolute inset-0 z-10 [&>canvas]:h-full [&>canvas]:w-full" />
+
+          {/* the finale: the site's full Current Earth Sunlight model, loading
+              in over the arrival globe once the zoom has landed */}
+          {sunMounted ? (
+            <div
+              ref={sunLayerRef}
+              className="pointer-events-none absolute inset-0 z-[15]"
+              style={{ opacity: 0 }}
+            >
+              <AppProvider>
+                <SunlightGlobe
+                  className="h-full w-full"
+                  mode="globe"
+                  isDarkOverride
+                  interactive={false}
+                  paused={!finaleOn}
+                  dateOffsetMs={preview.dateOffsetMs}
+                  rotationOffsetMs={preview.rotationOffsetMs}
+                  sunOrbitProgress={preview.sunOrbitProgress}
+                  sunOrbitActive={preview.previewMode === "sun-year"}
+                  timezone={finaleTz}
+                  timezoneRingScale={0.72}
+                  homeCoords={homeCoords}
+                />
+              </AppProvider>
+            </div>
+          ) : null}
 
           {/* cinematic vignette */}
           <div
@@ -2277,15 +2351,41 @@ export function YouAreHereExperience() {
             </div>
           ) : null}
 
-          {/* sound */}
-          <button
-            type="button"
-            onClick={toggleSound}
-            className="absolute bottom-6 right-5 z-40 cursor-pointer border border-[#f2ece1]/15 bg-black/40 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#c9c2b4] backdrop-blur-sm transition-colors hover:text-[#f2ece1] sm:bottom-8 sm:right-8"
-            aria-pressed={soundOn}
-          >
-            {soundOn ? "● sound on" : "○ sound off"}
-          </button>
+          {/* bottom-right cluster: sunlight-model animations (finale) + sound */}
+          <div className="absolute bottom-6 right-5 z-40 flex max-w-[min(38rem,calc(100vw-2rem))] flex-wrap items-center justify-end gap-2 sm:bottom-8 sm:right-8">
+            {finaleOn ? (
+              (
+                [
+                  ["day", "24 hours", "stop 24 h"],
+                  ["year-no-spin", "1 year", "stop year"],
+                  ["year-spin", "year + spin", "stop spin"],
+                  ["sun-year", "sun year", "stop sun"],
+                ] as const
+              ).map(([modeKey, label, stopLabel]) => (
+                <button
+                  key={modeKey}
+                  type="button"
+                  onClick={() => preview.togglePreview(modeKey)}
+                  aria-pressed={preview.previewMode === modeKey}
+                  className={`cursor-pointer border bg-black/40 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] backdrop-blur-sm transition-colors ${
+                    preview.previewMode === modeKey
+                      ? "border-[#ffb454]/50 text-[#ffb454]"
+                      : "border-[#f2ece1]/15 text-[#c9c2b4] hover:text-[#f2ece1]"
+                  }`}
+                >
+                  {preview.previewMode === modeKey ? stopLabel : label}
+                </button>
+              ))
+            ) : null}
+            <button
+              type="button"
+              onClick={toggleSound}
+              className="cursor-pointer border border-[#f2ece1]/15 bg-black/40 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#c9c2b4] backdrop-blur-sm transition-colors hover:text-[#f2ece1]"
+              aria-pressed={soundOn}
+            >
+              {soundOn ? "● sound on" : "○ sound off"}
+            </button>
+          </div>
 
           {/* restart */}
           {ended ? (
