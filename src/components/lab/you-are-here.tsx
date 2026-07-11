@@ -276,13 +276,13 @@ const BEATS: Beat[] = [
   { from: 0.532, to: 0.549, title: "The age of dinosaurs", sub: "They run the planet for 160 million years — until one very bad afternoon, 66 million years ago." },
   { from: 0.552, to: 0.568, title: "300,000 years ago", sub: "Homo sapiens. Every city, book, and name fits inside the last sliver of this timeline." },
   // pivot — a hard chapter break between time and space
-  { from: 0.572, to: 0.607, chapter: true, title: "That brings us to the present universe.", sub: "All of time has passed — the clock reads tonight. Now we cross space instead: from everything we can see, down to you." },
+  { from: 0.572, to: 0.607, chapter: true, title: "That brings us to the present universe.", sub: "All of time has passed — the clock reads today. Now we cross space instead: from everything we can see, down to you." },
   // Movement II — the descent
   { from: 0.612, to: 0.65, title: "The observable universe", sub: "93 billion light-years of cosmic web — every thread a chain of galaxies. Your address starts here." },
-  { from: 0.658, to: 0.69, title: "Laniakea", sub: "“Immeasurable heaven”: a hundred thousand galaxies drifting the same slow current. One of them matters to you." },
-  { from: 0.696, to: 0.735, title: "The Local Group", sub: "The spiral ahead is home. The other big one arrives in about four billion years. No rush." },
-  { from: 0.741, to: 0.776, title: "The Milky Way", sub: "The spiral we watched assemble — a hundred thousand light-years, several hundred billion stars. You live between two arms." },
-  { from: 0.781, to: 0.808, title: "The neighborhood", sub: "Every star any human eye has ever seen, unaided, lives inside this one small bright bubble." },
+  { from: 0.65, to: 0.685, title: "Laniakea", sub: "“Immeasurable heaven”: a hundred thousand galaxies drifting the same slow current. One of them matters to you." },
+  { from: 0.69, to: 0.728, title: "The Local Group", sub: "The spiral ahead is home. The other big one arrives in about four billion years. No rush." },
+  { from: 0.733, to: 0.77, title: "The Milky Way", sub: "The spiral we watched assemble — a hundred thousand light-years, several hundred billion stars. You live between two arms." },
+  { from: 0.774, to: 0.806, title: "The neighborhood", sub: "Every star any human eye has ever seen, unaided, lives inside this one small bright bubble." },
   { from: 0.812, to: 0.848, title: "And in between", sub: "Almost all of everything is this: nothing. Cold, clean, patient vacuum." },
   { from: 0.852, to: 0.886, title: "One ordinary star", sub: "The sun we watched ignite, with its eight worlds. Yours is the third — the damp one." },
   { from: 0.89, to: 0.912, title: "One year, from above", sub: "Earth's whole orbit, annotated: the months are places on this ring, and “today” is a location. There you are, on it." },
@@ -291,14 +291,17 @@ const BEATS: Beat[] = [
   { from: 0.973, to: 1.01, title: "You are the universe, 13.8 billion years in, looking back at itself.", sub: "Every “here” is the center. This one is yours." },
 ];
 
+// Each line stamps in the moment its object becomes recognizable on screen
+// (fade-in complete), not at the zoom's deepest dwell — the label greets the
+// thing, it doesn't eulogize it.
 const ADDRESS: { p: number; line: string; note: string }[] = [
-  { p: 0.628, line: "OBSERVABLE UNIVERSE", note: "8.8×10²⁶ m" },
-  { p: 0.66, line: "LANIAKEA SUPERCLUSTER", note: "~5×10²⁴ m" },
-  { p: 0.698, line: "THE LOCAL GROUP", note: "~10²³ m" },
-  { p: 0.742, line: "MILKY WAY GALAXY", note: "9×10²⁰ m" },
-  { p: 0.78, line: "ORION–CYGNUS ARM", note: "~10¹⁹ m" },
-  { p: 0.858, line: "THE SOLAR SYSTEM", note: "~10¹³ m" },
-  { p: 0.897, line: "EARTH ORBIT", note: "3×10¹¹ m" },
+  { p: 0.618, line: "OBSERVABLE UNIVERSE", note: "8.8×10²⁶ m" },
+  { p: 0.648, line: "LANIAKEA SUPERCLUSTER", note: "~5×10²⁴ m" },
+  { p: 0.678, line: "THE LOCAL GROUP", note: "~10²³ m" },
+  { p: 0.722, line: "MILKY WAY GALAXY", note: "9×10²⁰ m" },
+  { p: 0.775, line: "ORION–CYGNUS ARM", note: "~10¹⁹ m" },
+  { p: 0.852, line: "THE SOLAR SYSTEM", note: "~10¹³ m" },
+  { p: 0.89, line: "EARTH ORBIT", note: "3×10¹¹ m" },
   { p: 0.911, line: "EARTH", note: "1.27×10⁷ m" },
   { p: 0.945, line: "@COORDS@", note: "" },
   { p: 0.958, line: "NOW", note: "@TIME@" },
