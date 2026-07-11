@@ -10,8 +10,9 @@
 //   through space (an exponential zoom down the reader's cosmic mailing
 //   address), then it runs out of universe and lands on NOW — a live clock,
 //   the sun's real terminator, a pin near the reader, and finally (by
-//   invitation only) the reader themselves, live on camera, composited into
-//   the starfield. A spacetime altimeter rides the left edge; its units flip
+//   invitation only) the reader themselves — a small live camera porthole
+//   hanging from their pin on the globe, the last object in the zoom.
+//   A spacetime altimeter rides the left edge; its units flip
 //   from seconds to metres to o'clock. Every number is true. Procedural
 //   everything; the only texture allowed is the blue marble. The tone is a
 //   poem with correct units, and the ending is quiet.
@@ -482,6 +483,7 @@ export function YouAreHereExperience() {
   const journeyRef = useRef<HTMLDivElement | null>(null);
   const canvasHostRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const mirrorWinRef = useRef<HTMLDivElement | null>(null);
   const cursorRef = useRef<HTMLDivElement | null>(null);
   const readoutBigRef = useRef<HTMLDivElement | null>(null);
   const readoutSmallRef = useRef<HTMLDivElement | null>(null);
@@ -1050,6 +1052,8 @@ export function YouAreHereExperience() {
 
     // DOM update helpers (all imperative, once per frame)
     const vec = new THREE.Vector3();
+    const vecB = new THREE.Vector3();
+    const vecC = new THREE.Vector3();
     const projectMarker = (p: number) => {
       const el = markerRef.current;
       if (!el) return;
@@ -1065,6 +1069,37 @@ export function YouAreHereExperience() {
       el.style.opacity = String(0.9 * fadeWindow(Math.log10(s)));
       el.style.left = `${(vec.x * 0.5 + 0.5) * w}px`;
       el.style.top = `${(-vec.y * 0.5 + 0.5) * h}px`;
+    };
+
+    // The mirror porthole hangs from the reader's pin: track its projected
+    // screen position, and hide it when the pin swings to the globe's far side.
+    const projectMirror = () => {
+      const el = mirrorWinRef.current;
+      if (!el) return;
+      if (!mirrorOnRef.current || !earthSet.group.visible) {
+        el.style.opacity = "0";
+        return;
+      }
+      beacon.getWorldPosition(vecB);
+      earthSpin.getWorldPosition(vecC);
+      const facing =
+        (vecB.x - vecC.x) * (camera.position.x - vecC.x) +
+        (vecB.y - vecC.y) * (camera.position.y - vecC.y) +
+        (vecB.z - vecC.z) * (camera.position.z - vecC.z);
+      if (facing <= 0) {
+        el.style.opacity = "0";
+        return;
+      }
+      vecB.project(camera);
+      if (vecB.z > 1) {
+        el.style.opacity = "0";
+        return;
+      }
+      const w = host.clientWidth;
+      const h = host.clientHeight;
+      el.style.left = `${(vecB.x * 0.5 + 0.5) * w}px`;
+      el.style.top = `${(-vecB.y * 0.5 + 0.5) * h + 10}px`;
+      el.style.opacity = "1";
     };
 
     const updateChrome = (p: number) => {
@@ -1122,7 +1157,6 @@ export function YouAreHereExperience() {
 
     let raf = 0;
     let last = performance.now();
-    let mirrorFade = 0;
     const tick = (nowMs: number) => {
       const dt = Math.min((nowMs - last) / 1000, 0.25);
       last = nowMs;
@@ -1142,12 +1176,10 @@ export function YouAreHereExperience() {
       }
       const p = smoothRef.current;
 
-      // mirror dims the cosmos so the reader shines through
-      mirrorFade += ((mirrorOnRef.current ? 1 : 0) - mirrorFade) * (1 - Math.exp(-dt * 3));
-      const stackAlpha = smooth01(mapRange(p, 0.332, 0.372)) * lerp(1, 0.16, mirrorFade);
+      const stackAlpha = smooth01(mapRange(p, 0.332, 0.372));
 
       // Movement I
-      const fuseAlpha = (1 - smooth01(mapRange(p, 0.335, 0.378))) * lerp(1, 0.16, mirrorFade);
+      const fuseAlpha = 1 - smooth01(mapRange(p, 0.335, 0.378));
       fuse.points.visible = fuseAlpha > 0.004;
       if (fuse.points.visible) {
         fuse.material.opacity = fuseAlpha;
@@ -1171,10 +1203,10 @@ export function YouAreHereExperience() {
 
       // ambient drift
       bg.points.rotation.y = (reduceMotion ? 0 : t * 0.0035) + p * 0.35;
-      bg.material.opacity = 0.55 * lerp(1, 0.75, mirrorFade);
 
       droneRef.current?.set(p);
       projectMarker(p);
+      projectMirror();
       updateChrome(p);
       renderer.render(scene, camera);
       raf = requestAnimationFrame(tick);
@@ -1297,25 +1329,40 @@ export function YouAreHereExperience() {
 
       <div className="relative" style={{ height: `calc(${SCROLL_VH}vh + 100vh)` }}>
         <div className="sticky top-0 h-screen w-full overflow-hidden">
-          {/* the mirror — beneath the cosmos, revealed only by invitation */}
-          <video
-            ref={videoRef}
-            muted
-            playsInline
-            aria-label="Your camera, mirrored — video stays on this device"
-            className="absolute inset-0 z-0 h-full w-full object-cover transition-opacity duration-[1600ms]"
-            style={{
-              transform: "scaleX(-1)",
-              filter: "grayscale(0.35) sepia(0.22) brightness(0.72) contrast(1.06)",
-              opacity: mirror === "on" ? 1 : 0,
-            }}
-          />
-          {mirror === "on" ? (
+          {/* the mirror — a live porthole hanging from your pin on the globe */}
+          <div
+            ref={mirrorWinRef}
+            className="pointer-events-none absolute z-30 flex -translate-x-1/2 flex-col items-center transition-opacity duration-1000"
+            style={{ opacity: 0, left: "50%", top: "58%" }}
+          >
+            <div className="h-8 w-px bg-gradient-to-b from-[#ffb454]/75 to-[#ffb454]/20" />
             <div
-              className="pointer-events-none absolute inset-0 z-[5]"
-              style={{ background: "radial-gradient(ellipse at center, transparent 38%, rgba(5,3,8,0.88) 100%)" }}
-            />
-          ) : null}
+              className="relative overflow-hidden rounded-full border border-[#ffb454]/50 shadow-[0_0_36px_rgba(255,180,84,0.3)]"
+              style={{
+                width: "clamp(112px, 17vh, 172px)",
+                height: "clamp(112px, 17vh, 172px)",
+              }}
+            >
+              <video
+                ref={videoRef}
+                muted
+                playsInline
+                aria-label="Your camera, mirrored — video stays on this device"
+                className="h-full w-full object-cover"
+                style={{
+                  transform: "scaleX(-1)",
+                  filter: "grayscale(0.25) sepia(0.16) brightness(0.9) contrast(1.05)",
+                }}
+              />
+              <div
+                className="absolute inset-0 rounded-full"
+                style={{ boxShadow: "inset 0 0 26px rgba(5,3,8,0.7)" }}
+              />
+            </div>
+            <div className="mt-2 text-[9px] font-semibold uppercase tracking-[0.26em] text-[#ffb454]/90">
+              you · live
+            </div>
+          </div>
 
           {/* the cosmos */}
           <div ref={canvasHostRef} className="pointer-events-none absolute inset-0 z-10 [&>canvas]:h-full [&>canvas]:w-full" />
@@ -1459,7 +1506,7 @@ export function YouAreHereExperience() {
                   <p className="mt-2 text-[9px] uppercase tracking-[0.18em] text-[#8a8378]">
                     {mirror === "denied"
                       ? "camera declined — you are still here"
-                      : "your camera, mirrored into the cosmos — stays on this device, never recorded"}
+                      : "a live porthole at your pin — stays on this device, never recorded"}
                   </p>
                 </>
               )}
