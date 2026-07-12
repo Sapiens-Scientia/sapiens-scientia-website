@@ -26,11 +26,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AppProvider } from "@/components/earthview/contexts";
 import { useSunlightPreview } from "@/hooks/use-sunlight-preview";
 
-// The finale borrows the site's full Current Earth Sunlight model — season
-// halo, timezone ring, subsolar annual track and all — loading in as its own
-// layer once the zoom has arrived, beneath the lab's own overlays.
+// The finale is the lab's own copy of the site's Current Earth Sunlight model
+// — season halo, timezone ring, subsolar annual track and all — extended for
+// this UX: camera aimed at the reader's location, home-marker projection for
+// the porthole, and drag-to-rotate with the wheel left to page scroll.
 const SunlightGlobe = dynamic(
-  () => import("@/components/earthview/globe/UnifiedEarthView").then((m) => m.UnifiedEarthView),
+  () => import("@/components/lab/lab-earth-view").then((m) => m.LabEarthView),
   { ssr: false },
 );
 
@@ -769,7 +770,6 @@ export function YouAreHereExperience() {
   const markerRef = useRef<HTMLDivElement | null>(null);
   const smoothRef = useRef(0);
   const geoRef = useRef(guessLocation());
-  const apiRef = useRef<{ setBeacon: (lat: number, lon: number) => void } | null>(null);
   const droneRef = useRef<Drone | null>(null);
   const mirrorOnRef = useRef(false);
   const scrollAnimRef = useRef(0);
@@ -782,14 +782,13 @@ export function YouAreHereExperience() {
   const [ended, setEnded] = useState(false);
   const [soundOn, setSoundOn] = useState(false);
   const [mirror, setMirror] = useState<MirrorState>("off");
-  const [geoLabel, setGeoLabel] = useState<"estimated" | "precise">("estimated");
   // the Current Earth Sunlight finale layer
   const sunLayerRef = useRef<HTMLDivElement | null>(null);
   const sunAlphaRef = useRef(0);
-  const mirrorLineRef = useRef<HTMLDivElement | null>(null);
+  const homeProjRef = useRef<{ x: number; y: number; visible: boolean } | null>(null);
   const [sunMounted, setSunMounted] = useState(false);
   const [finaleOn, setFinaleOn] = useState(false);
-  const [homeCoords, setHomeCoords] = useState(() => {
+  const [homeCoords] = useState(() => {
     const g = guessLocation();
     return { lat: g.lat, lng: g.lon };
   });
@@ -1447,10 +1446,12 @@ export function YouAreHereExperience() {
       };
     }
 
-    // 7) Earth, live ----------------------------------------------------- 10^7.35
+    // 7) Earth on approach ----------------------------------------------- 10^7.35
+    // Only the distant view — the pale dot inside its moon's orbit. The
+    // close-up (chartwork, home marker, live terminator) is the LabEarthView
+    // finale, which this set hands the frame to.
     const earthSet = addSet(7.35, new THREE.Vector3(0, 0, 0));
     const earthSpin = new THREE.Group();
-    const beacon = new THREE.Group();
     let atmoMat: THREE.ShaderMaterial;
     let earthMat: THREE.ShaderMaterial | null = null;
     {
@@ -1482,26 +1483,6 @@ export function YouAreHereExperience() {
       }));
       earthSpin.add(new THREE.Mesh(track(new THREE.SphereGeometry(2.31, 48, 48)), atmoMat));
 
-      // the pin
-      const pinMat = track(new THREE.MeshBasicMaterial({
-        color: 0xffb454, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false,
-      }));
-      const pin = new THREE.Mesh(track(new THREE.SphereGeometry(0.028, 12, 12)), pinMat);
-      const pulseMat = track(new THREE.MeshBasicMaterial({
-        color: 0xffb454, transparent: true, opacity: 0.5, side: THREE.DoubleSide,
-        blending: THREE.AdditiveBlending, depthWrite: false,
-      }));
-      const pulse = new THREE.Mesh(track(new THREE.RingGeometry(0.05, 0.06, 40)), pulseMat);
-      beacon.add(pin, pulse);
-      earthSpin.add(beacon);
-      const placeBeacon = (lat: number, lon: number) => {
-        const dir = latLngToVec(lat, lon, 1);
-        beacon.position.copy(dir.clone().multiplyScalar(2.225));
-        beacon.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir);
-      };
-      placeBeacon(geoRef.current.lat, geoRef.current.lon);
-      apiRef.current = { setBeacon: placeBeacon };
-
       // the Moon, to scale, on its real-radius orbit (visible on approach)
       const moonRingMat = track(new THREE.LineBasicMaterial({
         color: 0x8b86a8, transparent: true, opacity: 0.2, depthWrite: false,
@@ -1531,110 +1512,13 @@ export function YouAreHereExperience() {
       moon.position.set(Math.cos(moonA) * moonR, 0, Math.sin(moonA) * moonR);
       moonSystem.add(moon);
 
-      // --- arrival chartwork, regenerated from the Current Earth Sunlight
-      // scene: latitude reference lines, the live subsolar point, and a
-      // sun-locked ring of local solar time. These fade in only once the
-      // globe itself has the frame.
-      const annotMats: { m: THREE.Material & { opacity: number }; base: number }[] = [];
-      const annot = (m: THREE.Material & { opacity: number }, base: number) => {
-        fadeMat(earthSet, m, base);
-        annotMats.push({ m, base });
-      };
-
-      const LATS: [number, string, string, number][] = [
-        [0, "#e2e8f0", "equator", -32],
-        [23.44, "#fde68a", "Tropic of Cancer", -24],
-        [-23.44, "#fde68a", "Tropic of Capricorn", -30],
-        [66.56, "#67e8f9", "Arctic Circle", -64],
-        [-66.56, "#67e8f9", "Antarctic Circle", -96],
-      ];
-      for (const [lat, color, name, labelLng] of LATS) {
-        const pts: THREE.Vector3[] = [];
-        for (let k = 0; k <= 128; k++) pts.push(latLngToVec(lat, (k / 128) * 360, 2.235));
-        const mat = track(new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.5, depthWrite: false }));
-        earthSpin.add(new THREE.LineLoop(track(new THREE.BufferGeometry().setFromPoints(pts)), mat));
-        annot(mat, 0.5);
-        const label = makeLabel(name, color, 0.1);
-        label.sprite.position.copy(latLngToVec(lat, labelLng, 2.37));
-        earthSpin.add(label.sprite);
-        annot(label.mat, 0.85);
-      }
-
-      const subsolarGroup = new THREE.Group();
-      earthSpin.add(subsolarGroup);
-      const ssDotMat = track(new THREE.MeshBasicMaterial({
-        color: 0xffb454, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false,
-      }));
-      subsolarGroup.add(new THREE.Mesh(track(new THREE.SphereGeometry(0.04, 12, 12)), ssDotMat));
-      annot(ssDotMat, 0.95);
-      const ssRayMat = track(new THREE.LineBasicMaterial({ color: 0xffd27f, transparent: true, opacity: 0.85, depthWrite: false }));
-      const rayPts: THREE.Vector3[] = [];
-      for (let k = 0; k < 8; k++) {
-        const a = (k / 8) * Math.PI * 2;
-        rayPts.push(
-          new THREE.Vector3(Math.cos(a) * 0.07, Math.sin(a) * 0.07, 0),
-          new THREE.Vector3(Math.cos(a) * 0.16, Math.sin(a) * 0.16, 0),
-        );
-      }
-      subsolarGroup.add(new THREE.LineSegments(track(new THREE.BufferGeometry().setFromPoints(rayPts)), ssRayMat));
-      annot(ssRayMat, 0.85);
-      const ssLabel = makeLabel("subsolar point", "#ffd27f", 0.1);
-      ssLabel.sprite.position.set(0, -0.24, 0.06);
-      subsolarGroup.add(ssLabel.sprite);
-      annot(ssLabel.mat, 0.9);
-
-      const hourRing = new THREE.Group();
-      earthSet.group.add(hourRing);
-      const hourCircleMat = track(new THREE.LineBasicMaterial({ color: 0xc9c2b4, transparent: true, opacity: 0.18, depthWrite: false }));
-      const circlePts: THREE.Vector3[] = [];
-      for (let k = 0; k <= 96; k++) {
-        const a = (k / 96) * Math.PI * 2;
-        circlePts.push(new THREE.Vector3(Math.cos(a) * 3.05, 0, -Math.sin(a) * 3.05));
-      }
-      hourRing.add(new THREE.LineLoop(track(new THREE.BufferGeometry().setFromPoints(circlePts)), hourCircleMat));
-      annot(hourCircleMat, 0.18);
-      const hourTickMat = track(new THREE.LineBasicMaterial({ color: 0xc9c2b4, transparent: true, opacity: 0.5, depthWrite: false }));
-      const hourPts: THREE.Vector3[] = [];
-      for (let hIdx = 0; hIdx < 24; hIdx++) {
-        const a = (hIdx / 24) * Math.PI * 2;
-        const r1 = hIdx % 6 === 0 ? 3.32 : 3.18;
-        hourPts.push(
-          new THREE.Vector3(Math.cos(a) * 3.05, 0, -Math.sin(a) * 3.05),
-          new THREE.Vector3(Math.cos(a) * r1, 0, -Math.sin(a) * r1),
-        );
-      }
-      hourRing.add(new THREE.LineSegments(track(new THREE.BufferGeometry().setFromPoints(hourPts)), hourTickMat));
-      annot(hourTickMat, 0.5);
-      const HOURS: [number, string][] = [[0, "noon"], [6, "6 pm"], [12, "midnight"], [18, "6 am"]];
-      for (const [h, name] of HOURS) {
-        const a = (h / 24) * Math.PI * 2;
-        const label = makeLabel(name, "#c9c2b4", 0.16);
-        label.sprite.position.set(Math.cos(a) * 3.62, 0, -Math.sin(a) * 3.62);
-        hourRing.add(label.sprite);
-        annot(label.mat, 0.9);
-      }
-
-      fadeMat(earthSet, pinMat, 0.95);
-      fadeMat(earthSet, pulseMat, 0.5);
-      fadeMat(earthSet, moonRingMat, 0.14);
+      fadeMat(earthSet, moonRingMat, 0.2);
       fadeMat(earthSet, atmoMat, 1);
-      const zAxis = new THREE.Vector3(0, 0, 1);
-      const tmpSun = new THREE.Vector3();
-      earthSet.update = (t, s) => {
-        const sub = subsolarDirection(new Date());
-        if (earthMat) earthMat.uniforms.sunDir.value = sub;
-        const k = reduceMotion ? 1 : 1 + 0.5 * Math.sin(t * 2.2);
-        pulse.scale.setScalar(k);
-        // the subsolar marker rides the real sun across the earth-fixed globe
-        subsolarGroup.position.copy(sub).multiplyScalar(2.24);
-        subsolarGroup.quaternion.setFromUnitVectors(zAxis, sub);
-        // local solar time is sun-locked, not earth-fixed: keep noon at the
-        // sun's azimuth even while the globe turns to face the reader's pin
-        tmpSun.copy(sub).applyQuaternion(earthSpin.quaternion);
-        hourRing.rotation.y = Math.atan2(-tmpSun.z, tmpSun.x);
-        // chartwork only once the globe has the frame
-        const annotK = smooth01(mapRange(Math.log10(s), -0.3, 0.0));
-        for (const entry of annotMats) entry.m.opacity *= annotK;
+      earthSet.update = () => {
+        if (earthMat) earthMat.uniforms.sunDir.value = subsolarDirection(new Date());
+        // hand the frame to the LabEarthView finale as it fades in
+        const hand = 1 - sunAlphaRef.current;
+        for (const f of earthSet.fades) f.mat.opacity *= hand;
       };
       // the Moon's orbit is 60 Earth-radii wide, so this set must wake long
       // before the globe itself fills the frame — and it never leaves
@@ -1642,8 +1526,6 @@ export function YouAreHereExperience() {
     }
 
     // ----------------------------------------------------------------- loop
-    const beaconTarget = new THREE.Quaternion();
-    const identityQ = new THREE.Quaternion();
     const fadeWindow = (x: number) =>
       smooth01((x + 2.05) / 0.85) * (1 - smooth01((x - 0.62) / 0.95));
 
@@ -1707,8 +1589,6 @@ export function YouAreHereExperience() {
 
     // DOM update helpers (all imperative, once per frame)
     const vec = new THREE.Vector3();
-    const vecB = new THREE.Vector3();
-    const vecC = new THREE.Vector3();
     const projectMarker = (p: number) => {
       const el = markerRef.current;
       if (!el) return;
@@ -1726,44 +1606,20 @@ export function YouAreHereExperience() {
       el.style.top = `${(-vec.y * 0.5 + 0.5) * h}px`;
     };
 
-    // The mirror porthole hangs from the reader's pin: track its projected
-    // screen position, and hide it when the pin swings to the globe's far side.
+    // The mirror porthole hangs from the reader's home marker on the finale
+    // globe: LabEarthView reports the marker's on-canvas position each frame
+    // (homeProjRef), and the porthole hides while the marker is behind the
+    // globe or the finale hasn't taken the frame yet.
     const projectMirror = () => {
       const el = mirrorWinRef.current;
       if (!el) return;
-      // once the full sunlight model owns the frame, the porthole docks as a
-      // small picture-in-picture beside it instead of hanging from the lab pin
-      if (mirrorOnRef.current && sunAlphaRef.current > 0.5) {
-        if (mirrorLineRef.current) mirrorLineRef.current.style.display = "none";
-        el.style.left = "max(16%, 104px)";
-        el.style.top = "56%";
-        el.style.opacity = "1";
-        return;
-      }
-      if (mirrorLineRef.current) mirrorLineRef.current.style.display = "";
-      if (!mirrorOnRef.current || !earthSet.group.visible) {
+      const hp = homeProjRef.current;
+      if (!mirrorOnRef.current || !hp || !hp.visible || sunAlphaRef.current < 0.4) {
         el.style.opacity = "0";
         return;
       }
-      beacon.getWorldPosition(vecB);
-      earthSpin.getWorldPosition(vecC);
-      const facing =
-        (vecB.x - vecC.x) * (camera.position.x - vecC.x) +
-        (vecB.y - vecC.y) * (camera.position.y - vecC.y) +
-        (vecB.z - vecC.z) * (camera.position.z - vecC.z);
-      if (facing <= 0) {
-        el.style.opacity = "0";
-        return;
-      }
-      vecB.project(camera);
-      if (vecB.z > 1) {
-        el.style.opacity = "0";
-        return;
-      }
-      const w = host.clientWidth;
-      const h = host.clientHeight;
-      el.style.left = `${(vecB.x * 0.5 + 0.5) * w}px`;
-      el.style.top = `${(-vecB.y * 0.5 + 0.5) * h + 10}px`;
+      el.style.left = `${hp.x}px`;
+      el.style.top = `${hp.y + 10}px`;
       el.style.opacity = "1";
     };
 
@@ -1823,10 +1679,10 @@ export function YouAreHereExperience() {
         addrTimeRef.current.textContent = new Date().toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" });
       }
       setStarted(p > 0.004);
-      setArrived(p > 0.935);
+      setArrived(p > 0.94);
       setEnded(p > 0.985);
-      setSunMounted(p > 0.93);
-      setFinaleOn(p > 0.952);
+      setSunMounted(p > 0.9);
+      setFinaleOn(p > 0.94);
     };
 
     let raf = 0;
@@ -1951,21 +1807,11 @@ export function YouAreHereExperience() {
       // Movements II & III
       setStackVisible(p, t, stackAlpha);
 
-      // Movement III: turn the reader's pin to face the camera
-      const face = smooth01(mapRange(p, 0.938, 0.968));
-      if (face > 0) {
-        const dir = beacon.position.clone().normalize();
-        beaconTarget.setFromUnitVectors(dir, new THREE.Vector3(0, 0.12, 1).normalize());
-        earthSpin.quaternion.slerpQuaternions(identityQ, beaconTarget, face);
-      } else {
-        earthSpin.quaternion.identity();
-      }
-
       // ambient drift
       bg.points.rotation.y = (reduceMotion ? 0 : t * 0.0035) + p * 0.35;
 
-      // the full sunlight model loads in over the arrival globe
-      const sunA = smooth01(mapRange(p, 0.952, 0.975));
+      // the full sunlight model takes over from the approach dot
+      const sunA = smooth01(mapRange(p, 0.928, 0.955));
       sunAlphaRef.current = sunA;
       if (sunLayerRef.current) sunLayerRef.current.style.opacity = String(sunA);
 
@@ -1991,7 +1837,6 @@ export function YouAreHereExperience() {
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", resize);
-      apiRef.current = null;
       scene.traverse((obj) => {
         const mesh = obj as THREE.Mesh;
         if (mesh.geometry) mesh.geometry.dispose();
@@ -2013,21 +1858,6 @@ export function YouAreHereExperience() {
     }
   }, [soundOn]);
   useEffect(() => () => { droneRef.current?.dispose(); }, []);
-
-  // ------------------------------------------------------------- location
-  const usePreciseLocation = useCallback(() => {
-    if (!navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        geoRef.current = { lat: pos.coords.latitude, lon: pos.coords.longitude, precise: true };
-        apiRef.current?.setBeacon(pos.coords.latitude, pos.coords.longitude);
-        setHomeCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setGeoLabel("precise");
-      },
-      () => { /* declined — the clock estimate stands */ },
-      { enableHighAccuracy: false, timeout: 8000 },
-    );
-  }, []);
 
   // --------------------------------------------------------------- mirror
   const openMirror = useCallback(async () => {
@@ -2102,7 +1932,7 @@ export function YouAreHereExperience() {
             className="pointer-events-none absolute z-30 flex -translate-x-1/2 flex-col items-center transition-opacity duration-1000"
             style={{ opacity: 0, left: "50%", top: "58%" }}
           >
-            <div ref={mirrorLineRef} className="h-8 w-px bg-gradient-to-b from-[#ffb454]/75 to-[#ffb454]/20" />
+            <div className="h-8 w-px bg-gradient-to-b from-[#ffb454]/75 to-[#ffb454]/20" />
             <div
               className="relative overflow-hidden rounded-full border border-[#ffb454]/50 shadow-[0_0_36px_rgba(255,180,84,0.3)]"
               style={{
@@ -2134,12 +1964,13 @@ export function YouAreHereExperience() {
           {/* the cosmos */}
           <div ref={canvasHostRef} className="pointer-events-none absolute inset-0 z-10 [&>canvas]:h-full [&>canvas]:w-full" />
 
-          {/* the finale: the site's full Current Earth Sunlight model, loading
-              in over the arrival globe once the zoom has landed */}
+          {/* the finale: the lab's copy of the Current Earth Sunlight model,
+              taking over from the approach dot — camera aimed at the reader's
+              location, draggable, with the wheel left to page scroll */}
           {sunMounted ? (
             <div
               ref={sunLayerRef}
-              className="pointer-events-none absolute inset-0 z-[15]"
+              className={`absolute inset-0 z-[15] ${finaleOn ? "" : "pointer-events-none"}`}
               style={{ opacity: 0 }}
             >
               <AppProvider>
@@ -2147,7 +1978,9 @@ export function YouAreHereExperience() {
                   className="h-full w-full"
                   mode="globe"
                   isDarkOverride
-                  interactive={false}
+                  interactive={finaleOn}
+                  enableWheelZoom={false}
+                  cameraFocusOnHome
                   paused={!finaleOn}
                   dateOffsetMs={preview.dateOffsetMs}
                   rotationOffsetMs={preview.rotationOffsetMs}
@@ -2156,6 +1989,9 @@ export function YouAreHereExperience() {
                   timezone={finaleTz}
                   timezoneRingScale={0.72}
                   homeCoords={homeCoords}
+                  onHomeProject={(x, y, visible) => {
+                    homeProjRef.current = { x, y, visible };
+                  }}
                 />
               </AppProvider>
             </div>
@@ -2249,7 +2085,7 @@ export function YouAreHereExperience() {
                     {line.line === "@COORDS@" ? (
                       <>
                         <span ref={addrCoordsRef} />
-                        <span className="text-[#8a8378]"> · {geoLabel === "precise" ? "your location" : "est. from your clock"}</span>
+                        <span className="text-[#8a8378]"> · est. from your clock</span>
                       </>
                     ) : (
                       line.line
@@ -2266,15 +2102,6 @@ export function YouAreHereExperience() {
                 <div className="text-[11px] text-[#ffb454] [animation:yahPulse_1.2s_steps(2)_infinite]">▌</div>
               ) : null}
             </div>
-            {arrived && geoLabel === "estimated" ? (
-              <button
-                type="button"
-                onClick={usePreciseLocation}
-                className="mt-3 cursor-pointer border border-[#f2ece1]/15 bg-black/40 px-2.5 py-1.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-[#c9c2b4] backdrop-blur-sm transition-colors hover:border-[#ffb454]/50 hover:text-[#ffb454]"
-              >
-                ◎ pin my precise location
-              </button>
-            ) : null}
           </div>
 
           {/* the big readout */}
