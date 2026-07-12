@@ -28,17 +28,12 @@ import { Volume2, VolumeX } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppProvider } from "@/components/earthview/contexts";
 import { useSunlightPreview } from "@/hooks/use-sunlight-preview";
-import {
-  getChartContinuationCamera,
-  getChartContinuationYaw,
-} from "@/components/lab/earth-geometry";
+import { getChartContinuationCamera } from "@/components/lab/earth-geometry";
 
 // The finale opens from the orbit chart's own viewpoint — same ecliptic
 // frame, same elevation — so the sun arrow lands exactly where the chart's
-// sun was, on any date. Constant by construction. The camera is squared to
-// Earth's axis, so the chart carries the matching constant yaw.
+// sun was, on any date. Constant by construction.
 const FINALE_CAMERA = getChartContinuationCamera();
-const CHART_YAW = getChartContinuationYaw();
 
 // The finale is the lab's own copy of the site's Current Earth Sunlight model
 // — season halo, timezone ring, subsolar annual track and all — extended for
@@ -1297,7 +1292,6 @@ export function YouAreHereExperience() {
         fadeMat(solarSet, mat, 1);
       });
       solarSet.group.rotation.x = 0.42; // a three-quarter view of the ecliptic
-      solarSet.group.rotation.y = CHART_YAW;
       fadeMat(solarSet, sunMat, 1);
       fadeMat(solarSet, ringMat, 0.34);
       fadeMat(solarSet, earthRingMat, 0.9);
@@ -1404,7 +1398,6 @@ export function YouAreHereExperience() {
       fadeMat(orbitSet, earthLabel.mat, 0.95);
 
       orbitSet.group.rotation.x = 0.42;
-      orbitSet.group.rotation.y = CHART_YAW;
       orbitSet.update = (_t, s) => {
         orbitSet.group.rotation.x = eclipticTilt(11.75 - Math.log10(s));
       };

@@ -113,28 +113,12 @@ export function getFinaleSunScreenAngle(coords: LabEarthCoords, date = new Date(
 }
 
 /**
- * The finale camera that continues the orbit chart's viewpoint — same
- * ecliptic frame, same elevation — with its azimuth set exactly opposite the
- * direction Earth's axis tips (the winter-solstice direction, constant in
- * this frame). The north arrow therefore projects perfectly vertical on
- * screen, leaning straight away from the viewer, and the sun lands within a
- * few degrees of where the chart's sun was — on any date.
+ * The finale camera that CONTINUES the orbit chart's viewpoint: the chart and
+ * the globe share the same ecliptic frame (y = ecliptic north), and the chart
+ * is viewed tilted by Rx(tilt) — so a camera at this constant position sees
+ * the globe's sun at exactly the screen angle the chart's sun occupied, on
+ * any date, with ecliptic north tipping up-and-away from the viewer.
  */
-export function getChartContinuationCamera(date = new Date(), tilt = 0.95, distance = 3.61) {
-  const northAngle = getNorthHaloAngle(date.getFullYear());
-  const away = new THREE.Vector3(-Math.cos(northAngle), 0, Math.sin(northAngle));
-  return away
-    .multiplyScalar(Math.cos(tilt) * distance)
-    .add(new THREE.Vector3(0, Math.sin(tilt) * distance, 0));
-}
-
-/**
- * The matching yaw for the orbit chart (applied about ecliptic north, before
- * its tilt): squaring the continuation camera to Earth's axis moved its
- * azimuth off the chart's default viewpoint by this same constant angle, so
- * the chart must turn with it for the handoff to stay an exact frame
- * continuation. Constant year-round, like the camera.
- */
-export function getChartContinuationYaw(date = new Date()) {
-  return Math.PI / 2 - getNorthHaloAngle(date.getFullYear());
+export function getChartContinuationCamera(tilt = 0.95, distance = 3.61) {
+  return new THREE.Vector3(0, Math.sin(tilt) * distance, Math.cos(tilt) * distance);
 }
