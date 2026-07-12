@@ -2053,8 +2053,8 @@ export function YouAreHereExperience() {
             </div>
           ) : null}
 
-          {/* bottom-right cluster: sunlight-model animations (finale) + sound */}
-          <div className="absolute bottom-6 right-5 z-40 flex max-w-[min(38rem,calc(100vw-2rem))] flex-wrap items-center justify-end gap-2 sm:bottom-8 sm:right-8">
+          {/* bottom-right column: sunlight-model animations (finale) + sound */}
+          <div className="absolute bottom-6 right-5 z-40 flex flex-col items-stretch gap-2 sm:bottom-8 sm:right-8">
             {finaleOn ? (
               (
                 [
