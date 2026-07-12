@@ -2087,41 +2087,64 @@ export function YouAreHereExperience() {
             </div>
           ) : null}
 
-          {/* bottom-right column: sunlight-model animations (finale) + sound */}
-          <div className="absolute bottom-6 right-5 z-40 flex flex-col items-stretch gap-2 sm:bottom-8 sm:right-8">
-            {finaleOn ? (
-              (
+          {/* finale animations: play controls on the right edge */}
+          {finaleOn ? (
+            <div className="absolute right-5 top-1/2 z-40 flex -translate-y-1/2 flex-col items-end gap-3 sm:right-8">
+              {(
                 [
-                  ["day", "24 hours", "stop 24 h"],
-                  ["year-no-spin", "1 year", "stop year"],
-                  ["year-spin", "year + spin", "stop spin"],
-                  ["sun-year", "sun year", "stop sun"],
+                  ["day", "one day"],
+                  ["sun-year", "one year"],
                 ] as const
-              ).map(([modeKey, label, stopLabel]) => (
-                <button
-                  key={modeKey}
-                  type="button"
-                  onClick={() => preview.togglePreview(modeKey)}
-                  aria-pressed={preview.previewMode === modeKey}
-                  className={`cursor-pointer border bg-black/40 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] backdrop-blur-sm transition-colors ${
-                    preview.previewMode === modeKey
-                      ? "border-[#ffb454]/50 text-[#ffb454]"
-                      : "border-[#f2ece1]/15 text-[#c9c2b4] hover:text-[#f2ece1]"
-                  }`}
-                >
-                  {preview.previewMode === modeKey ? stopLabel : label}
-                </button>
-              ))
-            ) : null}
-            <button
-              type="button"
-              onClick={toggleSound}
-              className="cursor-pointer border border-[#f2ece1]/15 bg-black/40 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#c9c2b4] backdrop-blur-sm transition-colors hover:text-[#f2ece1]"
-              aria-pressed={soundOn}
-            >
-              {soundOn ? "● sound on" : "○ sound off"}
-            </button>
-          </div>
+              ).map(([modeKey, label]) => {
+                const active = preview.previewMode === modeKey;
+                return (
+                  <button
+                    key={modeKey}
+                    type="button"
+                    onClick={() => preview.togglePreview(modeKey)}
+                    aria-pressed={active}
+                    aria-label={active ? `Stop the ${label} animation` : `Play the ${label} animation`}
+                    className="group flex cursor-pointer items-center gap-2.5"
+                  >
+                    <span
+                      className={`text-[10px] font-semibold uppercase tracking-[0.2em] transition-colors ${
+                        active ? "text-[#ffb454]" : "text-[#c9c2b4] group-hover:text-[#f2ece1]"
+                      }`}
+                    >
+                      {label}
+                    </span>
+                    <span
+                      className={`flex h-9 w-9 items-center justify-center rounded-full border backdrop-blur-sm transition-colors ${
+                        active
+                          ? "border-[#ffb454]/70 bg-[#ffb454]/10 text-[#ffb454]"
+                          : "border-[#f2ece1]/25 bg-black/40 text-[#c9c2b4] group-hover:border-[#f2ece1]/55 group-hover:text-[#f2ece1]"
+                      }`}
+                    >
+                      {active ? (
+                        <svg viewBox="0 0 12 12" className="h-3 w-3" aria-hidden="true">
+                          <rect x="2.5" y="2.5" width="7" height="7" fill="currentColor" />
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 12 12" className="ml-0.5 h-3 w-3" aria-hidden="true">
+                          <path d="M3 1.8l7.2 4.2L3 10.2z" fill="currentColor" />
+                        </svg>
+                      )}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
+
+          {/* sound */}
+          <button
+            type="button"
+            onClick={toggleSound}
+            className="absolute bottom-6 right-5 z-40 cursor-pointer border border-[#f2ece1]/15 bg-black/40 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#c9c2b4] backdrop-blur-sm transition-colors hover:text-[#f2ece1] sm:bottom-8 sm:right-8"
+            aria-pressed={soundOn}
+          >
+            {soundOn ? "● sound on" : "○ sound off"}
+          </button>
 
           {/* restart */}
           {ended ? (
