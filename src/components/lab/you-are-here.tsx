@@ -1,7 +1,7 @@
 "use client";
 
 // ============================================================================
-// YOU ARE HERE — a scroll through everything                    (lab experiment)
+// YOU ARE HERE — a scroll through everything                    (the homepage)
 //
 // The brief (self-prompt):
 //   One unbroken shot from the first instant of time to the reader's own
@@ -17,10 +17,12 @@
 //   everything; the only texture allowed is the blue marble. The tone is a
 //   poem with correct units, and the ending is quiet.
 //
-// Standalone by design: one component, one hidden route, no site chrome.
+// Standalone by design: one component, no site chrome. Born as a lab
+// experiment; now the landing page, handing off to /meta-earth at the end.
 // ============================================================================
 
 import * as THREE from "three";
+import Link from "next/link";
 import dynamic from "next/dynamic";
 import { Volume2, VolumeX } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -1925,7 +1927,7 @@ export function YouAreHereExperience() {
           <div
             className={`pointer-events-none absolute left-5 top-5 z-40 text-[10px] font-semibold uppercase tracking-[0.26em] text-[#8a8378] transition-opacity duration-1000 ${started ? "opacity-100" : "opacity-0"}`}
           >
-            Lab experiment · You Are Here
+            Sapiens Scientia · You Are Here
           </div>
 
           {/* spacetime altimeter */}
@@ -2093,6 +2095,17 @@ export function YouAreHereExperience() {
                   </p>
                 </>
               )}
+              {/* onward: the journey's end hands off to the rest of the site */}
+              <div
+                className={`transition-opacity duration-700 ${ended ? "opacity-100" : "pointer-events-none opacity-0"}`}
+              >
+                <Link
+                  href="/meta-earth"
+                  className="mt-4 inline-block border border-[#ffb454]/45 bg-black/40 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#ffb454] backdrop-blur-sm transition-colors hover:bg-[#ffb454]/10"
+                >
+                  enter meta earth →
+                </Link>
+              </div>
             </div>
           ) : null}
 

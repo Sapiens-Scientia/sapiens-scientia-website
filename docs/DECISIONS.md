@@ -90,3 +90,9 @@ This leaves `Persona` with two direct modules: `Salus` (Health) and `Domus` (Hom
 The disease ontology module (`Morbus`) has been nested under the body module (`Soma`), which resides under the health module (`Salus`). The new path is `/platforms/persona/salus/soma/morbus` (residing in `src/app/platforms/persona/salus/soma/morbus/page.tsx`).
 
 This establishes a nested hierarchy: `Persona` -> `Salus` (Health) -> `Soma` (Body) -> `Morbus` (Disease). Organisms are understood first through their healthy physiological substrate (`Soma`), while pathological states (`Morbus`) are modeled directly as failures of specific body systems.
+
+## Replace the opening flow with the You Are Here journey
+
+The homepage now renders the "You Are Here" experience (`src/components/lab/you-are-here.tsx`), incubated at the unlisted `/lab/you-are-here` route: one continuous scroll from the Big Bang through cosmic and geologic time, then down the reader's cosmic address to a live sunlit globe, ending with an "enter meta earth" button. That button is deliberately the only link between the journey and the rest of the site for now.
+
+The former opening flow — the `CosmicJourney` landing component and the standalone pages `/observable-universe`, `/history-of-planet-earth`, `/earth-orbit`, and `/current-earth-sunlight` — has been removed, along with the components only they used. `/meta-earth` remains the product surface and now links back to `/`. `/lab/you-are-here` redirects to `/`.

@@ -55,7 +55,7 @@ export function BigBangUniverseExperience({
       siteIntroMode: siteIntro,
       journeyMode: journey,
       syncHash: !siteIntro && !journey,
-      onEnterObservableUniverse: () => router.push("/observable-universe"),
+      onEnterObservableUniverse: () => router.push("/"),
       onMilestoneTravel: (vy: number) => onMilestoneTravelRef.current?.(vy),
     });
     onControllerRef.current?.(controller);

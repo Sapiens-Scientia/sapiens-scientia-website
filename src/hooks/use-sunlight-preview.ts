@@ -8,10 +8,10 @@ const YEAR_MS = 365 * DAY_MS;
 export type SunlightPreviewMode = "day" | "year-no-spin" | "year-spin" | "sun-year";
 
 /**
- * Drives the Current Earth Sunlight preview animations (24 hours, one year
- * with/without daily spin, and the sun-direction year) shared by
- * /current-earth-sunlight and the homepage cosmic journey. Returns the offsets
- * to feed UnifiedEarthView in globe mode plus the toggle for the buttons.
+ * Drives the Earth sunlight preview animations (24 hours, one year
+ * with/without daily spin, and the sun-direction year) used by the homepage
+ * You Are Here finale. Returns the offsets to feed the globe view in globe
+ * mode plus the toggle for the buttons.
  */
 export function useSunlightPreview() {
   const [previewMode, setPreviewMode] = useState<SunlightPreviewMode | null>(null);

@@ -66,10 +66,10 @@ export default function BigBangUniversePage() {
             milestone spacing adjusted for readability.
           </p>
           <Link
-            href="/observable-universe"
+            href="/"
             className="shrink-0 text-sm font-medium uppercase tracking-[0.16em] text-blue-300 underline-offset-4 hover:text-white hover:underline"
           >
-            Continue to Observable Universe
+            Continue to the You Are Here journey
           </Link>
         </div>
       </section>

@@ -1107,7 +1107,7 @@ export function mountBigBangUniverse(root, options = {}) {
     if (options.onEnterObservableUniverse) {
       options.onEnterObservableUniverse?.();
     } else {
-      window.location.href = "/observable-universe";
+      window.location.href = "/";
     }
   };
   listen(canvas, "mousemove", (e) => {

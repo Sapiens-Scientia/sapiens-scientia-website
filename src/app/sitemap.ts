@@ -5,10 +5,6 @@ const baseUrl = "https://www.sapiensscientia.com";
 // All statically prerendered routes. Keep in sync with the app directory.
 const routes = [
   "/",
-  "/observable-universe",
-  "/history-of-planet-earth",
-  "/earth-orbit",
-  "/current-earth-sunlight",
   "/meta-earth",
   "/ontology",
   "/scales",

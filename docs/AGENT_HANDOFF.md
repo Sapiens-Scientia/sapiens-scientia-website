@@ -6,18 +6,19 @@ This file records practical handoff context for future agents working on the Sap
 
 - The site is a Next.js App Router application using React, Tailwind CSS, and React Three Fiber.
 - Project memory is local to this repository under `docs/`.
-- The homepage is `src/components/cosmic-journey.tsx`: one scroll-driven
-  experience that scrubs the Big Bang canvas, morphs the history bell's
-  present-day rim into the observable-universe disc, dives into its center,
-  carries galaxy → orbit → globe on a single `UnifiedEarthView` canvas, and
-  reveals the Meta Earth hero — followed by the overview content and footer.
-  See "Homepage Structure" in `docs/ARCHITECTURE.md` before touching it.
-- The former flow pages remain public routes, linked from each journey act via
-  "Open full view": `/observable-universe`, `/history-of-planet-earth`,
-  `/earth-orbit`, `/current-earth-sunlight`, `/meta-earth`.
+- The homepage is `src/components/lab/you-are-here.tsx` ("You Are Here — a
+  scroll through everything"): one scroll-driven journey from the Big Bang
+  through cosmic and geologic time, then down the reader's cosmic address to a
+  live sunlit globe (`src/components/lab/lab-earth-view.tsx`), ending with an
+  "enter meta earth" handoff button. See "Homepage Structure" in
+  `docs/ARCHITECTURE.md` before touching it. `/lab/you-are-here` (where it was
+  incubated) redirects to `/`.
+- The former flow pages (`/observable-universe`, `/history-of-planet-earth`,
+  `/earth-orbit`, `/current-earth-sunlight`) and the previous `CosmicJourney`
+  landing experience were removed when the You Are Here journey replaced them.
 - `/meta-earth` is the former homepage: a full-screen 3D experience with overlay
-  panels, time controls, theme support, and platform bridge interactions. The
-  same `EarthHero` is the journey's final act.
+  panels, time controls, theme support, and platform bridge interactions,
+  reached from the end of the homepage journey.
 - The main platform model is `Persona`, `Societas`, `Terra`, with `Salus` and `Domus` nested inside Persona, `Soma` nested inside Salus, and `Morbus` nested inside Soma.
 - Public project routes include the Data Index, EarthView 3D, and Big Bang
   Universe.
@@ -36,25 +37,13 @@ If the implementation reveals a conceptual mismatch or durable constraint, updat
 ## Current Implementation Notes
 
 - `src/components/earth-hero.tsx` owns the Meta Earth hero shell, React Three Fiber canvas, theme toggle, and timeline state.
-- `src/app/page.tsx` renders `CosmicJourney`. The Big Bang runtime is scrubbed
-  through the controller returned by `mountBigBangUniverse` (`journeyMode`);
-  its `getTodayRimRect` powers the seamless rim → observable-universe-disc
-  handoff, and `getReadout` feeds the journey's spacetime readout.
-- In the journey, the 3D canvases are non-interactive (scroll owns input);
-  orbiting/zooming lives on the standalone routes. Only the final Meta Earth
-  act is fully interactive.
-- `src/components/home-galaxy-view.tsx` is the duplicated Galaxy scene used by
-  `/history-of-planet-earth`. It uses the lower-level EarthView
-  `UnifiedEarthView` but does not change `/projects/earthview` or its
-  standalone EarthView app wrapper.
-- `src/components/home-orbit-experience.tsx` is the flow-specific Earth Orbit
-  scene used by `/earth-orbit`. It reuses the lower-level EarthView
-  `UnifiedEarthView` in `orbit` mode with reset, tilt-view, and tilt-strip
-  controls.
-- `src/components/current-earth-sunlight-experience.tsx` is the flow-specific
-  current Earth sunlight scene used by `/current-earth-sunlight`. It reuses the
-  lower-level EarthView `UnifiedEarthView` in `globe` mode with the copied
-  EarthView 3D globe animation controls.
+- `src/app/page.tsx` renders `YouAreHereExperience`. Scroll owns all input
+  during the journey (its raw-Three canvas is non-interactive); only the
+  finale globe is drag-interactive, with the wheel left to page scroll.
+- `src/components/lab/lab-earth-view.tsx` is a duplicate of the EarthView
+  `UnifiedEarthView` tuned for the homepage finale (chart-continuation camera,
+  home-marker projection for the webcam porthole). Changes to one do not
+  affect the other; `/projects/earthview` still uses the original.
 - `src/components/earthview/` contains the imported EarthView 3D React/Three
   project. `/projects/earthview` renders it directly rather than using an
   iframe. Keep the copied textures in `public/earth-blue-marble-5400x2700.jpg`
