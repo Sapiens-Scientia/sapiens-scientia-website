@@ -949,6 +949,8 @@ export function YouAreHereExperience() {
     const youngSun = new THREE.Sprite(youngSunMat);
     nebGroup.add(youngSun);
     const nebPlanets: THREE.MeshBasicMaterial[] = [];
+    // where the third world condenses — Earth is born HERE, not at the sun
+    const earthSeedPos = new THREE.Vector3();
     ([
       [0.62, 0x9c9488, 0.028], [0.95, 0xd9b98a, 0.04],
       [1.3, 0x6f9fd8, 0.05], [1.9, 0xc86a4a, 0.036],
@@ -957,6 +959,7 @@ export function YouAreHereExperience() {
       const mesh = new THREE.Mesh(track(new THREE.SphereGeometry(size, 12, 12)), mat);
       const ang = 1.1 + i * 1.7;
       mesh.position.set(Math.cos(ang) * r, 0, Math.sin(ang) * r);
+      if (i === 2) earthSeedPos.copy(mesh.position).applyEuler(nebGroup.rotation);
       nebGroup.add(mesh);
       nebPlanets.push(mat);
     });
@@ -1612,9 +1615,15 @@ export function YouAreHereExperience() {
         proto.points.rotation.y = reduceMotion ? 0 : t * (0.015 + settle * 0.045);
       }
 
+      // Earth is born on its orbit: the whole nebula frame pans so the third
+      // planet-dot glides to center (the sun sliding away) while the molten
+      // globe grows out of that exact spot at the dot's own size.
+      const earthGrowK = smooth01(mapRange(p, 0.371, 0.414));
+
       const nebA = winP(p, 0.302, 0.33, 0.373, 0.406);
       nebGroup.visible = nebA > 0.004;
       if (nebGroup.visible) {
+        nebGroup.position.copy(earthSeedPos).multiplyScalar(-earthGrowK);
         neb.material.opacity = nebA * 0.9;
         const collapse = smooth01(mapRange(p, 0.308, 0.352));
         for (let i = 0; i < NEB_N; i++) {
@@ -1638,8 +1647,10 @@ export function YouAreHereExperience() {
       const earthTimeA = winP(p, 0.371, 0.4, 0.572, 0.596);
       timeEarthGroup.visible = earthTimeA > 0.004;
       if (timeEarthGroup.visible) {
-        const grow = lerp(0.35, 1.0, smooth01(mapRange(p, 0.371, 0.408)));
+        // start at the condensed dot's size and position, arrive centred
+        const grow = lerp(0.025, 1.0, Math.pow(earthGrowK, 1.6));
         const recede = 1 - smooth01(mapRange(p, 0.572, 0.596)) * 0.985;
+        timeEarthGroup.position.copy(earthSeedPos).multiplyScalar(1 - earthGrowK);
         timeEarthGroup.scale.setScalar(grow * recede);
         timeEarth.rotation.y = reduceMotion ? 0 : t * 0.05;
         timeEarthMat.uniforms.uOpacity.value = earthTimeA;
