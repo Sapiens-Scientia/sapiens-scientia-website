@@ -167,19 +167,6 @@ function formatCoords(lat: number, lon: number) {
   return `${Math.abs(lat).toFixed(1)}°${ns}, ${Math.abs(lon).toFixed(1)}°${ew}`;
 }
 
-// Earth-fixed lat/lng → unit vector, matching the blue-marble equirect mapping
-// used elsewhere in this repo.
-function latLngToVec(lat: number, lng: number, r = 1) {
-  const latRad = (Math.max(-89.9, Math.min(89.9, lat)) * Math.PI) / 180;
-  const lngRad = ((lng + 180) * Math.PI) / 180;
-  const cosLat = Math.cos(latRad);
-  return new THREE.Vector3(
-    -Math.cos(lngRad) * cosLat * r,
-    Math.sin(latRad) * r,
-    Math.sin(lngRad) * cosLat * r,
-  );
-}
-
 // Orbital position helpers, matching the tuned geometry of the site's
 // EarthView scenes: progress 0..1 through the calendar year, and the ring
 // convention angle = progress·2π + π/2 with z negated.
@@ -195,17 +182,6 @@ function progressForDate(year: number, monthIndex: number, day: number) {
 function orbitPos(progress: number, radius: number, y = 0) {
   const a = progress * Math.PI * 2 + Math.PI / 2;
   return new THREE.Vector3(Math.cos(a) * radius, y, -Math.sin(a) * radius);
-}
-
-// The real subsolar point (±~1° without the equation of time — good enough
-// for an honest terminator).
-function subsolarDirection(date: Date) {
-  const start = Date.UTC(date.getUTCFullYear(), 0, 0);
-  const day = (date.getTime() - start) / 86400000;
-  const decl = -23.44 * Math.cos(((2 * Math.PI) / 365.25) * (day + 10));
-  const utcH = date.getUTCHours() + date.getUTCMinutes() / 60 + date.getUTCSeconds() / 3600;
-  const lon = 15 * (12 - utcH);
-  return latLngToVec(decl, lon, 1);
 }
 
 // ---------------------------------------------------------------------------
@@ -257,7 +233,7 @@ function formatAgo(agoMa: number) {
 const pToLogM = piecewise([
   [0.602, 26.95], [0.63, 26.2], [0.657, 24.6], [0.695, 22.9], [0.739, 20.9],
   [0.763, 19.55], [0.783, 18.85], [0.807, 17.9], [0.84, 14.6], [0.853, 13.4],
-  [0.874, 12.6], [0.893, 11.78], [0.906, 11.6], [0.92, 9.9], [0.938, 7.35], [1.0, 7.18],
+  [0.874, 12.6], [0.893, 11.78], [0.906, 11.6], [0.936, 7.35], [1.0, 7.35],
 ]);
 
 type Beat = {
@@ -298,7 +274,7 @@ const BEATS: Beat[] = [
   { from: 0.812, to: 0.848, title: "And in between", sub: "Almost all of everything is this: nothing. Cold, clean, patient vacuum." },
   { from: 0.852, to: 0.886, title: "One ordinary star", sub: "The sun we watched ignite, with its eight worlds. Yours is the third — the damp one." },
   { from: 0.89, to: 0.912, title: "One year, from above", sub: "Earth's whole orbit, annotated: the months are places on this ring, and “today” is a location. There you are, on it." },
-  { from: 0.917, to: 0.936, title: "Earth, live", sub: "The daylight on this globe is where daylight actually is, this second." },
+  { from: 0.912, to: 0.935, title: "Earth, live", sub: "The daylight on this globe is where daylight actually is, this second." },
   { from: 0.941, to: 0.97, title: "And after 13.8 billion years…", live: true },
   { from: 0.973, to: 1.01, title: "You are the universe, 13.8 billion years in, looking back at itself.", sub: "Every “here” is the center. This one is yours." },
 ];
@@ -549,22 +525,7 @@ const EARTH_VERT = `
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   }
 `;
-const EARTH_FRAG = `
-  uniform sampler2D map;
-  uniform vec3 sunDir;
-  varying vec3 vNormal;
-  varying vec2 vUv;
-  void main() {
-    vec3 day = texture2D(map, vUv).rgb;
-    float d = dot(normalize(vNormal), normalize(sunDir));
-    float lit = smoothstep(-0.10, 0.12, d);
-    float band = smoothstep(-0.14, 0.0, d) * smoothstep(0.16, 0.0, d);
-    vec3 night = day * 0.14 + vec3(0.014, 0.024, 0.06);
-    vec3 col = mix(night, day * 1.24, lit) + vec3(1.0, 0.45, 0.16) * band * 0.22;
-    gl_FragColor = vec4(col, 1.0);
-  }
-`;
-// Deep-time Earth: the same globe aged by uniforms — molten Hadean crust with
+// Deep-time Earth: the globe aged by uniforms — molten Hadean crust with
 // glowing cracks, orange Archean haze, Cryogenian ice creeping from the poles,
 // and PROCEDURAL CONTINENTS that drift, gather into supercontinents, and split
 // (a noise field on the sphere whose domain crawls with uDrift and clusters
@@ -670,22 +631,6 @@ const MOON_FRAG = `
     gl_FragColor = vec4(tex * (0.2 + 0.95 * lit), uOpacity);
   }
 `;
-const ATMO_VERT = `
-  varying vec3 vNormal;
-  void main() {
-    vNormal = normalize(normalMatrix * normal);
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`;
-const ATMO_FRAG = `
-  varying vec3 vNormal;
-  uniform float strength;
-  void main() {
-    float rim = pow(clamp(0.72 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 0.0, 1.0), 3.0);
-    gl_FragColor = vec4(vec3(0.35, 0.6, 1.0) * rim * strength, rim * strength);
-  }
-`;
-
 // ---------------------------------------------------------------------------
 // Procedural sound: a drone that cools with the universe
 // ---------------------------------------------------------------------------
@@ -1446,84 +1391,9 @@ export function YouAreHereExperience() {
       };
     }
 
-    // 7) Earth on approach ----------------------------------------------- 10^7.35
-    // Only the distant view — the pale dot inside its moon's orbit. The
-    // close-up (chartwork, home marker, live terminator) is the LabEarthView
-    // finale, which this set hands the frame to.
-    const earthSet = addSet(7.35, new THREE.Vector3(0, 0, 0));
-    const earthSpin = new THREE.Group();
-    let atmoMat: THREE.ShaderMaterial;
-    let earthMat: THREE.ShaderMaterial | null = null;
-    {
-      earthSet.group.add(earthSpin);
-      const loader = new THREE.TextureLoader();
-      const sphereGeo = track(new THREE.SphereGeometry(2.2, 72, 72));
-      // placeholder until the texture arrives
-      const placeholder = track(new THREE.MeshBasicMaterial({ color: 0x0d2c52 }));
-      const earthMesh = new THREE.Mesh<THREE.SphereGeometry, THREE.Material>(sphereGeo, placeholder);
-      earthSpin.add(earthMesh);
-      loader.load("/earth-blue-marble-5400x2700.jpg", (tex) => {
-        tex.colorSpace = THREE.SRGBColorSpace;
-        tex.anisotropy = 8;
-        earthMat = new THREE.ShaderMaterial({
-          vertexShader: EARTH_VERT,
-          fragmentShader: EARTH_FRAG,
-          uniforms: {
-            map: { value: tex },
-            sunDir: { value: subsolarDirection(new Date()) },
-          },
-        });
-        track(earthMat); track(tex);
-        earthMesh.material = earthMat;
-      });
-      atmoMat = track(new THREE.ShaderMaterial({
-        vertexShader: ATMO_VERT, fragmentShader: ATMO_FRAG,
-        uniforms: { strength: { value: 1 } },
-        transparent: true, blending: THREE.AdditiveBlending, side: THREE.BackSide, depthWrite: false,
-      }));
-      earthSpin.add(new THREE.Mesh(track(new THREE.SphereGeometry(2.31, 48, 48)), atmoMat));
-
-      // the Moon, to scale, on its real-radius orbit (visible on approach)
-      const moonRingMat = track(new THREE.LineBasicMaterial({
-        color: 0x8b86a8, transparent: true, opacity: 0.2, depthWrite: false,
-      }));
-      // tilted slightly so the orbit reads as an ellipse, not a hairline
-      const moonSystem = new THREE.Group();
-      moonSystem.rotation.x = 0.5;
-      earthSet.group.add(moonSystem);
-      const moonPts: THREE.Vector3[] = [];
-      const moonR = 2.2 * 60.3;
-      for (let k = 0; k <= 160; k++) {
-        const a = (k / 160) * Math.PI * 2;
-        moonPts.push(new THREE.Vector3(Math.cos(a) * moonR, 0, Math.sin(a) * moonR));
-      }
-      moonSystem.add(new THREE.LineLoop(track(new THREE.BufferGeometry().setFromPoints(moonPts)), moonRingMat));
-      const moonMat = track(new THREE.ShaderMaterial({
-        vertexShader: EARTH_VERT,
-        fragmentShader: MOON_FRAG,
-        uniforms: {
-          map: { value: moonTex },
-          sunDir: { value: subsolarDirection(new Date()) },
-          uOpacity: { value: 1 },
-        },
-      }));
-      const moon = new THREE.Mesh(track(new THREE.SphereGeometry(0.6, 24, 24)), moonMat);
-      const moonA = Math.PI * 0.3;
-      moon.position.set(Math.cos(moonA) * moonR, 0, Math.sin(moonA) * moonR);
-      moonSystem.add(moon);
-
-      fadeMat(earthSet, moonRingMat, 0.2);
-      fadeMat(earthSet, atmoMat, 1);
-      earthSet.update = () => {
-        if (earthMat) earthMat.uniforms.sunDir.value = subsolarDirection(new Date());
-        // hand the frame to the LabEarthView finale as it fades in
-        const hand = 1 - sunAlphaRef.current;
-        for (const f of earthSet.fades) f.mat.opacity *= hand;
-      };
-      // the Moon's orbit is 60 Earth-radii wide, so this set must wake long
-      // before the globe itself fills the frame — and it never leaves
-      earthSet.window = (x) => smooth01((x + 2.78) / 0.55);
-    }
+    // 7) Earth itself is the LabEarthView finale — the full Current Earth
+    // Sunlight instrument fades straight in as the annotated orbit chart
+    // blows past. No intermediate globe.
 
     // ----------------------------------------------------------------- loop
     const fadeWindow = (x: number) =>
@@ -1626,7 +1496,7 @@ export function YouAreHereExperience() {
     const updateChrome = (p: number) => {
       // altimeter
       const mode: AltimeterMode =
-        p < 0.365 ? "time" : p < 0.594 ? "geo" : p < 0.938 ? "scale" : "now";
+        p < 0.365 ? "time" : p < 0.594 ? "geo" : p < 0.932 ? "scale" : "now";
       setAltMode(mode);
       if (cursorRef.current) {
         let f = 0;
@@ -1679,10 +1549,10 @@ export function YouAreHereExperience() {
         addrTimeRef.current.textContent = new Date().toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" });
       }
       setStarted(p > 0.004);
-      setArrived(p > 0.94);
+      setArrived(p > 0.93);
       setEnded(p > 0.985);
-      setSunMounted(p > 0.9);
-      setFinaleOn(p > 0.94);
+      setSunMounted(p > 0.88);
+      setFinaleOn(p > 0.93);
     };
 
     let raf = 0;
@@ -1810,8 +1680,8 @@ export function YouAreHereExperience() {
       // ambient drift
       bg.points.rotation.y = (reduceMotion ? 0 : t * 0.0035) + p * 0.35;
 
-      // the full sunlight model takes over from the approach dot
-      const sunA = smooth01(mapRange(p, 0.928, 0.955));
+      // the full sunlight instrument fades in as the orbit chart blows past
+      const sunA = smooth01(mapRange(p, 0.906, 0.932));
       sunAlphaRef.current = sunA;
       if (sunLayerRef.current) sunLayerRef.current.style.opacity = String(sunA);
 
@@ -1981,7 +1851,6 @@ export function YouAreHereExperience() {
                   interactive={finaleOn}
                   enableWheelZoom={false}
                   cameraFocusOnHome
-                  paused={!finaleOn}
                   dateOffsetMs={preview.dateOffsetMs}
                   rotationOffsetMs={preview.rotationOffsetMs}
                   sunOrbitProgress={preview.sunOrbitProgress}
