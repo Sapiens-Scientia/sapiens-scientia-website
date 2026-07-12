@@ -6,7 +6,7 @@ This is the current public route inventory for the Sapiens Scientia website.
 
 | Route | File | Purpose |
 |---|---|---|
-| `/` | `src/app/page.tsx` | Homepage "You Are Here" journey (`src/components/lab/you-are-here.tsx`): one scroll from the Big Bang through cosmic and geologic time, then down the reader's cosmic address to a live sunlit globe, ending with a handoff button into Meta Earth. `/lab/you-are-here` redirects here. |
+| `/` | `src/app/page.tsx` | Homepage "The History of the Universe" journey (`src/components/lab/you-are-here.tsx`, formerly "You Are Here" — file keeps the original slug): one scroll from the Big Bang through cosmic and geologic time, then down the reader's cosmic address to a live sunlit globe, ending with a handoff button into Meta Earth. `/#end` opens directly on the finale; `/lab/you-are-here` redirects here. |
 | `/meta-earth` | `src/app/meta-earth/page.tsx` | Meta Earth page: the Current Sunlight globe wrapped in the geodesic digital shell, under the Earth Systems / Digital Systems / platforms overlays, plus overview content. Reached from the end of the homepage journey. |
 | `/scales` | `src/app/scales/page.tsx` | Ladder of Scale, from particles to the Sun. |
 | `/chronos` | `src/app/chronos/page.tsx` | Arc of Time, from the Big Bang to the present. |

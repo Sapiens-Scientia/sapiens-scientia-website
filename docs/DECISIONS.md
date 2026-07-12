@@ -102,3 +102,7 @@ The former opening flow — the `CosmicJourney` landing component and the standa
 Meta Earth's hero no longer shows the Physical Earth / Digital Halo pair. The page now renders the same Current Sunlight globe the homepage journey ends on (`LabEarthView`, opening from the journey's continuation camera), wrapped in a geodesic digital-web shell — thin cyan struts, glowing junction nodes, and packets drifting along the edges — under the existing Meta Earth overlays.
 
 The halo (a separate Saturn-like data ring beside the planet) was a weak metaphor for Earth's digital layer; the shell states the concept directly: the digital layer is a web laid over the physical planet. Entering Meta Earth from the journey now reads as the overlays changing and the shell materializing over an unmoved Earth.
+
+## Rename the journey to The History of the Universe
+
+The homepage journey (formerly "You Are Here") is now titled "The History of the Universe"; the file and export keep the original `you-are-here` slug. "You Are Here" survives as the name of the journey's final frame: Meta Earth's top-left links go back to the journey's start ("The History of the Universe" → `/`) and directly to its finale ("You Are Here" → `/#end`, which the journey honors by opening on its last frame).

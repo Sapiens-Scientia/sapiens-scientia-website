@@ -6,13 +6,15 @@ This file records practical handoff context for future agents working on the Sap
 
 - The site is a Next.js App Router application using React, Tailwind CSS, and React Three Fiber.
 - Project memory is local to this repository under `docs/`.
-- The homepage is `src/components/lab/you-are-here.tsx` ("You Are Here — a
-  scroll through everything"): one scroll-driven journey from the Big Bang
-  through cosmic and geologic time, then down the reader's cosmic address to a
-  live sunlit globe (`src/components/lab/lab-earth-view.tsx`), ending with an
-  "enter meta earth" handoff button. See "Homepage Structure" in
-  `docs/ARCHITECTURE.md` before touching it. `/lab/you-are-here` (where it was
-  incubated) redirects to `/`.
+- The homepage is `src/components/lab/you-are-here.tsx` ("The History of the
+  Universe — a scroll through everything"; formerly "You Are Here", and the
+  file and export keep that original slug): one scroll-driven journey from the
+  Big Bang through cosmic and geologic time, then down the reader's cosmic
+  address to a live sunlit globe (`src/components/lab/lab-earth-view.tsx`),
+  ending with an "enter meta earth" handoff button. Landing on `/#end` opens
+  directly on the finale. See "Homepage Structure" in `docs/ARCHITECTURE.md`
+  before touching it. `/lab/you-are-here` (where it was incubated) redirects
+  to `/`.
 - The former flow pages (`/observable-universe`, `/history-of-planet-earth`,
   `/earth-orbit`, `/current-earth-sunlight`) and the previous `CosmicJourney`
   landing experience were removed when the You Are Here journey replaced them.
@@ -20,7 +22,9 @@ This file records practical handoff context for future agents working on the Sap
   model (`LabEarthView` with `digitalShell`) wrapped in a geodesic digital-web
   shell, under the Meta Earth overlay panels, clock, theme toggle, and
   platform bridge interactions. Reached from the end of the homepage journey,
-  opening from the same camera so only the overlays and shell change.
+  opening from the same camera so only the overlays and shell change. Its
+  top-left links go back to the journey's start ("The History of the
+  Universe" → `/`) and its finale ("You Are Here" → `/#end`).
 - The main platform model is `Persona`, `Societas`, `Terra`, with `Salus` and `Domus` nested inside Persona, `Soma` nested inside Salus, and `Morbus` nested inside Soma.
 - Public project routes include the Data Index, EarthView 3D, and Big Bang
   Universe.

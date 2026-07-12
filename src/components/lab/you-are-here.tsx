@@ -1,7 +1,8 @@
 "use client";
 
 // ============================================================================
-// YOU ARE HERE — a scroll through everything                    (the homepage)
+// THE HISTORY OF THE UNIVERSE — a scroll through everything     (the homepage)
+// (born as "You Are Here"; file and export names keep the original slug)
 //
 // The brief (self-prompt):
 //   One unbroken shot from the first instant of time to the reader's own
@@ -1717,6 +1718,19 @@ export function YouAreHereExperience() {
     };
   }, []);
 
+  // Arriving at /#end (Meta Earth's "You Are Here" link) opens on the
+  // journey's last frame — the live finale — instead of the singularity.
+  useEffect(() => {
+    if (window.location.hash !== "#end") return;
+    const jump = () => {
+      window.scrollTo(0, document.documentElement.scrollHeight);
+    };
+    jump();
+    // Once more after layout settles, in case fonts/canvas shifted heights.
+    const raf = requestAnimationFrame(jump);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
   // --------------------------------------------------------------- mirror
   const openMirror = useCallback(async () => {
     setMirror("pending");
@@ -1872,7 +1886,7 @@ export function YouAreHereExperience() {
           <div
             className={`pointer-events-none absolute left-5 top-5 z-40 text-[10px] font-semibold uppercase tracking-[0.26em] text-[#8a8378] transition-opacity duration-1000 ${started ? "opacity-100" : "opacity-0"}`}
           >
-            Sapiens Scientia · You Are Here
+            Sapiens Scientia · The History of the Universe
           </div>
 
           {/* spacetime altimeter */}
