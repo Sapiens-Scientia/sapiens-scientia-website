@@ -25,6 +25,7 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppProvider } from "@/components/earthview/contexts";
 import { useSunlightPreview } from "@/hooks/use-sunlight-preview";
+import { getFinaleSunScreenAngle } from "@/components/lab/earth-geometry";
 
 // The finale is the lab's own copy of the site's Current Earth Sunlight model
 // — season halo, timezone ring, subsolar annual track and all — extended for
@@ -1238,6 +1239,24 @@ export function YouAreHereExperience() {
     const AUu = 4 / 30; // scene units per AU
     const earthFocus = orbitPos(nowProgress, AUu);
     const solarSet = addSet(13.1, earthFocus.clone());
+
+    // Yaw the solar system and orbit chart so their sun sits at the same
+    // screen direction the finale globe's sun will occupy, making the
+    // chart → instrument handoff directionally continuous. Solving
+    // atan2(−sinγ·sin(tilt), cosγ) = a for the yawed sun azimuth γ at the
+    // final ecliptic tilt.
+    const finaleSunAngle = getFinaleSunScreenAngle(
+      { lat: geoRef.current.lat, lng: geoRef.current.lon },
+      new Date(),
+    );
+    const tiltEnd = 0.95;
+    const sunLocal = orbitPos(nowProgress, 1).multiplyScalar(-1);
+    const gamma0 = Math.atan2(sunLocal.z, sunLocal.x);
+    const gamma = Math.atan2(
+      -Math.sin(finaleSunAngle) / Math.sin(tiltEnd),
+      Math.cos(finaleSunAngle),
+    );
+    const eclipticYaw = gamma0 - gamma;
     {
       const sunTex = track(makeSunTexture());
       const sunMat = track(new THREE.SpriteMaterial({
@@ -1280,6 +1299,7 @@ export function YouAreHereExperience() {
         fadeMat(solarSet, mat, 1);
       });
       solarSet.group.rotation.x = 0.42; // a three-quarter view of the ecliptic
+      solarSet.group.rotation.y = eclipticYaw;
       fadeMat(solarSet, sunMat, 1);
       fadeMat(solarSet, ringMat, 0.34);
       fadeMat(solarSet, earthRingMat, 0.9);
@@ -1386,6 +1406,7 @@ export function YouAreHereExperience() {
       fadeMat(orbitSet, earthLabel.mat, 0.95);
 
       orbitSet.group.rotation.x = 0.42;
+      orbitSet.group.rotation.y = eclipticYaw;
       orbitSet.update = (_t, s) => {
         orbitSet.group.rotation.x = eclipticTilt(11.75 - Math.log10(s));
       };

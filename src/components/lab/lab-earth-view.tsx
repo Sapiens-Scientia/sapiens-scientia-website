@@ -13,6 +13,7 @@ import * as THREE from 'three'
 import { useAppContext } from '@/components/earthview/contexts'
 import type { ThemeMode } from '@/components/earthview/contexts'
 import { EarthNorthArrowLocalYNorth } from '@/components/earthview/globe/EarthSpinDecor3D'
+import { getHomeFocusCamera } from '@/components/lab/earth-geometry'
 
 export type EarthVisualizationMode = 'globe' | 'orbit' | 'spiral' | 'galaxy'
 
@@ -424,19 +425,8 @@ function getCameraPosition(mode: EarthVisualizationMode, date = new Date()) {
     return cameraVectorForProgress(julyProgress, 8.8, 6)
 }
 
-// Globe-mode camera aimed at the home location instead of the subsolar face:
-// replicates EarthBody's tilt+spin stack so the home point's world direction
-// is exact at the given moment.
-function getHomeFocusCamera(coords: EarthCoords, date = new Date()) {
-    const north = getSunAnchoredNorthDirection(date, getSunAnchoredHaloAngle(date))
-    const tiltQuaternion = makeEarthTiltQuaternionForNorthDirection(north)
-    const spin = getDailySpinAngle(date, tiltQuaternion, getSunDirectionFromEarth(getOrbitalProgress(date)))
-    return latLngToEarthPoint(coords.lat, coords.lng, 1)
-        .applyAxisAngle(new THREE.Vector3(0, 1, 0), spin)
-        .applyQuaternion(tiltQuaternion)
-        .normalize()
-        .multiplyScalar(3.61)
-}
+// Home-focused camera math lives in earth-geometry.ts, shared with the
+// journey so the orbit chart can pre-align its sun direction to this view.
 
 function withSpiralRadius(point: THREE.Vector3, radius: number) {
     const radial = new THREE.Vector3(point.x, 0, point.z).normalize()
