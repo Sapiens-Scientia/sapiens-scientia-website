@@ -1,27 +1,50 @@
 "use client";
 
-import { Canvas } from "@react-three/fiber";
-import { Suspense, useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
+import { useEffect, useRef, useState } from "react";
+import { AppProvider } from "@/components/earthview/contexts";
 import { EarthOverlay } from "@/components/earth-overlay";
-import { EarthScene } from "@/components/earth-scene";
 import { HomeNav } from "@/components/home-nav";
+import { getChartContinuationCamera } from "@/components/lab/earth-geometry";
+import { guessLocation } from "@/lib/guess-location";
 import { useTheme } from "@/lib/use-theme";
+
+// The Meta Earth hero: the homepage journey's Current Sunlight globe wrapped
+// in the geodesic digital shell, under the Meta Earth overlay chrome. It
+// opens from the same constant camera as the journey's finale, so "enter
+// meta earth" reads as the overlays changing over an unmoved globe while the
+// digital shell materializes.
+const SunlightGlobe = dynamic(
+  () => import("@/components/lab/lab-earth-view").then((m) => m.LabEarthView),
+  { ssr: false },
+);
+
+const HERO_CAMERA = getChartContinuationCamera();
 
 // Fraction of the hero, centred, where wheel events drive the 3D zoom.
 // Outside this rectangle, the wheel scrolls the page as normal.
 const ZOOM_ZONE_WIDTH = 0.5;
 const ZOOM_ZONE_HEIGHT = 0.55;
 
-export function EarthHero() {
+export function MetaEarthHero() {
   const [isPanelPointerActive, setIsPanelPointerActive] = useState(false);
-  const [isMetaEarthMerged, setIsMetaEarthMerged] = useState(false);
   const sceneRef = useRef<HTMLDivElement>(null);
 
   const { theme, toggleTheme } = useTheme();
 
-  const toggleMetaEarth = () => setIsMetaEarthMerged((value) => !value);
+  const [homeCoords] = useState(() => {
+    const g = guessLocation();
+    return { lat: g.lat, lng: g.lon };
+  });
+  const [timezone] = useState(() => {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    } catch {
+      return "UTC";
+    }
+  });
 
-  // Confine the scene's wheel-to-zoom to a central rectangle. A capture-phase
+  // Confine the globe's wheel-to-zoom to a central rectangle. A capture-phase
   // listener stops wheel events from reaching OrbitControls when the cursor is
   // outside that zone, so the page scrolls instead of the globe zooming.
   useEffect(() => {
@@ -55,23 +78,20 @@ export function EarthHero() {
 
   return (
     <section className="earth-hero relative h-screen min-h-[48rem] overflow-hidden bg-black">
-      <div ref={sceneRef} className="absolute inset-0 h-full w-full">
-        <Canvas
-          camera={{ position: [0, 0.28, 9.99], fov: 45 }}
-          dpr={[1, 1.8]}
-          gl={{ antialias: true, alpha: false }}
-          className="earth-hero-canvas !h-full !w-full"
-          style={{ height: "100%", width: "100%" }}
-        >
-          <Suspense fallback={null}>
-            <EarthScene
-              enableZoom={!isPanelPointerActive}
-              isMerged={isMetaEarthMerged}
-              onToggleMerged={toggleMetaEarth}
-              theme={theme}
-            />
-          </Suspense>
-        </Canvas>
+      <div ref={sceneRef} className="earth-hero-canvas absolute inset-0 h-full w-full">
+        <AppProvider>
+          <SunlightGlobe
+            className="h-full w-full"
+            mode="globe"
+            digitalShell
+            isDarkOverride={theme === "dark"}
+            cameraOverride={HERO_CAMERA}
+            enableWheelZoom={!isPanelPointerActive}
+            timezone={timezone}
+            timezoneRingScale={0.72}
+            homeCoords={homeCoords}
+          />
+        </AppProvider>
       </div>
 
       <HomeNav />
@@ -87,8 +107,6 @@ export function EarthHero() {
       </div>
 
       <EarthOverlay
-        isMetaEarthMerged={isMetaEarthMerged}
-        onMetaEarthToggle={toggleMetaEarth}
         onPanelPointerEnter={() => setIsPanelPointerActive(true)}
         onPanelPointerLeave={() => setIsPanelPointerActive(false)}
       />

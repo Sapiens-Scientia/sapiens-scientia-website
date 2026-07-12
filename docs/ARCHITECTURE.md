@@ -48,9 +48,15 @@ The site is mostly static pages with client-side interactive islands.
   `BigBangUniverseExperience` inside a React/Next project page shell in embedded
   mode, so the public project route keeps the site navigation, page rhythm, and
   footer without using an iframe.
-- `src/app/meta-earth/page.tsx` renders `MetaEarthExperience`, the former
-  homepage Physical Earth / Digital Halo / Meta Earth product surface.
-- `EarthHero` is a client component because it owns the Meta Earth 3D canvas, theme state, timeline state, and pointer interlock between overlays and orbit controls.
+- `src/app/meta-earth/page.tsx` renders `MetaEarthExperience`: the
+  `MetaEarthHero` (the journey's Current Sunlight globe wrapped in the
+  geodesic digital shell, under the Meta Earth overlays) plus the overview
+  content. `src/components/meta-earth-hero.tsx` owns the hero shell, theme
+  toggle, wheel-zoom zone, and pointer interlock between overlay panels and
+  orbit controls; it opens from the same `getChartContinuationCamera()` the
+  homepage finale uses, so the handoff reads as overlays changing over an
+  unmoved globe. The former Physical Earth / Digital Halo scene
+  (`earth-scene.tsx`, `earth-hero.tsx`) was removed with it.
 - `src/app/projects/earthview/page.tsx` renders the imported EarthView 3D
   React/Three experience directly from `src/components/earthview/`; it is not
   an iframe wrapper.
@@ -88,9 +94,10 @@ The homepage is the most sensitive surface.
   the public Big Bang project page.
 - `src/hooks/use-sunlight-preview.ts`: the Earth sunlight preview animation
   state machine driving the homepage finale's One Day / One Year controls.
-- `src/components/earth-hero.tsx`: full-screen Meta Earth hero shell and React Three Fiber canvas.
-- `src/components/earth-scene.tsx`: Three.js objects and animation.
-- `src/components/earth-overlay.tsx`: panels, clock, timeline, popouts, and bridge connectors.
+- `src/lib/guess-location.ts`: the timezone → rough-coordinates estimate
+  shared by the homepage finale and the Meta Earth hero.
+- `src/components/earth-overlay.tsx`: the Meta Earth overlay panels, clock,
+  popouts, and platform bridges (pure DOM over the hero canvas).
 - `src/components/home-nav.tsx`: compact nav shown over the hero.
 - `src/components/home-overview.tsx`: content below the hero.
 

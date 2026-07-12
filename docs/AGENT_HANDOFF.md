@@ -16,9 +16,11 @@ This file records practical handoff context for future agents working on the Sap
 - The former flow pages (`/observable-universe`, `/history-of-planet-earth`,
   `/earth-orbit`, `/current-earth-sunlight`) and the previous `CosmicJourney`
   landing experience were removed when the You Are Here journey replaced them.
-- `/meta-earth` is the former homepage: a full-screen 3D experience with overlay
-  panels, time controls, theme support, and platform bridge interactions,
-  reached from the end of the homepage journey.
+- `/meta-earth` continues the journey's globe: the Current Sunlight earth
+  model (`LabEarthView` with `digitalShell`) wrapped in a geodesic digital-web
+  shell, under the Meta Earth overlay panels, clock, theme toggle, and
+  platform bridge interactions. Reached from the end of the homepage journey,
+  opening from the same camera so only the overlays and shell change.
 - The main platform model is `Persona`, `Societas`, `Terra`, with `Salus` and `Domus` nested inside Persona, `Soma` nested inside Salus, and `Morbus` nested inside Soma.
 - Public project routes include the Data Index, EarthView 3D, and Big Bang
   Universe.
@@ -36,7 +38,12 @@ If the implementation reveals a conceptual mismatch or durable constraint, updat
 
 ## Current Implementation Notes
 
-- `src/components/earth-hero.tsx` owns the Meta Earth hero shell, React Three Fiber canvas, theme toggle, and timeline state.
+- `src/components/meta-earth-hero.tsx` owns the Meta Earth hero shell: the
+  `LabEarthView` globe canvas (with the `digitalShell` prop), theme toggle,
+  the central wheel-zoom zone, and the panel-hover zoom interlock. The former
+  `earth-hero.tsx` / `earth-scene.tsx` (Physical Earth, Digital Halo,
+  connectors, solar orbit model) were removed when the shell replaced the
+  halo.
 - `src/app/page.tsx` renders `YouAreHereExperience`. Scroll owns all input
   during the journey (its raw-Three canvas is non-interactive); only the
   finale globe is drag-interactive, with the wheel left to page scroll.
@@ -53,7 +60,6 @@ If the implementation reveals a conceptual mismatch or durable constraint, updat
   `public/standalone/big-bang-universe/index.html`. The sitewide Universe
   Timeline is hidden on that route so the standalone app's controls are not
   covered.
-- `src/components/earth-scene.tsx` owns the 3D scene: Physical Earth, Digital Halo, Meta Earth label, data connectors, solar orbit model, and orbit controls.
 - `src/components/earth-overlay.tsx` owns Meta Earth overlays: Earth Systems, Digital Systems, Sapiens Platforms, vital signs popout, data index popout, and clock.
 - `src/lib/earth-systems.ts` is the Meta Earth taxonomy source for Earth Systems, Digital Systems, and platform bridge highlighting.
 - `src/lib/vital-signs.ts` feeds both `/vitals` and Meta Earth vital-sign overlays.

@@ -2396,6 +2396,163 @@ function GlobeSeasonHalo({
     )
 }
 
+// ---------------------------------------------------------------------------
+// The digital shell: Earth's digital layer rendered as a geodesic web hugging
+// the globe — thin cyan struts, glowing junction nodes, and bright packets
+// drifting along the edges. It spins slowly about its own slightly tilted
+// axis, independent of the planet, and materializes over ~2s on mount.
+// ---------------------------------------------------------------------------
+
+const DIGITAL_SHELL_RADIUS = 1.15
+const DIGITAL_SHELL_PACKETS = 14
+
+function DigitalShell({ isDark }: { isDark: boolean }) {
+    const spinRef = useRef<THREE.Group>(null)
+    const strutsMatRef = useRef<THREE.LineBasicMaterial>(null)
+    const nodesMatRef = useRef<THREE.PointsMaterial>(null)
+    const pulseMatRef = useRef<THREE.PointsMaterial>(null)
+    const packetsMatRef = useRef<THREE.PointsMaterial>(null)
+    const packetsRef = useRef<THREE.Points>(null)
+    const bornAtRef = useRef<number | null>(null)
+
+    const { strutsGeometry, nodesGeometry, pulseGeometry, edges } = useMemo(() => {
+        const ico = new THREE.IcosahedronGeometry(DIGITAL_SHELL_RADIUS, 2)
+        const strutsGeometry = new THREE.EdgesGeometry(ico, 1)
+        ico.dispose()
+        // Unique junctions and the edge endpoint pairs, recovered from the
+        // edge segments so nodes and packets share the struts' exact frame.
+        const pos = strutsGeometry.getAttribute('position')
+        const junctions = new Map<string, THREE.Vector3>()
+        const edges: [THREE.Vector3, THREE.Vector3][] = []
+        for (let i = 0; i < pos.count; i += 2) {
+            const a = new THREE.Vector3().fromBufferAttribute(pos, i)
+            const b = new THREE.Vector3().fromBufferAttribute(pos, i + 1)
+            edges.push([a, b])
+            for (const v of [a, b]) {
+                const key = `${v.x.toFixed(4)},${v.y.toFixed(4)},${v.z.toFixed(4)}`
+                if (!junctions.has(key)) junctions.set(key, v)
+            }
+        }
+        const nodes = [...junctions.values()]
+        const nodesGeometry = new THREE.BufferGeometry().setFromPoints(nodes)
+        const pulseGeometry = new THREE.BufferGeometry().setFromPoints(
+            nodes.filter((_, index) => index % 9 === 0),
+        )
+        return { strutsGeometry, nodesGeometry, pulseGeometry, edges }
+    }, [])
+
+    useEffect(() => () => {
+        strutsGeometry.dispose()
+        nodesGeometry.dispose()
+        pulseGeometry.dispose()
+    }, [strutsGeometry, nodesGeometry, pulseGeometry])
+
+    // Packets: a handful of bright points travelling the web, each on its own
+    // edge at its own speed, respawning on a fresh random edge at arrival.
+    const packetState = useMemo(() => {
+        let seed = 611
+        const rand = () => {
+            seed = (seed * 16807) % 2147483647
+            return (seed - 1) / 2147483646
+        }
+        return {
+            rand,
+            edge: Array.from({ length: DIGITAL_SHELL_PACKETS }, () => Math.floor(rand() * edges.length)),
+            t: Array.from({ length: DIGITAL_SHELL_PACKETS }, () => rand()),
+            speed: Array.from({ length: DIGITAL_SHELL_PACKETS }, () => 0.25 + rand() * 0.4),
+            positions: new Float32Array(DIGITAL_SHELL_PACKETS * 3),
+        }
+    }, [edges])
+
+    useFrame(({ clock }, delta) => {
+        const now = clock.elapsedTime
+        if (bornAtRef.current === null) bornAtRef.current = now
+        const grow = Math.min(1, (now - bornAtRef.current) / 2)
+        const materialize = grow * grow * (3 - 2 * grow)
+
+        if (spinRef.current) spinRef.current.rotation.y += delta * 0.02
+
+        const strutOpacity = (isDark ? 0.2 : 0.32) * materialize
+        const nodeOpacity = (isDark ? 0.55 : 0.6) * materialize
+        const pulseOpacity = (isDark ? 0.5 : 0.55) * (0.55 + 0.45 * Math.sin(now * 2.1)) * materialize
+        if (strutsMatRef.current) strutsMatRef.current.opacity = strutOpacity
+        if (nodesMatRef.current) nodesMatRef.current.opacity = nodeOpacity
+        if (pulseMatRef.current) pulseMatRef.current.opacity = pulseOpacity
+        if (packetsMatRef.current) packetsMatRef.current.opacity = 0.9 * materialize
+
+        const { rand, edge, t, speed, positions } = packetState
+        for (let i = 0; i < DIGITAL_SHELL_PACKETS; i += 1) {
+            t[i] += delta * speed[i]
+            if (t[i] >= 1) {
+                t[i] -= 1
+                edge[i] = Math.floor(rand() * edges.length)
+            }
+            const [a, b] = edges[edge[i]]
+            positions[i * 3] = a.x + (b.x - a.x) * t[i]
+            positions[i * 3 + 1] = a.y + (b.y - a.y) * t[i]
+            positions[i * 3 + 2] = a.z + (b.z - a.z) * t[i]
+        }
+        const packetAttr = packetsRef.current?.geometry.getAttribute('position') as THREE.BufferAttribute | undefined
+        if (packetAttr) packetAttr.needsUpdate = true
+    })
+
+    return (
+        <group rotation={[0.18, 0, -0.12]}>
+            <group ref={spinRef}>
+                <lineSegments geometry={strutsGeometry}>
+                    <lineBasicMaterial
+                        ref={strutsMatRef}
+                        color={isDark ? '#4cc9f8' : '#0369a1'}
+                        transparent
+                        opacity={0}
+                        blending={isDark ? THREE.AdditiveBlending : THREE.NormalBlending}
+                        depthWrite={false}
+                    />
+                </lineSegments>
+                <points geometry={nodesGeometry}>
+                    <pointsMaterial
+                        ref={nodesMatRef}
+                        color={isDark ? '#9be8ff' : '#0e7490'}
+                        size={0.018}
+                        sizeAttenuation
+                        transparent
+                        opacity={0}
+                        blending={isDark ? THREE.AdditiveBlending : THREE.NormalBlending}
+                        depthWrite={false}
+                    />
+                </points>
+                <points geometry={pulseGeometry}>
+                    <pointsMaterial
+                        ref={pulseMatRef}
+                        color={isDark ? '#dffaff' : '#0369a1'}
+                        size={0.034}
+                        sizeAttenuation
+                        transparent
+                        opacity={0}
+                        blending={isDark ? THREE.AdditiveBlending : THREE.NormalBlending}
+                        depthWrite={false}
+                    />
+                </points>
+                <points ref={packetsRef}>
+                    <bufferGeometry>
+                        <bufferAttribute attach="attributes-position" args={[packetState.positions, 3]} />
+                    </bufferGeometry>
+                    <pointsMaterial
+                        ref={packetsMatRef}
+                        color={isDark ? '#e8fcff' : '#075985'}
+                        size={0.026}
+                        sizeAttenuation
+                        transparent
+                        opacity={0}
+                        blending={isDark ? THREE.AdditiveBlending : THREE.NormalBlending}
+                        depthWrite={false}
+                    />
+                </points>
+            </group>
+        </group>
+    )
+}
+
 function UnifiedScene({
     mode,
     isDark,
@@ -2418,6 +2575,7 @@ function UnifiedScene({
     cameraFocusOnHome = false,
     cameraOverride,
     onHomeProject,
+    digitalShell = false,
 }: {
     mode: EarthVisualizationMode
     isDark: boolean
@@ -2440,6 +2598,7 @@ function UnifiedScene({
     cameraFocusOnHome?: boolean
     cameraOverride?: THREE.Vector3
     onHomeProject?: (x: number, y: number, visible: boolean) => void
+    digitalShell?: boolean
 }) {
     const { camera } = useThree()
     const sceneDate = useMemo(() => new Date(Date.now() + dateOffsetMs), [dateOffsetMs])
@@ -2552,6 +2711,7 @@ function UnifiedScene({
                     />
                 )}
                 {mode !== 'galaxy' && <EarthBody mode={mode} position={earthPos} radius={earthRadius} isDark={isDark} theme={theme} progress={progress} sceneDate={sceneDate} rotationDate={rotationDate} rotationProgress={rotationProgress} sunOrbitProgress={mode === 'globe' ? sunOrbitProgress : 0} sunOrbitActive={mode === 'globe' && sunOrbitActive} northDirection={mode === 'globe' ? globeNorthDirection : undefined} homeCoords={homeCoords} onHomeProject={onHomeProject} />}
+                {mode === 'globe' && digitalShell && <DigitalShell isDark={isDark} />}
                 {mode === 'globe' && (
                     <group quaternion={sunOrbitQuaternion}>
                         <NorthPoleYearPathRing earthPos={earthPos} earthRadius={earthRadius} year={sceneDate.getFullYear()} sunAnchorAngle={sunAnchorAngle} isDark={isDark} theme={theme} />
@@ -2622,9 +2782,11 @@ interface LabEarthViewProps {
     cameraOverride?: THREE.Vector3
     /** Per-frame on-canvas position of the home marker, for outer overlays. */
     onHomeProject?: (x: number, y: number, visible: boolean) => void
+    /** Globe mode only: wrap the planet in the geodesic digital-web shell. */
+    digitalShell?: boolean
 }
 
-export function LabEarthView({ className, style, mode, dateOffsetMs = 0, rotationOffsetMs = 0, sunOrbitProgress = 0, sunOrbitActive = false, isDarkOverride, orbitTiltView = false, orbitTiltStripsVisible = true, resetViewKey = 0, selectedGalaxyEventKey, galaxyDiskSize, galaxyDiskRotationDeg, homeCoords, timezone, timezoneRingScale = 1, interactive = true, paused = false, enableWheelZoom = true, cameraFocusOnHome = false, cameraOverride, onHomeProject }: LabEarthViewProps) {
+export function LabEarthView({ className, style, mode, dateOffsetMs = 0, rotationOffsetMs = 0, sunOrbitProgress = 0, sunOrbitActive = false, isDarkOverride, orbitTiltView = false, orbitTiltStripsVisible = true, resetViewKey = 0, selectedGalaxyEventKey, galaxyDiskSize, galaxyDiskRotationDeg, homeCoords, timezone, timezoneRingScale = 1, interactive = true, paused = false, enableWheelZoom = true, cameraFocusOnHome = false, cameraOverride, onHomeProject, digitalShell = false }: LabEarthViewProps) {
     const { isDark, theme } = useAppContext()
     const [ready, setReady] = useState(false)
     const [contextResetKey, setContextResetKey] = useState(0)
@@ -2666,7 +2828,7 @@ export function LabEarthView({ className, style, mode, dateOffsetMs = 0, rotatio
                 }}
             >
                 <SceneBackground color={bgColor} />
-                <UnifiedScene mode={mode} isDark={sceneIsDark} theme={theme} dateOffsetMs={dateOffsetMs} rotationOffsetMs={rotationOffsetMs} sunOrbitProgress={sunOrbitProgress} sunOrbitActive={sunOrbitActive} homeCoords={homeCoords} timezone={timezone} timezoneRingScale={timezoneRingScale} orbitTiltView={orbitTiltView} orbitTiltStripsVisible={orbitTiltStripsVisible} resetViewKey={resetViewKey} selectedGalaxyEventKey={selectedGalaxyEventKey} galaxyDiskSize={galaxyDiskSize} galaxyDiskRotationDeg={galaxyDiskRotationDeg} interactive={interactive} enableWheelZoom={enableWheelZoom} cameraFocusOnHome={cameraFocusOnHome} cameraOverride={cameraOverride} onHomeProject={onHomeProject} />
+                <UnifiedScene mode={mode} isDark={sceneIsDark} theme={theme} dateOffsetMs={dateOffsetMs} rotationOffsetMs={rotationOffsetMs} sunOrbitProgress={sunOrbitProgress} sunOrbitActive={sunOrbitActive} homeCoords={homeCoords} timezone={timezone} timezoneRingScale={timezoneRingScale} orbitTiltView={orbitTiltView} orbitTiltStripsVisible={orbitTiltStripsVisible} resetViewKey={resetViewKey} selectedGalaxyEventKey={selectedGalaxyEventKey} galaxyDiskSize={galaxyDiskSize} galaxyDiskRotationDeg={galaxyDiskRotationDeg} interactive={interactive} enableWheelZoom={enableWheelZoom} cameraFocusOnHome={cameraFocusOnHome} cameraOverride={cameraOverride} onHomeProject={onHomeProject} digitalShell={digitalShell} />
             </Canvas>
         </div>
     )

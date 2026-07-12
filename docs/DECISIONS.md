@@ -96,3 +96,9 @@ This establishes a nested hierarchy: `Persona` -> `Salus` (Health) -> `Soma` (Bo
 The homepage now renders the "You Are Here" experience (`src/components/lab/you-are-here.tsx`), incubated at the unlisted `/lab/you-are-here` route: one continuous scroll from the Big Bang through cosmic and geologic time, then down the reader's cosmic address to a live sunlit globe, ending with an "enter meta earth" button. That button is deliberately the only link between the journey and the rest of the site for now.
 
 The former opening flow — the `CosmicJourney` landing component and the standalone pages `/observable-universe`, `/history-of-planet-earth`, `/earth-orbit`, and `/current-earth-sunlight` — has been removed, along with the components only they used. `/meta-earth` remains the product surface and now links back to `/`. `/lab/you-are-here` redirects to `/`.
+
+## Replace the Digital Halo with the digital shell
+
+Meta Earth's hero no longer shows the Physical Earth / Digital Halo pair. The page now renders the same Current Sunlight globe the homepage journey ends on (`LabEarthView`, opening from the journey's continuation camera), wrapped in a geodesic digital-web shell — thin cyan struts, glowing junction nodes, and packets drifting along the edges — under the existing Meta Earth overlays.
+
+The halo (a separate Saturn-like data ring beside the planet) was a weak metaphor for Earth's digital layer; the shell states the concept directly: the digital layer is a web laid over the physical planet. Entering Meta Earth from the journey now reads as the overlays changing and the shell materializing over an unmoved Earth.

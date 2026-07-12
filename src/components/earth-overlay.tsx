@@ -767,13 +767,9 @@ function TimeOverlay({
 }
 
 export function EarthOverlay({
-  isMetaEarthMerged,
-  onMetaEarthToggle,
   onPanelPointerEnter,
   onPanelPointerLeave,
 }: {
-  isMetaEarthMerged: boolean;
-  onMetaEarthToggle: () => void;
   onPanelPointerEnter: () => void;
   onPanelPointerLeave: () => void;
 }) {
@@ -796,14 +792,6 @@ export function EarthOverlay({
           onPanelPointerLeave={onPanelPointerLeave}
         />
       </header>
-      {isMetaEarthMerged ? (
-        <button
-          type="button"
-          aria-label="Separate Meta Earth"
-          className="pointer-events-auto absolute left-1/2 top-[calc(50%-9.25rem)] z-[9] h-10 w-36 -translate-x-1/2 bg-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-200/80"
-          onClick={onMetaEarthToggle}
-        />
-      ) : null}
       <div className="pointer-events-none absolute inset-x-0 top-1/2 z-10 flex -translate-y-1/2 items-center justify-between gap-6 px-8 max-lg:inset-x-4 max-lg:bottom-36 max-lg:top-auto max-lg:grid max-lg:translate-y-0 max-lg:grid-cols-2 max-lg:px-0 max-md:grid-cols-1">
         <EarthSystemsColumn
           activeBridge={activeBridge}
