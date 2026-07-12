@@ -22,6 +22,7 @@
 
 import * as THREE from "three";
 import dynamic from "next/dynamic";
+import { Volume2, VolumeX } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppProvider } from "@/components/earthview/contexts";
 import { useSunlightPreview } from "@/hooks/use-sunlight-preview";
@@ -1921,12 +1922,16 @@ export function YouAreHereExperience() {
           </div>
 
           {/* lab badge */}
-          <div className="pointer-events-none absolute left-5 top-5 z-40 text-[10px] font-semibold uppercase tracking-[0.26em] text-[#8a8378]">
+          <div
+            className={`pointer-events-none absolute left-5 top-5 z-40 text-[10px] font-semibold uppercase tracking-[0.26em] text-[#8a8378] transition-opacity duration-1000 ${started ? "opacity-100" : "opacity-0"}`}
+          >
             Lab experiment · You Are Here
           </div>
 
           {/* spacetime altimeter */}
-          <div className="pointer-events-none absolute left-5 top-1/2 z-40 hidden h-[62vh] -translate-y-1/2 sm:block">
+          <div
+            className={`pointer-events-none absolute left-5 top-1/2 z-40 hidden h-[62vh] -translate-y-1/2 transition-opacity duration-1000 sm:block ${started ? "opacity-100" : "opacity-0"}`}
+          >
             <div className="relative h-full w-px bg-[#f2ece1]/15">
               {/* keyed by mode so each coordinate system visibly re-arms */}
               <div key={altMode} className="absolute inset-0 [animation:yahFade_1.1s_ease_both]">
@@ -1983,7 +1988,9 @@ export function YouAreHereExperience() {
           </div>
 
           {/* the cosmic address, typing itself */}
-          <div className="absolute right-5 top-5 z-40 w-[15.5rem] text-right sm:right-8 sm:top-8">
+          <div
+            className={`absolute right-5 top-5 z-40 w-[15.5rem] text-right transition-opacity duration-1000 sm:right-8 sm:top-8 ${started ? "opacity-100" : "opacity-0"}`}
+          >
             <div className="text-[9px] font-bold uppercase tracking-[0.3em] text-[#8a8378]">
               your cosmic address
             </div>
@@ -2014,7 +2021,9 @@ export function YouAreHereExperience() {
           </div>
 
           {/* the big readout */}
-          <div className="pointer-events-none absolute bottom-6 left-5 z-40 sm:bottom-8 sm:left-8">
+          <div
+            className={`pointer-events-none absolute bottom-6 left-5 z-40 transition-opacity duration-1000 sm:bottom-8 sm:left-8 ${started ? "opacity-100" : "opacity-0"}`}
+          >
             <div ref={readoutBigRef} className="font-mono text-2xl font-extralight tabular-nums tracking-tight text-[#f2ece1] sm:text-4xl" />
             <div ref={readoutSmallRef} className="mt-1 text-[10px] uppercase tracking-[0.2em] text-[#8a8378]" />
           </div>
@@ -2140,10 +2149,20 @@ export function YouAreHereExperience() {
           <button
             type="button"
             onClick={toggleSound}
-            className="absolute bottom-6 right-5 z-40 cursor-pointer border border-[#f2ece1]/15 bg-black/40 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#c9c2b4] backdrop-blur-sm transition-colors hover:text-[#f2ece1] sm:bottom-8 sm:right-8"
             aria-pressed={soundOn}
+            aria-label={soundOn ? "Turn sound off" : "Turn sound on"}
+            title={soundOn ? "Sound on" : "Sound off"}
+            className={`absolute bottom-6 right-5 z-40 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border bg-black/40 backdrop-blur-sm transition-colors sm:bottom-8 sm:right-8 ${
+              soundOn
+                ? "border-[#ffb454]/70 bg-[#ffb454]/10 text-[#ffb454]"
+                : "border-[#f2ece1]/25 text-[#c9c2b4] hover:border-[#f2ece1]/55 hover:text-[#f2ece1]"
+            }`}
           >
-            {soundOn ? "● sound on" : "○ sound off"}
+            {soundOn ? (
+              <Volume2 className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <VolumeX className="h-4 w-4" aria-hidden="true" />
+            )}
           </button>
 
           {/* restart */}
