@@ -127,3 +127,14 @@ export function getChartContinuationCamera(date = new Date(), tilt = 0.95, dista
     .multiplyScalar(Math.cos(tilt) * distance)
     .add(new THREE.Vector3(0, Math.sin(tilt) * distance, 0));
 }
+
+/**
+ * The matching yaw for the orbit chart (applied about ecliptic north, before
+ * its tilt): squaring the continuation camera to Earth's axis moved its
+ * azimuth off the chart's default viewpoint by this same constant angle, so
+ * the chart must turn with it for the handoff to stay an exact frame
+ * continuation. Constant year-round, like the camera.
+ */
+export function getChartContinuationYaw(date = new Date()) {
+  return Math.PI / 2 - getNorthHaloAngle(date.getFullYear());
+}
