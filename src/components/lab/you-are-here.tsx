@@ -1735,6 +1735,22 @@ export function YouAreHereExperience() {
   }, [soundOn]);
   useEffect(() => () => { droneRef.current?.dispose(); }, []);
 
+  // Paint the document itself in the lab's void-black and disable overscroll
+  // bounce, so nothing white can peek past the journey's end.
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const previous = [html.style.background, body.style.background, html.style.overscrollBehaviorY];
+    html.style.background = "#050308";
+    body.style.background = "#050308";
+    html.style.overscrollBehaviorY = "none";
+    return () => {
+      html.style.background = previous[0];
+      body.style.background = previous[1];
+      html.style.overscrollBehaviorY = previous[2];
+    };
+  }, []);
+
   // --------------------------------------------------------------- mirror
   const openMirror = useCallback(async () => {
     setMirror("pending");
