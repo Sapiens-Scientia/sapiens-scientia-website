@@ -25,6 +25,12 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppProvider } from "@/components/earthview/contexts";
 import { useSunlightPreview } from "@/hooks/use-sunlight-preview";
+import { getChartContinuationCamera } from "@/components/lab/earth-geometry";
+
+// The finale opens from the orbit chart's own viewpoint — same ecliptic
+// frame, same elevation — so the sun arrow lands exactly where the chart's
+// sun was, on any date. Constant by construction.
+const FINALE_CAMERA = getChartContinuationCamera();
 
 // The finale is the lab's own copy of the site's Current Earth Sunlight model
 // — season halo, timezone ring, subsolar annual track and all — extended for
@@ -1850,6 +1856,7 @@ export function YouAreHereExperience() {
                   isDarkOverride
                   interactive={finaleOn}
                   enableWheelZoom={false}
+                  cameraOverride={FINALE_CAMERA}
                   dateOffsetMs={preview.dateOffsetMs}
                   rotationOffsetMs={preview.rotationOffsetMs}
                   sunOrbitProgress={preview.sunOrbitProgress}

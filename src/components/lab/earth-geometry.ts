@@ -111,3 +111,14 @@ export function getFinaleSunScreenAngle(coords: LabEarthCoords, date = new Date(
   const sun = getSunDirectionFromEarth(getOrbitalProgress(date));
   return Math.atan2(sun.dot(yAxis), sun.dot(xAxis));
 }
+
+/**
+ * The finale camera that CONTINUES the orbit chart's viewpoint: the chart and
+ * the globe share the same ecliptic frame (y = ecliptic north), and the chart
+ * is viewed tilted by Rx(tilt) — so a camera at this constant position sees
+ * the globe's sun at exactly the screen angle the chart's sun occupied, on
+ * any date, with ecliptic north tipping up-and-away from the viewer.
+ */
+export function getChartContinuationCamera(tilt = 0.95, distance = 3.61) {
+  return new THREE.Vector3(0, Math.sin(tilt) * distance, Math.cos(tilt) * distance);
+}

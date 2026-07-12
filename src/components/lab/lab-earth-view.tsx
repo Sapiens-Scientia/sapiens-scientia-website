@@ -2416,6 +2416,7 @@ function UnifiedScene({
     interactive = true,
     enableWheelZoom = true,
     cameraFocusOnHome = false,
+    cameraOverride,
     onHomeProject,
 }: {
     mode: EarthVisualizationMode
@@ -2437,6 +2438,7 @@ function UnifiedScene({
     interactive?: boolean
     enableWheelZoom?: boolean
     cameraFocusOnHome?: boolean
+    cameraOverride?: THREE.Vector3
     onHomeProject?: (x: number, y: number, visible: boolean) => void
 }) {
     const { camera } = useThree()
@@ -2467,14 +2469,14 @@ function UnifiedScene({
     }, [mode, orbitTiltView, sceneDate])
     const controlsRef = useRef<any>(null)
     const controlsModeKey = `${mode}-${resetViewKey}`
-    // Aim at the home location once, at mount, so later date/rotation offsets
+    // Fix the opening camera once, at mount, so later date/rotation offsets
     // (the preview animations) never re-steer a camera the user may have moved.
-    const [homeFocusCamera] = useState(() => (
-        cameraFocusOnHome && homeCoords && mode === 'globe'
-            ? getHomeFocusCamera(homeCoords)
-            : null
-    ))
-    const desiredCamera = useMemo(() => homeFocusCamera ?? getCameraPosition(mode), [mode, homeFocusCamera])
+    const [mountCamera] = useState(() => {
+        if (cameraOverride && mode === 'globe') return cameraOverride.clone()
+        if (cameraFocusOnHome && homeCoords && mode === 'globe') return getHomeFocusCamera(homeCoords)
+        return null
+    })
+    const desiredCamera = useMemo(() => mountCamera ?? getCameraPosition(mode), [mode, mountCamera])
     const desiredTarget = useMemo(() => {
         if (mode === 'galaxy') return new THREE.Vector3(0, (galaxyPoint(-FUTURE_PROJECTION_MA).y + GALAXY_HISTORY_HEIGHT / 2) / 2, 0)
         return new THREE.Vector3(0, 0, 0)
@@ -2616,19 +2618,23 @@ interface LabEarthViewProps {
     enableWheelZoom?: boolean
     /** Aim the initial globe camera at homeCoords instead of the subsolar face. */
     cameraFocusOnHome?: boolean
+    /** Exact initial globe camera position (wins over cameraFocusOnHome). */
+    cameraOverride?: THREE.Vector3
     /** Per-frame on-canvas position of the home marker, for outer overlays. */
     onHomeProject?: (x: number, y: number, visible: boolean) => void
 }
 
-export function LabEarthView({ className, style, mode, dateOffsetMs = 0, rotationOffsetMs = 0, sunOrbitProgress = 0, sunOrbitActive = false, isDarkOverride, orbitTiltView = false, orbitTiltStripsVisible = true, resetViewKey = 0, selectedGalaxyEventKey, galaxyDiskSize, galaxyDiskRotationDeg, homeCoords, timezone, timezoneRingScale = 1, interactive = true, paused = false, enableWheelZoom = true, cameraFocusOnHome = false, onHomeProject }: LabEarthViewProps) {
+export function LabEarthView({ className, style, mode, dateOffsetMs = 0, rotationOffsetMs = 0, sunOrbitProgress = 0, sunOrbitActive = false, isDarkOverride, orbitTiltView = false, orbitTiltStripsVisible = true, resetViewKey = 0, selectedGalaxyEventKey, galaxyDiskSize, galaxyDiskRotationDeg, homeCoords, timezone, timezoneRingScale = 1, interactive = true, paused = false, enableWheelZoom = true, cameraFocusOnHome = false, cameraOverride, onHomeProject }: LabEarthViewProps) {
     const { isDark, theme } = useAppContext()
     const [ready, setReady] = useState(false)
     const [contextResetKey, setContextResetKey] = useState(0)
     const sceneIsDark = isDarkOverride ?? isDark
     const bgColor = sceneIsDark ? '#0a0a12' : theme === 'sepia' ? '#fbf4e6' : '#ffffff'
-    const initialCamera = cameraFocusOnHome && homeCoords && mode === 'globe'
-        ? getHomeFocusCamera(homeCoords)
-        : getCameraPosition(mode)
+    const initialCamera = cameraOverride && mode === 'globe'
+        ? cameraOverride
+        : cameraFocusOnHome && homeCoords && mode === 'globe'
+            ? getHomeFocusCamera(homeCoords)
+            : getCameraPosition(mode)
 
     const handleCreated = useCallback((state: any) => {
         state.gl.setClearColor(bgColor, 1)
@@ -2660,7 +2666,7 @@ export function LabEarthView({ className, style, mode, dateOffsetMs = 0, rotatio
                 }}
             >
                 <SceneBackground color={bgColor} />
-                <UnifiedScene mode={mode} isDark={sceneIsDark} theme={theme} dateOffsetMs={dateOffsetMs} rotationOffsetMs={rotationOffsetMs} sunOrbitProgress={sunOrbitProgress} sunOrbitActive={sunOrbitActive} homeCoords={homeCoords} timezone={timezone} timezoneRingScale={timezoneRingScale} orbitTiltView={orbitTiltView} orbitTiltStripsVisible={orbitTiltStripsVisible} resetViewKey={resetViewKey} selectedGalaxyEventKey={selectedGalaxyEventKey} galaxyDiskSize={galaxyDiskSize} galaxyDiskRotationDeg={galaxyDiskRotationDeg} interactive={interactive} enableWheelZoom={enableWheelZoom} cameraFocusOnHome={cameraFocusOnHome} onHomeProject={onHomeProject} />
+                <UnifiedScene mode={mode} isDark={sceneIsDark} theme={theme} dateOffsetMs={dateOffsetMs} rotationOffsetMs={rotationOffsetMs} sunOrbitProgress={sunOrbitProgress} sunOrbitActive={sunOrbitActive} homeCoords={homeCoords} timezone={timezone} timezoneRingScale={timezoneRingScale} orbitTiltView={orbitTiltView} orbitTiltStripsVisible={orbitTiltStripsVisible} resetViewKey={resetViewKey} selectedGalaxyEventKey={selectedGalaxyEventKey} galaxyDiskSize={galaxyDiskSize} galaxyDiskRotationDeg={galaxyDiskRotationDeg} interactive={interactive} enableWheelZoom={enableWheelZoom} cameraFocusOnHome={cameraFocusOnHome} cameraOverride={cameraOverride} onHomeProject={onHomeProject} />
             </Canvas>
         </div>
     )
