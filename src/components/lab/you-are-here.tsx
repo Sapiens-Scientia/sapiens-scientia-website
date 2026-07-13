@@ -162,8 +162,10 @@ const pToLogT = piecewise([
 // (Movement I·b). Dwells sit on the geologic beats.
 const pToAgoMa = piecewise([
   [0.365, 4540], [0.418, 4000], [0.46, 2600], [0.468, 2400], [0.494, 800],
-  [0.5, 650], [0.505, 538.8], [0.53, 252], [0.5465, 66], [0.552, 2.6],
-  [0.556, 0.3], [0.575, 0],
+  [0.5, 650], [0.505, 538.8],
+  // the vertebrate → human climb, paced so each milestone gets even scroll
+  [0.516, 425], [0.524, 375], [0.532, 320], [0.54, 210], [0.548, 66],
+  [0.553, 20], [0.558, 6], [0.562, 0.3], [0.575, 0],
 ]);
 
 // The geologic time scale rail (colors shared with the site's galaxy helix).
@@ -187,6 +189,87 @@ function formatAgo(agoMa: number) {
   if (agoMa >= 1) return `${Math.round(agoMa).toLocaleString()} million years ago`;
   if (agoMa > 0.001) return `${Math.round(agoMa * 1e6).toLocaleString()} years ago`;
   return "today";
+}
+
+// ---------------------------------------------------------------------------
+// The Thread of Life: the evolutionary lineage that leads, unbroken, from the
+// first cell to Homo sapiens, drawn beside the aging Earth. The main thread is
+// our own ancestry — a luminous gold line running down from the oldest life at
+// the top to you at the bottom, matching the altimeter's oldest-on-top axis;
+// the muted branches forking off it are the rest of the bush of life. Nodes
+// light as the aging globe's clock (agoMa) passes each one. SVG viewBox is
+// 0 0 300 640; the thread is authored top→bottom so it draws on as time runs.
+// ---------------------------------------------------------------------------
+
+type LifeNode = { age: number; x: number; y: number; label: string; sub: string };
+
+// Oldest first (top of the SVG) → newest last (bottom). x wanders gently for
+// an organic descent; y is hand-spaced, compressing toward the recent so the
+// vertebrate → human story gets room near the bottom.
+const LIFE_NODES: LifeNode[] = [
+  { age: 3800, x: 150, y: 36, label: "First life", sub: "3.8 billion years ago" },
+  { age: 2100, x: 168, y: 95, label: "The complex cell", sub: "2.1 billion years ago" },
+  { age: 800, x: 138, y: 154, label: "First animals", sub: "800 million years ago" },
+  { age: 540, x: 170, y: 212, label: "Backbones", sub: "540 Mya · the Cambrian" },
+  { age: 425, x: 140, y: 265, label: "Jawed fish", sub: "425 million years ago" },
+  { age: 375, x: 172, y: 318, label: "Onto land", sub: "375 Mya · first walkers" },
+  { age: 320, x: 142, y: 369, label: "Eggs on dry land", sub: "320 million years ago" },
+  { age: 210, x: 170, y: 420, label: "First mammals", sub: "210 million years ago" },
+  { age: 66, x: 144, y: 472, label: "Primates", sub: "66 Mya · after the dinosaurs" },
+  { age: 20, x: 168, y: 523, label: "Apes", sub: "20 million years ago" },
+  { age: 6, x: 150, y: 566, label: "Upright walkers", sub: "6 Mya · the first hominins" },
+  { age: 0.3, x: 150, y: 606, label: "Homo sapiens", sub: "300,000 years ago · you" },
+];
+
+// The bush: a short tendril forking left off a lineage node into the dark, one
+// for each of the great groups that split away from our own line.
+type LifeBranch = { forkIdx: number; label: string };
+const LIFE_BRANCHES: LifeBranch[] = [
+  { forkIdx: 0, label: "Bacteria · Archaea" },
+  { forkIdx: 1, label: "Plants · Fungi" },
+  { forkIdx: 2, label: "Insects · Molluscs" },
+  { forkIdx: 4, label: "Sharks" },
+  { forkIdx: 5, label: "Amphibians" },
+  { forkIdx: 6, label: "Reptiles · Dinosaurs · Birds" },
+  { forkIdx: 7, label: "Other mammals" },
+  { forkIdx: 8, label: "Monkeys" },
+  { forkIdx: 9, label: "Gorillas · Chimpanzees" },
+  { forkIdx: 10, label: "Other Homo species" },
+];
+
+const LIFE_Y_OLDEST = LIFE_NODES[0].y;
+const LIFE_Y_NEWEST = LIFE_NODES[LIFE_NODES.length - 1].y;
+
+// The SVG path (a smooth Catmull-Rom-ish curve) through the lineage nodes,
+// authored oldest→newest (top→bottom) so a stroke-dash reveal reads as life
+// descending the page as time advances.
+const LIFE_THREAD_D = (() => {
+  const pts = LIFE_NODES.map((n) => [n.x, n.y] as const);
+  let d = `M ${pts[0][0]} ${pts[0][1]}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [x0, y0] = pts[i];
+    const [x1, y1] = pts[i + 1];
+    const my = (y0 + y1) / 2;
+    d += ` C ${x0} ${my}, ${x1} ${my}, ${x1} ${y1}`;
+  }
+  return d;
+})();
+
+// Interpolate the descent height (SVG y) reached at a given age, so the thread
+// and its "front" marker sit exactly where the clock is.
+function lifeYAtAge(age: number) {
+  if (age >= LIFE_NODES[0].age) return LIFE_Y_OLDEST;
+  const last = LIFE_NODES[LIFE_NODES.length - 1];
+  if (age <= last.age) return LIFE_Y_NEWEST;
+  for (let i = 0; i < LIFE_NODES.length - 1; i++) {
+    const a = LIFE_NODES[i];
+    const b = LIFE_NODES[i + 1];
+    if (age <= a.age && age >= b.age) {
+      const t = (a.age - age) / (a.age - b.age || 1);
+      return a.y + (b.y - a.y) * t;
+    }
+  }
+  return LIFE_Y_NEWEST;
 }
 
 // Scroll fraction → log10(metres across the view). Movements II & III.
@@ -220,11 +303,12 @@ const BEATS: Beat[] = [
   { from: 0.245, to: 0.298, title: "Home is built", sub: "Our galaxy assembles itself out of smaller ones. The disc you live in settles into a slow, patient spin." },
   { from: 0.31, to: 0.36, title: "9.2 billion years in", sub: "A cloud of recycled star-dust collapses. A new sun switches on, and the leftovers dry into worlds." },
   { from: 0.37, to: 0.418, title: "Earth, day one", sub: "A ball of molten rock under a rain of asteroids. One collision the size of a planet carves off the Moon." },
-  { from: 0.428, to: 0.46, title: "3.7 billion years ago", sub: "In the young oceans, chemistry learns to copy itself. It has not stopped since." },
-  { from: 0.468, to: 0.499, title: "2.4 billion years ago", sub: "Microbes exhale a new atmosphere. The sky turns blue — and the planet nearly freezes solid for the trouble." },
-  { from: 0.504, to: 0.528, title: "538 million years ago", sub: "The Cambrian explosion: eyes, shells, spines. The ocean invents almost every kind of body at once." },
-  { from: 0.532, to: 0.549, title: "The age of dinosaurs", sub: "They run the planet for 160 million years — until one very bad afternoon, 66 million years ago." },
-  { from: 0.552, to: 0.568, title: "300,000 years ago", sub: "Homo sapiens. Every city, book, and name fits inside the last sliver of this timeline." },
+  { from: 0.428, to: 0.458, title: "3.7 billion years ago", sub: "In the young oceans, chemistry learns to copy itself — and one unbroken thread of that first life leads, cell by cell, all the way to you." },
+  { from: 0.466, to: 0.498, title: "2.4 billion years ago", sub: "Microbes exhale oxygen; the sky turns blue. Then cells learn to keep a nucleus — the start of everything larger than a smudge." },
+  { from: 0.505, to: 0.518, title: "540 million years ago", sub: "The Cambrian explosion invents almost every kind of body at once — including the first with a nerve cord down its back, the line that becomes us." },
+  { from: 0.521, to: 0.532, title: "375 million years ago", sub: "A fish with sturdy fins hauls itself onto land. Every animal that has walked since is its descendant." },
+  { from: 0.535, to: 0.549, title: "In the dinosaurs' shadow", sub: "For 150 million years our ancestors stay small and warm-blooded. Then, 66 million years ago, the sky falls — and the survivors inherit the world." },
+  { from: 0.553, to: 0.569, title: "300,000 years ago", sub: "Homo sapiens: one twig, on one branch, of a 3.7-billion-year-old tree — now looking back down its own trunk." },
   // pivot — a hard chapter break between time and space
   { from: 0.572, to: 0.607, chapter: true, title: "That brings us to the present universe.", sub: "All of time has passed — the clock reads today. Now we cross space instead: from everything we can see, down to you." },
   // Movement II — the descent
@@ -675,6 +759,13 @@ export function YouAreHereExperience() {
   const addrCoordsRef = useRef<HTMLSpanElement | null>(null);
   const addrTimeRef = useRef<HTMLSpanElement | null>(null);
   const markerRef = useRef<HTMLDivElement | null>(null);
+  // the Thread of Life overlay (Earth-history movement)
+  const lifeWrapRef = useRef<HTMLDivElement | null>(null);
+  const lifeThreadRef = useRef<SVGPathElement | null>(null);
+  const lifeThreadLenRef = useRef(0);
+  const lifeFrontRef = useRef<SVGGElement | null>(null);
+  const lifeNodeEls = useRef<(SVGGElement | null)[]>([]);
+  const lifeBranchEls = useRef<(SVGGElement | null)[]>([]);
   const smoothRef = useRef(0);
   const geoRef = useRef(guessLocation());
   const droneRef = useRef<Drone | null>(null);
@@ -1513,6 +1604,53 @@ export function YouAreHereExperience() {
       if (addrTimeRef.current) {
         addrTimeRef.current.textContent = new Date().toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" });
       }
+
+      // --- the Thread of Life (Earth-history movement) --------------------
+      const lifeWrap = lifeWrapRef.current;
+      if (lifeWrap) {
+        const lifeAlpha = winP(p, 0.418, 0.452, 0.566, 0.586);
+        lifeWrap.style.opacity = lifeAlpha.toFixed(3);
+        lifeWrap.style.visibility = lifeAlpha < 0.004 ? "hidden" : "visible";
+        if (lifeAlpha >= 0.004) {
+          const front = pToAgoMa(p); // Ma before present, from the globe's clock
+          const thread = lifeThreadRef.current;
+          if (thread) {
+            if (lifeThreadLenRef.current === 0) {
+              lifeThreadLenRef.current = thread.getTotalLength();
+              thread.style.strokeDasharray = `${lifeThreadLenRef.current}`;
+            }
+            const climb = clamp01((LIFE_Y_OLDEST - lifeYAtAge(front)) / (LIFE_Y_OLDEST - LIFE_Y_NEWEST));
+            thread.style.strokeDashoffset = `${(lifeThreadLenRef.current * (1 - climb)).toFixed(1)}`;
+          }
+          if (lifeFrontRef.current) {
+            const fy = lifeYAtAge(front);
+            lifeFrontRef.current.setAttribute("transform", `translate(150 ${fy.toFixed(1)})`);
+            lifeFrontRef.current.style.opacity = front > LIFE_NODES[0].age || front <= 0.29 ? "0" : "1";
+          }
+          // reveal a lineage node once the clock has reached its age; the most
+          // recently reached one is the "active" beacon
+          let activeIdx = -1;
+          for (let i = 0; i < LIFE_NODES.length; i++) {
+            if (front <= LIFE_NODES[i].age) activeIdx = i;
+          }
+          for (let i = 0; i < LIFE_NODES.length; i++) {
+            const el = lifeNodeEls.current[i];
+            if (!el) continue;
+            const reached = front <= LIFE_NODES[i].age;
+            el.style.opacity = reached ? "1" : "0";
+            if ((el.dataset.active === "1") !== (i === activeIdx)) {
+              el.dataset.active = i === activeIdx ? "1" : "0";
+              el.classList.toggle("yah-life-active", i === activeIdx);
+            }
+          }
+          for (let i = 0; i < LIFE_BRANCHES.length; i++) {
+            const el = lifeBranchEls.current[i];
+            if (!el) continue;
+            el.style.opacity = front <= LIFE_NODES[LIFE_BRANCHES[i].forkIdx].age ? "1" : "0";
+          }
+        }
+      }
+
       setStarted(p > 0.004);
       setArrived(p > 0.93);
       setEnded(p > 0.985);
@@ -1607,6 +1745,9 @@ export function YouAreHereExperience() {
         const grow = lerp(0.025, 1.0, Math.pow(earthGrowK, 1.6));
         const recede = 1 - smooth01(mapRange(p, 0.572, 0.596)) * 0.985;
         timeEarthGroup.position.copy(earthSeedPos).multiplyScalar(1 - earthGrowK);
+        // slide left while the Thread of Life climbs on the right, then
+        // re-centre before the globe recedes into the chapter break
+        timeEarthGroup.position.x -= 1.35 * winP(p, 0.44, 0.49, 0.556, 0.575);
         timeEarthGroup.scale.setScalar(grow * recede);
         timeEarth.rotation.y = reduceMotion ? 0 : t * 0.05;
         timeEarthMat.uniforms.uOpacity.value = earthTimeA;
@@ -1794,6 +1935,13 @@ export function YouAreHereExperience() {
         @keyframes yahPulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
         @keyframes yahFade { from { opacity: 0; } to { opacity: 1; } }
         .yah ::selection { background: rgba(255, 180, 84, 0.35); }
+        .yah-life-node { transition: opacity 0.55s ease; }
+        .yah-life-node circle { transition: r 0.4s ease, fill 0.4s ease; }
+        .yah-life-active circle.yah-life-dot { r: 4.4px; fill: #fff6e6; }
+        .yah-life-active .yah-life-label { fill: #ffd9a0; }
+        .yah-life-branch { transition: opacity 0.7s ease; }
+        @keyframes yahLifePulse { 0%, 100% { opacity: 0.25; transform: scale(0.9); } 50% { opacity: 0.7; transform: scale(1.5); } }
+        .yah-life-front circle { animation: yahLifePulse 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
       `}</style>
 
       <div className="relative" style={{ height: `calc(${SCROLL_VH}vh + 100vh)` }}>
@@ -1946,6 +2094,72 @@ export function YouAreHereExperience() {
             >
               {altMode === "time" ? "time" : altMode === "geo" ? "earth" : altMode === "scale" ? "size" : "·"}
             </div>
+          </div>
+
+          {/* the Thread of Life — our lineage climbing beside the aging Earth */}
+          <div
+            ref={lifeWrapRef}
+            className="pointer-events-none absolute right-3 top-1/2 z-30 hidden h-[84vh] w-[min(30rem,44vw)] -translate-y-1/2 lg:block"
+            style={{ opacity: 0, visibility: "hidden" }}
+          >
+            <svg viewBox="0 0 300 640" className="h-full w-full" style={{ overflow: "visible" }} aria-hidden="true">
+              <text x="150" y="16" textAnchor="middle" className="fill-[#8a8378]" style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.24em", textTransform: "uppercase" }}>
+                The thread of life
+              </text>
+              {/* faint full track the lineage will climb */}
+              <path d={LIFE_THREAD_D} fill="none" stroke="#ffb454" strokeOpacity={0.12} strokeWidth={1.4} />
+              {/* the bright, drawn-on lineage */}
+              <path
+                ref={lifeThreadRef}
+                d={LIFE_THREAD_D}
+                fill="none"
+                stroke="#ffb454"
+                strokeWidth={2.4}
+                strokeLinecap="round"
+                style={{ filter: "drop-shadow(0 0 4px rgba(255,180,84,0.6))" }}
+              />
+              {/* the bush: branches forking away from our line */}
+              {LIFE_BRANCHES.map((br, i) => {
+                const n = LIFE_NODES[br.forkIdx];
+                const ex = n.x - 62;
+                const ey = n.y + 20;
+                return (
+                  <g
+                    key={br.label}
+                    className="yah-life-branch"
+                    ref={(el) => { lifeBranchEls.current[i] = el; }}
+                    style={{ opacity: 0 }}
+                  >
+                    <path d={`M ${n.x} ${n.y} Q ${n.x - 30} ${n.y + 4}, ${ex} ${ey}`} fill="none" stroke="#8a8378" strokeOpacity={0.5} strokeWidth={1} />
+                    <circle cx={ex} cy={ey} r={1.7} fill="#8a8378" />
+                    <text x={ex - 5} y={ey + 3} textAnchor="end" className="fill-[#8a8378]" style={{ fontSize: 8, letterSpacing: "0.04em" }}>
+                      {br.label}
+                    </text>
+                  </g>
+                );
+              })}
+              {/* the climbing "front" — where the clock is right now */}
+              <g ref={lifeFrontRef} className="yah-life-front" style={{ opacity: 0 }} transform="translate(150 36)">
+                <circle cx={0} cy={0} r={7} fill="#ffb454" fillOpacity={0.5} />
+              </g>
+              {/* the lineage milestones */}
+              {LIFE_NODES.map((n, i) => (
+                <g
+                  key={n.label}
+                  className="yah-life-node"
+                  ref={(el) => { lifeNodeEls.current[i] = el; }}
+                  style={{ opacity: 0 }}
+                >
+                  <circle className="yah-life-dot" cx={n.x} cy={n.y} r={3.2} fill="#ffb454" />
+                  <text x={n.x + 12} y={n.y - 1} className="yah-life-label fill-[#f2ece1]" style={{ fontSize: 11, fontWeight: 600 }}>
+                    {n.label}
+                  </text>
+                  <text x={n.x + 12} y={n.y + 10} className="fill-[#8a8378]" style={{ fontSize: 8, letterSpacing: "0.06em" }}>
+                    {n.sub}
+                  </text>
+                </g>
+              ))}
+            </svg>
           </div>
 
           {/* the cosmic address, typing itself */}
