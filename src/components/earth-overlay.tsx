@@ -92,33 +92,40 @@ function useManualPanelWheel<TElement extends HTMLElement>() {
 
 function ConceptColumn({
   align,
+  collapsed = false,
   highlights,
+  listId,
   nodes,
   noWrapTitle = false,
   onPanelPointerEnter,
   onPanelPointerLeave,
-  onTitleClick,
+  onToggleCollapse,
   panelRef,
+  secondaryToggle,
   size = "large",
   title,
-  titleControlsId,
-  titleExpanded,
-  titleLabel,
 }: {
   align: "left" | "center" | "right";
+  /** When true, the panel reads as its title alone; the node list is hidden. */
+  collapsed?: boolean;
   highlights?: ConceptHighlight[];
+  listId?: string;
   noWrapTitle?: boolean;
   nodes: ConceptNode[];
   onPanelPointerEnter?: () => void;
   onPanelPointerLeave?: () => void;
-  /** When set, the header title becomes the button that toggles the panel. */
-  onTitleClick?: () => void;
+  /** When set, the header title becomes the button that collapses/expands the list. */
+  onToggleCollapse?: () => void;
   panelRef?: RefObject<HTMLElement | null>;
+  /** Compact toggle under the title (e.g. the vital-signs popout), shown while expanded. */
+  secondaryToggle?: {
+    label: string;
+    expanded: boolean;
+    controlsId: string;
+    onClick: () => void;
+  };
   size?: "large" | "compact";
   title: string;
-  titleControlsId?: string;
-  titleExpanded?: boolean;
-  titleLabel?: string;
 }) {
   const isRightAligned = align === "right";
   const isCenterAligned = align === "center";
@@ -140,10 +147,15 @@ function ConceptColumn({
     <aside
       ref={panelRef}
       className={[
-        "scrollbar-hidden pointer-events-auto overflow-y-auto overscroll-contain py-4",
+        "scrollbar-hidden pointer-events-auto overscroll-contain py-4",
         "bg-black/42 text-white shadow-[0_0_28px_rgba(59,130,246,0.16)] backdrop-blur-sm",
         size === "large" ? "w-64" : "w-72",
-        size === "large" ? "h-[72vh] max-lg:h-auto max-lg:max-h-[34vh]" : "max-h-[24vh]",
+        collapsed
+          ? "h-auto overflow-visible"
+          : [
+              "overflow-y-auto",
+              size === "large" ? "h-[72vh] max-lg:h-auto max-lg:max-h-[34vh]" : "max-h-[24vh]",
+            ].join(" "),
         "max-lg:w-full max-lg:px-4 max-lg:py-3",
         align === "left" ? "pl-6 pr-4 text-left" : "",
         isRightAligned ? "pl-4 pr-6 text-right max-lg:text-left" : "",
@@ -157,7 +169,7 @@ function ConceptColumn({
     >
       <div
         className={[
-          "mb-3 flex items-center gap-2",
+          collapsed ? "flex items-center gap-2" : "mb-3 flex items-center gap-2",
           isRightAligned ? "justify-end max-lg:justify-start" : "",
           isCenterAligned ? "justify-center" : "",
         ].join(" ")}
@@ -168,39 +180,51 @@ function ConceptColumn({
             noWrapTitle ? "whitespace-nowrap" : "",
           ].join(" ")}
         >
-          {onTitleClick ? (
+          {onToggleCollapse ? (
             <button
               type="button"
-              onClick={onTitleClick}
-              aria-expanded={titleExpanded}
-              aria-controls={titleControlsId}
-              aria-label={
-                titleLabel
-                  ? `${titleExpanded ? "Hide" : "Show"} ${titleLabel}`
-                  : undefined
-              }
+              onClick={onToggleCollapse}
+              aria-expanded={!collapsed}
+              aria-controls={listId}
+              aria-label={`${collapsed ? "Show" : "Hide"} ${title}`}
               className="cursor-pointer text-inherit transition-colors hover:text-blue-200 focus:outline-none focus-visible:text-blue-200"
             >
               {title}
+              <span aria-hidden className="ml-2 inline-block align-middle text-sm text-slate-400">
+                {collapsed ? "▸" : "▾"}
+              </span>
             </button>
           ) : (
             title
           )}
         </h2>
       </div>
-      <ol className="space-y-1.5">
-        {nodes.map((node) => (
-          <ConceptColumnNode
-            key={`${node.level}-${node.label}`}
-            align={align}
-            highlightColor={highlightLookup.get(node.label)}
-            isCenterAligned={isCenterAligned}
-            isRightAligned={isRightAligned}
-            node={node}
-            size={size}
-          />
-        ))}
-      </ol>
+      {!collapsed && secondaryToggle ? (
+        <button
+          type="button"
+          onClick={secondaryToggle.onClick}
+          aria-expanded={secondaryToggle.expanded}
+          aria-controls={secondaryToggle.controlsId}
+          className="mb-3 cursor-pointer text-[11px] font-semibold uppercase tracking-[0.14em] text-sky-300/90 transition-colors hover:text-sky-200 focus:outline-none focus-visible:text-sky-200"
+        >
+          {secondaryToggle.expanded ? "Hide" : "Show"} {secondaryToggle.label}
+        </button>
+      ) : null}
+      {!collapsed ? (
+        <ol id={listId} className="space-y-1.5">
+          {nodes.map((node) => (
+            <ConceptColumnNode
+              key={`${node.level}-${node.label}`}
+              align={align}
+              highlightColor={highlightLookup.get(node.label)}
+              isCenterAligned={isCenterAligned}
+              isRightAligned={isRightAligned}
+              node={node}
+              size={size}
+            />
+          ))}
+        </ol>
+      ) : null}
     </aside>
   );
 }
@@ -515,6 +539,7 @@ function EarthSystemsColumn({
   onPanelPointerLeave: () => void;
 }) {
   const { signs, liveIds, status } = useLiveVitalSigns();
+  const [isColumnOpen, setIsColumnOpen] = useState(false);
   const [isVitalSignsOpen, setIsVitalSignsOpen] = useState(false);
   const earthSystemHighlights = useMemo<ConceptHighlight[]>(
     () =>
@@ -546,10 +571,22 @@ function EarthSystemsColumn({
           panelRef={panelRef}
           title="Physical Systems"
           noWrapTitle
-          onTitleClick={() => setIsVitalSignsOpen((value) => !value)}
-          titleExpanded={isVitalSignsOpen}
-          titleControlsId="earth-vital-signs-panel"
-          titleLabel="Earth Vital Signs"
+          collapsed={!isColumnOpen}
+          onToggleCollapse={() =>
+            setIsColumnOpen((value) => {
+              if (value) {
+                setIsVitalSignsOpen(false);
+              }
+              return !value;
+            })
+          }
+          listId="earth-systems-list"
+          secondaryToggle={{
+            label: "Earth Vital Signs",
+            expanded: isVitalSignsOpen,
+            controlsId: "earth-vital-signs-panel",
+            onClick: () => setIsVitalSignsOpen((value) => !value),
+          }}
           nodes={earthSystemNodes}
         />
       </div>
@@ -578,6 +615,7 @@ function DigitalSystemsColumn({
   onPanelPointerEnter: () => void;
   onPanelPointerLeave: () => void;
 }) {
+  const [isColumnOpen, setIsColumnOpen] = useState(false);
   const [isDataIndexOpen, setIsDataIndexOpen] = useState(false);
   const activeHighlights = [
     ...(isDataIndexOpen ? digitalDataIndexHighlights : []),
@@ -601,10 +639,22 @@ function DigitalSystemsColumn({
           panelRef={panelRef}
           noWrapTitle
           title="Digital Systems"
-          onTitleClick={() => setIsDataIndexOpen((value) => !value)}
-          titleExpanded={isDataIndexOpen}
-          titleControlsId="digital-data-index-panel"
-          titleLabel="Global Data Index"
+          collapsed={!isColumnOpen}
+          onToggleCollapse={() =>
+            setIsColumnOpen((value) => {
+              if (value) {
+                setIsDataIndexOpen(false);
+              }
+              return !value;
+            })
+          }
+          listId="digital-systems-list"
+          secondaryToggle={{
+            label: "Global Data Index",
+            expanded: isDataIndexOpen,
+            controlsId: "digital-data-index-panel",
+            onClick: () => setIsDataIndexOpen((value) => !value),
+          }}
           nodes={digitalSystemNodes}
         />
       </div>
