@@ -23,8 +23,9 @@ This file records practical handoff context for future agents working on the Sap
   shell, under the Meta Earth overlay panels, clock, theme toggle, and
   platform bridge interactions. Reached from the end of the homepage journey,
   opening from the same camera so only the overlays and shell change. Its
-  top-left links go back to the journey's start ("The History of the
-  Universe" → `/`) and its finale ("You Are Here" → `/#end`).
+  top-left link goes back to the journey's start ("The History of the
+  Universe" → `/`); the journey's `/#end` finale deep-link still works but is
+  no longer linked from here.
 - The main platform model is `Persona`, `Societas`, `Terra`, with `Salus` and `Domus` nested inside Persona, `Soma` nested inside Salus, and `Morbus` nested inside Soma.
 - Public project routes include the Data Index, EarthView 3D, and Big Bang
   Universe.
