@@ -22,50 +22,6 @@ import { useTheme } from "@/lib/use-theme";
 
 
 
-type TimeZoneOption = {
-  label: string;
-  value: string;
-};
-
-const timeZoneOptions: TimeZoneOption[] = [
-  { label: "New York", value: "America/New_York" },
-  { label: "Los Angeles", value: "America/Los_Angeles" },
-  { label: "UTC", value: "UTC" },
-  { label: "London", value: "Europe/London" },
-  { label: "Paris", value: "Europe/Paris" },
-  { label: "Sao Paulo", value: "America/Sao_Paulo" },
-  { label: "Singapore", value: "Asia/Singapore" },
-  { label: "Tokyo", value: "Asia/Tokyo" },
-  { label: "Sydney", value: "Australia/Sydney" },
-];
-
-function formatClockTime(date: Date | null, timeZone: string) {
-  if (!date) {
-    return "--:--";
-  }
-
-  return new Intl.DateTimeFormat("en-US", {
-    hour: "2-digit",
-    hour12: true,
-    minute: "2-digit",
-    timeZone,
-    timeZoneName: "short",
-  }).format(date);
-}
-
-function formatClockDate(date: Date | null, timeZone: string) {
-  if (!date) {
-    return "---, -- ---";
-  }
-
-  return new Intl.DateTimeFormat("en-US", {
-    day: "2-digit",
-    month: "short",
-    timeZone,
-    weekday: "short",
-  }).format(date);
-}
-
 function stopPanelScrollPropagation(event: React.WheelEvent<HTMLElement> | React.TouchEvent<HTMLElement>) {
   event.stopPropagation();
 }
@@ -752,67 +708,43 @@ function HumanPlatformsBridgePanel({
   );
 }
 
-function TimeOverlay({
-  onPanelPointerEnter,
-  onPanelPointerLeave,
-}: {
-  onPanelPointerEnter: () => void;
-  onPanelPointerLeave: () => void;
-}) {
-  const [selectedTimeZone, setSelectedTimeZone] = useState("America/New_York");
-  const [now, setNow] = useState(() => new Date());
+// The live local clock, bottom-left — the same reading, in the same seat and
+// style, as the end of The History of the Universe journey, so the handoff
+// keeps its continuity.
+function LocalClock() {
+  const { theme } = useTheme();
+  const [now, setNow] = useState<Date | null>(null);
 
   useEffect(() => {
-    const tick = () => {
-      setNow(new Date());
-    };
-
-    const timeoutId = window.setTimeout(tick, 0);
+    const tick = () => setNow(new Date());
+    tick();
     const intervalId = window.setInterval(tick, 1000);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-      window.clearInterval(intervalId);
-    };
+    return () => window.clearInterval(intervalId);
   }, []);
 
-  const selectedOption = timeZoneOptions.find((option) => option.value === selectedTimeZone);
-  const selectedLabel = selectedOption?.label ?? selectedTimeZone.replaceAll("_", " ");
+  const isDark = theme === "dark";
 
   return (
-    <aside
-      className="pointer-events-auto w-[min(22rem,calc(100vw-2rem))] bg-black/48 px-4 py-3 text-center text-white shadow-[0_0_28px_rgba(59,130,246,0.16)] backdrop-blur-sm"
-      onPointerEnter={onPanelPointerEnter}
-      onPointerLeave={onPanelPointerLeave}
-      onWheelCapture={stopPanelScrollPropagation}
-      onTouchMoveCapture={stopPanelScrollPropagation}
-    >
-      <div className="grid min-w-0 grid-rows-[2.35rem_auto_auto]">
-        <div className="flex items-center justify-center gap-3">
-          <label
-            className="text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-blue-300/80"
-            htmlFor="timezone-clock-select"
-          >
-            Timezone
-          </label>
-          <select
-            id="timezone-clock-select"
-            value={selectedTimeZone}
-            className="max-w-32 border border-white/12 bg-black/55 px-2 py-1 text-xs text-slate-100 outline-none transition focus:border-sky-300/70"
-            onChange={(event) => setSelectedTimeZone(event.target.value)}
-          >
-            {selectedOption ? null : <option value={selectedTimeZone}>{selectedLabel}</option>}
-            {timeZoneOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <p className="font-mono text-2xl leading-none text-white">{formatClockTime(now, selectedTimeZone)}</p>
-        <p className="mt-1 text-xs text-slate-300/80">{formatClockDate(now, selectedTimeZone)}</p>
+    <div className="pointer-events-none absolute bottom-6 left-5 z-40 hidden lg:block sm:bottom-8 sm:left-8">
+      <div
+        className={`font-mono text-2xl font-extralight tabular-nums tracking-tight sm:text-4xl ${
+          isDark ? "text-[#f2ece1]" : "text-slate-900"
+        }`}
+      >
+        {now
+          ? now.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+          : ""}
       </div>
-    </aside>
+      <div
+        className={`mt-1 text-[10px] uppercase tracking-[0.2em] ${
+          isDark ? "text-[#8a8378]" : "text-slate-500"
+        }`}
+      >
+        {now
+          ? now.toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" })
+          : ""}
+      </div>
+    </div>
   );
 }
 
@@ -837,11 +769,8 @@ export function EarthOverlay({
         <p className="max-w-md text-center text-sm leading-6 text-slate-300 max-sm:hidden">
           A public atlas for human-centered science.
         </p>
-        <TimeOverlay
-          onPanelPointerEnter={onPanelPointerEnter}
-          onPanelPointerLeave={onPanelPointerLeave}
-        />
       </header>
+      <LocalClock />
       <div className="pointer-events-none absolute inset-x-0 top-1/2 z-10 flex -translate-y-1/2 items-center justify-between gap-6 px-8 max-lg:inset-x-4 max-lg:bottom-36 max-lg:top-auto max-lg:grid max-lg:translate-y-0 max-lg:grid-cols-2 max-lg:px-0 max-md:grid-cols-1">
         <EarthSystemsColumn
           activeBridge={activeBridge}
