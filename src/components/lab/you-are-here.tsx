@@ -804,6 +804,8 @@ export function YouAreHereExperience() {
     const host = canvasHostRef.current;
     if (!host) return;
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // the Thread of Life only shows at lg+; below it, keep the globe centred
+    const wideMql = window.matchMedia("(min-width: 1024px)");
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.8));
@@ -1746,8 +1748,11 @@ export function YouAreHereExperience() {
         const recede = 1 - smooth01(mapRange(p, 0.572, 0.596)) * 0.985;
         timeEarthGroup.position.copy(earthSeedPos).multiplyScalar(1 - earthGrowK);
         // slide left while the Thread of Life climbs on the right, then
-        // re-centre before the globe recedes into the chapter break
-        timeEarthGroup.position.x -= 1.35 * winP(p, 0.44, 0.49, 0.556, 0.575);
+        // re-centre before the globe recedes into the chapter break (only when
+        // the thread is actually shown — below lg it stays centred)
+        if (wideMql.matches) {
+          timeEarthGroup.position.x -= 1.35 * winP(p, 0.44, 0.49, 0.556, 0.575);
+        }
         timeEarthGroup.scale.setScalar(grow * recede);
         timeEarth.rotation.y = reduceMotion ? 0 : t * 0.05;
         timeEarthMat.uniforms.uOpacity.value = earthTimeA;
