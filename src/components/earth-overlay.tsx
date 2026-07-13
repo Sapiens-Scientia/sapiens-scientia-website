@@ -766,9 +766,6 @@ export function EarthOverlay({
         <p className="site-wordmark bg-gradient-to-r from-emerald-300/84 to-blue-300/88 bg-clip-text text-3xl font-semibold uppercase tracking-[0.35em] text-transparent drop-shadow-[0_0_18px_rgba(96,165,250,0.42)] sm:text-4xl md:text-5xl">
           Sapiens Scientia
         </p>
-        <p className="max-w-md text-center text-sm leading-6 text-slate-300 max-sm:hidden">
-          A public atlas for human-centered science.
-        </p>
       </header>
       <LocalClock />
       <div className="pointer-events-none absolute inset-x-0 top-1/2 z-10 flex -translate-y-1/2 items-center justify-between gap-6 px-8 max-lg:inset-x-4 max-lg:bottom-36 max-lg:top-auto max-lg:grid max-lg:translate-y-0 max-lg:grid-cols-2 max-lg:px-0 max-md:grid-cols-1">
