@@ -188,8 +188,9 @@ export function MetaEarthHero() {
         </div>
       </div>
 
-      {/* the mirror invitation, bottom-right */}
-      <div className="absolute bottom-6 right-5 z-40 flex max-w-[15rem] flex-col items-end text-right sm:bottom-8 sm:right-8">
+      {/* the mirror invitation, bottom-right (lg+ only — the phone layout's
+          bottom edge belongs to the systems chips and platforms bridge) */}
+      <div className="absolute bottom-6 right-5 z-40 hidden max-w-[15rem] flex-col items-end text-right sm:bottom-8 sm:right-8 lg:flex">
         {mirror === "on" ? (
           <button
             type="button"

@@ -762,8 +762,8 @@ export function EarthOverlay({
 
   return (
     <>
-      <header className="pointer-events-none absolute inset-x-4 top-8 z-10 flex flex-col items-center gap-4 max-lg:top-4">
-        <p className="site-wordmark bg-gradient-to-r from-emerald-300/84 to-blue-300/88 bg-clip-text text-3xl font-semibold uppercase tracking-[0.35em] text-transparent drop-shadow-[0_0_18px_rgba(96,165,250,0.42)] sm:text-4xl md:text-5xl">
+      <header className="pointer-events-none absolute inset-x-4 top-8 z-10 flex flex-col items-center gap-4 max-lg:top-16">
+        <p className="site-wordmark bg-gradient-to-r from-emerald-300/84 to-blue-300/88 bg-clip-text text-2xl font-semibold uppercase tracking-[0.22em] text-transparent drop-shadow-[0_0_18px_rgba(96,165,250,0.42)] sm:text-4xl sm:tracking-[0.35em] md:text-5xl">
           Sapiens Scientia
         </p>
       </header>

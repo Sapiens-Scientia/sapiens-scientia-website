@@ -1849,18 +1849,27 @@ export function YouAreHereExperience() {
   useEffect(() => () => { droneRef.current?.dispose(); }, []);
 
   // Paint the document itself in the lab's void-black and disable overscroll
-  // bounce, so nothing white can peek past the journey's end.
+  // bounce, so nothing white can peek past the journey's end. The sitewide
+  // body padding-bottom (for other pages' chrome) is zeroed too — otherwise
+  // the page scrolls past the sticky stage and shoves the pinned chrome up.
   useEffect(() => {
     const html = document.documentElement;
     const body = document.body;
-    const previous = [html.style.background, body.style.background, html.style.overscrollBehaviorY];
+    const previous = [
+      html.style.background,
+      body.style.background,
+      html.style.overscrollBehaviorY,
+      body.style.paddingBottom,
+    ];
     html.style.background = "#050308";
     body.style.background = "#050308";
     html.style.overscrollBehaviorY = "none";
+    body.style.paddingBottom = "0px";
     return () => {
       html.style.background = previous[0];
       body.style.background = previous[1];
       html.style.overscrollBehaviorY = previous[2];
+      body.style.paddingBottom = previous[3];
     };
   }, []);
 
@@ -2039,7 +2048,8 @@ export function YouAreHereExperience() {
           <div
             className={`pointer-events-none absolute left-5 top-5 z-40 text-[10px] font-semibold uppercase tracking-[0.26em] text-[#8a8378] transition-opacity duration-1000 ${started ? "opacity-100" : "opacity-0"}`}
           >
-            Sapiens Scientia · The History of the Universe
+            <span className="sm:hidden">Sapiens Scientia</span>
+            <span className="hidden sm:inline">Sapiens Scientia · The History of the Universe</span>
           </div>
 
           {/* spacetime altimeter */}
@@ -2204,7 +2214,7 @@ export function YouAreHereExperience() {
           <div
             className={`pointer-events-none absolute bottom-6 left-5 z-40 transition-opacity duration-1000 sm:bottom-8 sm:left-8 ${started ? "opacity-100" : "opacity-0"}`}
           >
-            <div ref={readoutBigRef} className="font-mono text-2xl font-extralight tabular-nums tracking-tight text-[#f2ece1] sm:text-4xl" />
+            <div ref={readoutBigRef} className="font-mono text-xl font-extralight tabular-nums tracking-tight text-[#f2ece1] sm:text-4xl" />
             <div ref={readoutSmallRef} className="mt-1 text-[10px] uppercase tracking-[0.2em] text-[#8a8378]" />
           </div>
 
@@ -2230,7 +2240,7 @@ export function YouAreHereExperience() {
           ) : beat ? (
             <div
               key={beatIdx}
-              className="pointer-events-none absolute bottom-[16vh] left-1/2 z-40 w-[min(38rem,calc(100vw-3rem))] -translate-x-1/2 text-center [animation:yahRise_0.9s_ease_both]"
+              className="pointer-events-none absolute bottom-[26vh] left-1/2 z-40 w-[min(38rem,calc(100vw-3rem))] -translate-x-1/2 text-center [animation:yahRise_0.9s_ease_both] sm:bottom-[16vh]"
             >
               <h2 className="text-2xl font-light leading-tight tracking-tight text-[#f2ece1] drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)] sm:text-4xl">
                 {beat.title}
@@ -2245,9 +2255,9 @@ export function YouAreHereExperience() {
             </div>
           ) : null}
 
-          {/* the mirror invitation */}
+          {/* the mirror invitation (raised above the clock line on phones) */}
           {arrived ? (
-            <div className="absolute bottom-6 left-1/2 z-40 -translate-x-1/2 text-center sm:bottom-8">
+            <div className="absolute bottom-20 left-1/2 z-40 -translate-x-1/2 text-center sm:bottom-8">
               {mirror === "on" ? (
                 <button
                   type="button"
@@ -2262,7 +2272,7 @@ export function YouAreHereExperience() {
                     type="button"
                     onClick={openMirror}
                     disabled={mirror === "pending"}
-                    className="cursor-pointer border border-[#ffb454]/40 bg-black/40 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#ffb454] backdrop-blur-sm transition-colors hover:bg-[#ffb454]/10 disabled:opacity-50"
+                    className="cursor-pointer whitespace-nowrap border border-[#ffb454]/40 bg-black/40 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#ffb454] backdrop-blur-sm transition-colors hover:bg-[#ffb454]/10 disabled:opacity-50"
                   >
                     {mirror === "pending" ? "opening…" : "☉ see yourself in it"}
                   </button>
@@ -2279,7 +2289,7 @@ export function YouAreHereExperience() {
               >
                 <Link
                   href="/meta-earth"
-                  className="mt-4 inline-block border border-[#ffb454]/45 bg-black/40 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#ffb454] backdrop-blur-sm transition-colors hover:bg-[#ffb454]/10"
+                  className="mt-4 inline-block whitespace-nowrap border border-[#ffb454]/45 bg-black/40 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#ffb454] backdrop-blur-sm transition-colors hover:bg-[#ffb454]/10"
                 >
                   enter meta earth →
                 </Link>
