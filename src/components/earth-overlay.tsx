@@ -645,7 +645,7 @@ function HumanPlatformsBridgePanel({
   return (
     <aside
       ref={panelRef}
-      className="pointer-events-auto w-[min(32rem,calc(100vw-2rem))] bg-black/42 px-5 py-3 text-white shadow-[0_14px_38px_rgba(0,0,0,0.28)] backdrop-blur-sm max-lg:px-4"
+      className="pointer-events-auto w-auto max-w-[calc(100vw-2rem)] bg-black/42 px-6 py-3 text-white shadow-[0_14px_38px_rgba(0,0,0,0.28)] backdrop-blur-sm max-lg:px-4"
       aria-label="Platforms"
       onPointerEnter={onPanelPointerEnter}
       onPointerLeave={() => {
