@@ -1192,19 +1192,37 @@ export function YouAreHereExperience() {
     }
 
     // 3) the Local Group ------------------------------------------------ 10^22.9
-    const groupSet = addSet(22.9, new THREE.Vector3(-1.15, -0.2, 0.25));
+    // The Milky Way here is a true miniature of the next set's disc — same
+    // seed (its stars are a subset of the big cloud's), same tilt, same spin —
+    // and the set is pinned by the same landmark (the sun's seat inside it),
+    // so the zoom hands off as ONE spiral at two scales, not two spirals.
+    const sunMarkerLocal = new THREE.Vector3(1.55, 0.06, 1.55); // ~55% out, between arms
+    const MW_MINI_SCALE = 0.62 / 4.0;
+    const mwCenter = new THREE.Vector3(-1.15, -0.2, 0.25);
+    const mwSunSeat = sunMarkerLocal.clone()
+      .multiplyScalar(MW_MINI_SCALE)
+      .applyEuler(new THREE.Euler(-1.0, 0, 0))
+      .add(mwCenter);
+    const groupSet = addSet(22.9, mwSunSeat);
     {
       const mw = makePointCloud(750, 0.07, dot, 0.95);
-      fillSpiralGalaxy(mw, 0.62, 5, 1);
-      mw.points.position.set(-1.15, -0.2, 0.25);
-      mw.points.rotation.set(0.5, 0.3, 0.1);
+      fillSpiralGalaxy(mw, 4.0, 17, 1);
+      const mwTilt = new THREE.Group();
+      mwTilt.position.copy(mwCenter);
+      mwTilt.rotation.x = -1.0;
+      mwTilt.scale.setScalar(MW_MINI_SCALE);
+      mwTilt.add(mw.points);
       const m31 = makePointCloud(850, 0.07, dot, 0.95);
       fillSpiralGalaxy(m31, 0.78, 9, 0.9);
       m31.points.position.set(1.35, 0.42, -0.4);
       m31.points.rotation.set(1.15, -0.4, 0.35);
       track(mw.points.geometry); track(mw.material);
       track(m31.points.geometry); track(m31.material);
-      groupSet.group.add(mw.points, m31.points);
+      groupSet.group.add(mwTilt, m31.points);
+      groupSet.update = (t) => {
+        // the mini's arms swirl in phase with the big disc's
+        mw.points.rotation.y = reduceMotion ? 0 : t * 0.006;
+      };
       const rng = mulberry32(61);
       const dwarfs = makePointCloud(420, 0.06, dot, 0.7);
       track(dwarfs.points.geometry); track(dwarfs.material);
@@ -1225,7 +1243,6 @@ export function YouAreHereExperience() {
     }
 
     // 4) the Milky Way, up close ---------------------------------------- 10^20.9
-    const sunMarkerLocal = new THREE.Vector3(1.55, 0.06, 1.55); // ~55% out, between arms
     const galaxySet = addSet(20.9, sunMarkerLocal.clone());
     let sunMarker: THREE.Mesh;
     {
