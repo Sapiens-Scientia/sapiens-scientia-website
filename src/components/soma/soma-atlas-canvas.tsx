@@ -27,6 +27,7 @@ import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import type { SomaLensId, SomaScaleId } from "@/lib/soma";
 import type { Theme } from "@/lib/use-theme";
+import type { SomaReferenceModelStatus } from "@/lib/soma-models";
 import {
   scaleOrder,
   somaSystemVisualById,
@@ -38,6 +39,7 @@ import {
   OrganWorld,
   TissueWorld as DetailTissueWorld,
 } from "@/components/soma/soma-detail-worlds";
+import { SomaReferenceMolecule } from "@/components/soma/soma-reference-molecule";
 
 const anatomyModelPath = "/models/soma-anatomy.glb";
 const SOMA_DPR: [number, number] = [0.9, 1.15];
@@ -62,6 +64,8 @@ type SomaAtlasCanvasProps = {
   theme: Theme;
   onSelectSystem: (id: string) => void;
   onScaleChange: (scale: SomaScaleId) => void;
+  onReferenceStatusChange?: (status: SomaReferenceModelStatus) => void;
+  onStructureChange?: (structure: string | null) => void;
 };
 
 type WorldProps = Pick<
@@ -231,7 +235,6 @@ function MicroLabel({ scale, systemId }: { scale: SomaScaleId; systemId: string 
     tissue: `${visual.tissueName} · ${visual.tissueMeasure}`,
     cell: `${visual.cellName} · ${visual.cellMeasure}`,
     organelle: "Mitochondrion · 2 µm",
-    molecule: "ATP synthase · 10 nm",
   };
   const label = content[scale];
   if (!label) return null;
@@ -652,7 +655,7 @@ function OrganelleWorld({ onScaleChange }: Pick<WorldProps, "onScaleChange">) {
   );
 }
 
-function MoleculeWorld() {
+function ProceduralMoleculeWorld() {
   const lipids = useMemo(
     () => Array.from({ length: 18 }, (_, index) => (index - 8.5) * 0.34),
     [],
@@ -692,6 +695,22 @@ function MoleculeWorld() {
         })}
       </group>
     </group>
+  );
+}
+
+function MoleculeWorld({
+  labels,
+  onReferenceStatusChange,
+  onStructureChange,
+}: Pick<SomaAtlasCanvasProps, "labels" | "onReferenceStatusChange" | "onStructureChange">) {
+  const fallback = <ProceduralMoleculeWorld />;
+  return (
+    <SomaReferenceMolecule
+      fallback={fallback}
+      labels={labels}
+      onStatusChange={onReferenceStatusChange}
+      onStructureChange={onStructureChange}
+    />
   );
 }
 
@@ -793,11 +812,32 @@ function AtlasWorld(props: SomaAtlasCanvasProps) {
       <pointLight position={[0, -2, 3]} intensity={0.38} color="#45c7df" />
       <group>
         {props.scale === "organism" || props.scale === "system" ? <BodyWorld {...props} /> : null}
-        {props.scale === "organ" ? <OrganWorld systemId={props.systemId} onScaleChange={props.onScaleChange} /> : null}
+        {props.scale === "organ" ? (
+          <OrganWorld
+            systemId={props.systemId}
+            onScaleChange={props.onScaleChange}
+            onReferenceStatusChange={props.onReferenceStatusChange}
+            onStructureChange={props.onStructureChange}
+          />
+        ) : null}
         {props.scale === "tissue" ? <DetailTissueWorld systemId={props.systemId} onScaleChange={props.onScaleChange} /> : null}
-        {props.scale === "cell" ? <DetailCellWorld systemId={props.systemId} onScaleChange={props.onScaleChange} /> : null}
+        {props.scale === "cell" ? (
+          <DetailCellWorld
+            systemId={props.systemId}
+            labels={props.labels}
+            onScaleChange={props.onScaleChange}
+            onReferenceStatusChange={props.onReferenceStatusChange}
+            onStructureChange={props.onStructureChange}
+          />
+        ) : null}
         {props.scale === "organelle" ? <OrganelleWorld {...props} /> : null}
-        {props.scale === "molecule" ? <MoleculeWorld /> : null}
+        {props.scale === "molecule" ? (
+          <MoleculeWorld
+            labels={props.labels}
+            onReferenceStatusChange={props.onReferenceStatusChange}
+            onStructureChange={props.onStructureChange}
+          />
+        ) : null}
         {props.labels && micro ? <MicroLabel scale={props.scale} systemId={props.systemId} /> : null}
       </group>
       <OrbitControls

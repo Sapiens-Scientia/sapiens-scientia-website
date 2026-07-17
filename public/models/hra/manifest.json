@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "collection": "Human Reference Atlas 3D Reference Object Library",
+  "organization": "HuBMAP Consortium",
+  "collectionUrl": "https://humanatlas.io/3d-reference-library",
+  "sourceRepository": "https://github.com/hubmapconsortium/ccf-releases",
+  "license": "CC BY 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+  "attribution": "Human Reference Atlas, HuBMAP Consortium; reference-organ creators Kristen Browne and Heidi Schlehlein",
+  "downloadedOn": "2026-07-17",
+  "modifications": "Simplified, quantized, Meshopt-compressed, and runtime-recolored for Soma.",
+  "transform": {
+    "cliRequest": "@gltf-transform/cli@4.2.1",
+    "embeddedGenerator": "glTF-Transform v4.4.1",
+    "operations": [
+      "deduplicate",
+      "weld",
+      "structure-preserving mesh simplification",
+      "prune",
+      "sparse accessor optimization",
+      "Meshopt compression"
+    ],
+    "preserved": [
+      "named anatomical meshes",
+      "scene hierarchy",
+      "material groups"
+    ]
+  },
+  "assets": [
+    {
+      "systemId": "nervous",
+      "file": "brain.glb",
+      "title": "3D Reference Organ for Brain, Female v1.3",
+      "creators": ["Kristen Browne", "Heidi Schlehlein"],
+      "doi": "https://doi.org/10.48539/HBM425.NDKM.969",
+      "license": "CC BY 4.0",
+      "sourceRelease": "v2.0",
+      "sourceCommit": "71b933e655af6064b64c9c7cd920addd32e1b55e",
+      "sourceFile": "v2.0/models/3d-vh-f-allen-brain.glb",
+      "sourceUrl": "https://github.com/hubmapconsortium/ccf-releases/blob/71b933e655af6064b64c9c7cd920addd32e1b55e/v2.0/models/3d-vh-f-allen-brain.glb",
+      "originalSha256": "c5711a1a8bc62ca930b8bcf076def15315c11f5ad9bc7901e51f698406d38dbc",
+      "optimizedSha256": "d01d8ba9eea64d9956d01856ff1d334bbf0f623f9dde8aa9f355be05dcce968f",
+      "optimizedBytes": 2208596,
+      "renderTriangles": 360232,
+      "requestedSimplificationRatio": 0.24,
+      "simplificationError": 0.003
+    },
+    {
+      "systemId": "cardiovascular",
+      "file": "heart.glb",
+      "title": "3D Reference Organ for Heart, Female v1.2",
+      "creators": ["Kristen Browne", "Heidi Schlehlein"],
+      "doi": "https://doi.org/10.48539/HBM384.VWVH.465",
+      "license": "CC BY 4.0",
+      "sourceRelease": "v1.3",
+      "sourceCommit": "b036a91aaf7234f462b1249d4a5f4fb0e982f412",
+      "sourceFile": "v1.3/models/VH_F_Heart.glb",
+      "sourceUrl": "https://github.com/hubmapconsortium/ccf-releases/blob/b036a91aaf7234f462b1249d4a5f4fb0e982f412/v1.3/models/VH_F_Heart.glb",
+      "originalSha256": "9afdfb2ccf926869813582cfe150dce8cb28377417a968a4f29a5b8dc060428b",
+      "optimizedSha256": "77fc137713bb2be732b79b1634b93517f29536a21a6b250556d2681ea9c2fe92",
+      "optimizedBytes": 243552,
+      "renderTriangles": 46288,
+      "requestedSimplificationRatio": 0.52,
+      "simplificationError": 0.002
+    },
+    {
+      "systemId": "respiratory",
+      "file": "lung.glb",
+      "title": "3D Reference Organ for Lung, Female v1.2",
+      "creators": ["Kristen Browne", "Heidi Schlehlein"],
+      "doi": "https://doi.org/10.48539/HBM733.JCZJ.647",
+      "license": "CC BY 4.0",
+      "sourceRelease": "v1.3",
+      "sourceCommit": "b036a91aaf7234f462b1249d4a5f4fb0e982f412",
+      "sourceFile": "v1.3/models/VH_F_Lung.glb",
+      "sourceUrl": "https://github.com/hubmapconsortium/ccf-releases/blob/b036a91aaf7234f462b1249d4a5f4fb0e982f412/v1.3/models/VH_F_Lung.glb",
+      "originalSha256": "a6a81718f4d0974bcbab47c6dc38efc941ad5c7f5f256bf7ff112c710a7fd932",
+      "optimizedSha256": "8626d04a70890927c3ab5237c87b62cb035d0b538e6cf4dbae4cad5c22961e01",
+      "optimizedBytes": 762720,
+      "renderTriangles": 133629,
+      "requestedSimplificationRatio": 0.32,
+      "simplificationError": 0.003
+    },
+    {
+      "systemId": "urinary",
+      "file": "kidney.glb",
+      "title": "3D Reference Organ for Kidney, Female, Left v1.2",
+      "creators": ["Kristen Browne", "Heidi Schlehlein"],
+      "doi": "https://doi.org/10.48539/HBM898.QGVV.734",
+      "license": "CC BY 4.0",
+      "sourceRelease": "v1.3",
+      "sourceCommit": "b036a91aaf7234f462b1249d4a5f4fb0e982f412",
+      "sourceFile": "v1.3/models/VH_F_Kidney_L.glb",
+      "sourceUrl": "https://github.com/hubmapconsortium/ccf-releases/blob/b036a91aaf7234f462b1249d4a5f4fb0e982f412/v1.3/models/VH_F_Kidney_L.glb",
+      "originalSha256": "8ac1228e4db8c07cbf9f6c6dc7ca522c5b8d61f641927233a29ae6609b577403",
+      "optimizedSha256": "2dddf5cdb37010b1b2cc7e5ee77d21f62c69daf8b85e7a1d985c22f291e356a0",
+      "optimizedBytes": 227508,
+      "renderTriangles": 42742,
+      "requestedSimplificationRatio": 0.52,
+      "simplificationError": 0.002
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "entryId": "NMO_86976",
+  "cellName": "H16-06-004-01-04-01_538906745_m",
+  "title": "Human layer-3 pyramidal neuron",
+  "organism": "Homo sapiens",
+  "source": "NeuroMorpho.Org",
+  "archive": "Allen Cell Types",
+  "entryUrl": "https://neuromorpho.org/neuron_info.jsp?neuron_name=H16-06-004-01-04-01_538906745_m",
+  "metadataUrl": "https://neuromorpho.org/api/neuron/name/H16-06-004-01-04-01_538906745_m",
+  "sourceFile": "H16-06-004-01-04-01_538906745_m.CNG.swc",
+  "sourceUrl": "https://neuromorpho.org/dableFiles/allen%20cell%20types/CNG%20version/H16-06-004-01-04-01_538906745_m.CNG.swc",
+  "sourceSha256": "b88e7749b07ff951201033584e23e038a7113c97296d003335410735e44cd70c",
+  "sourceLastModified": "2024-02-01",
+  "license": "CC BY 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+  "usageTermsUrl": "https://neuromorpho.org/useterm.jsp",
+  "reconstruction": {
+    "species": "human",
+    "brainRegion": "right middle temporal gyrus, layer 3",
+    "cellType": "spiny pyramidal principal cell",
+    "stain": "biocytin",
+    "method": "Vaa3D",
+    "domains": ["dendrites", "soma", "axon"],
+    "physicalIntegrity": "Dendrites complete; axon incomplete",
+    "sourceNodes": 10531,
+    "sourceBoundsMicrometers": [592.69, 1233.78, 161.44],
+    "compartmentNodes": {
+      "soma": 3,
+      "axon": 2736,
+      "basalDendrites": 3792,
+      "apicalDendrite": 4000
+    }
+  },
+  "citations": [
+    {
+      "title": "Big Science, Team Science, and Open Science for Neuroscience",
+      "authors": ["Christof Koch", "Allan Jones"],
+      "doi": "https://doi.org/10.1016/j.neuron.2016.10.019",
+      "pmid": "27810003"
+    },
+    {
+      "title": "Accelerating the continuous community sharing of digital neuromorphology data",
+      "authors": ["Carlos Tecuatl", "Brittany Ljungquist", "Giorgio A. Ascoli"],
+      "doi": "https://doi.org/10.1096/fba.2024-00048"
+    }
+  ],
+  "derivedAsset": {
+    "file": "human-pyramidal-neuron-nmo-86976.glb",
+    "sha256": "59e052e897c99516cca3ee404ca4bb4a14850d9f254d077d2f48de99277e6ac3",
+    "bytes": 2144836,
+    "renderTriangles": 211100,
+    "representation": "tapered low-poly compartment segments grouped as soma, axon, basal dendrites, and apical dendrite",
+    "modifications": "Centered, normalized, display radii minimally amplified for legibility, semantically colored, quantized, and Meshopt-compressed for Soma.",
+    "generator": "scripts/build-soma-neuron.mjs",
+    "transform": {
+      "cliRequest": "@gltf-transform/cli@4.2.1",
+      "operations": ["deduplicate", "weld", "prune", "sparse accessor optimization", "Meshopt compression"],
+      "preserved": ["semantic compartment nodes", "compartment type metadata", "source record identifier"]
+    }
+  }
+}

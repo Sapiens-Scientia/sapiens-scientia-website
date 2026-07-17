@@ -10,11 +10,17 @@ import {
   type SomaSystemVisual,
   type VectorTuple,
 } from "@/components/soma/soma-scene-data";
+import { SomaReferenceOrgan } from "@/components/soma/soma-reference-organ";
+import { SomaReferenceNeuron } from "@/components/soma/soma-reference-neuron";
 import type { SomaScaleId } from "@/lib/soma";
+import type { SomaReferenceModelStatus } from "@/lib/soma-models";
 
 type DetailWorldProps = {
   systemId: string;
   onScaleChange: (scale: SomaScaleId) => void;
+  labels?: boolean;
+  onReferenceStatusChange?: (status: SomaReferenceModelStatus) => void;
+  onStructureChange?: (structure: string | null) => void;
 };
 
 type VisualProps = { visual: SomaSystemVisual };
@@ -460,12 +466,23 @@ const ORGAN_MODELS: Record<string, (props: VisualProps) => React.ReactNode> = {
   reproductive: GonadOrgan,
 };
 
-export function OrganWorld({ systemId }: DetailWorldProps) {
+export function OrganWorld({
+  onReferenceStatusChange,
+  onStructureChange,
+  systemId,
+}: DetailWorldProps) {
   const visual = somaSystemVisualById.get(systemId) ?? somaSystemVisuals[0];
   const Organ = ORGAN_MODELS[systemId] ?? BrainOrgan;
+  const fallback = <Organ visual={visual} />;
   return (
     <group scale={0.92}>
-      <Organ visual={visual} />
+      <SomaReferenceOrgan
+        key={systemId}
+        systemId={systemId}
+        fallback={fallback}
+        onStatusChange={onReferenceStatusChange}
+        onStructureChange={onStructureChange}
+      />
     </group>
   );
 }
@@ -956,12 +973,26 @@ const CELL_MODELS: Record<string, (props: VisualProps) => React.ReactNode> = {
   reproductive: GermCell,
 };
 
-export function CellWorld({ systemId, onScaleChange }: DetailWorldProps) {
+export function CellWorld({
+  systemId,
+  labels = false,
+  onScaleChange,
+  onReferenceStatusChange,
+  onStructureChange,
+}: DetailWorldProps) {
   const visual = somaSystemVisualById.get(systemId) ?? somaSystemVisuals[0];
   const Cell = CELL_MODELS[systemId] ?? NeuronCell;
+  const fallback = <Cell visual={visual} />;
   return (
     <group scale={0.82}>
-      <Cell visual={visual} />
+      {systemId === "nervous" ? (
+        <SomaReferenceNeuron
+          fallback={fallback}
+          labels={labels}
+          onStatusChange={onReferenceStatusChange}
+          onStructureChange={onStructureChange}
+        />
+      ) : fallback}
       <CellMitochondrion onSelect={() => onScaleChange("organelle")} />
     </group>
   );

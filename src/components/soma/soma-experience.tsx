@@ -39,6 +39,13 @@ import {
   somaSystemVisualById,
   somaSystemVisuals,
 } from "@/components/soma/soma-scene-data";
+import {
+  hasSomaReferenceOrgan,
+  somaReferenceMoleculeSource,
+  somaReferenceNeuronSource,
+  somaReferenceOrganSource,
+  type SomaReferenceModelStatus,
+} from "@/lib/soma-models";
 import type { SomaViewMode } from "@/components/soma/soma-atlas-canvas";
 
 const SomaAtlasCanvas = dynamic(
@@ -88,6 +95,14 @@ const systemIds = new Set(somaSystems.map((system) => system.id));
 const scaleIds = new Set<SomaScaleId>(scaleOrder);
 const lensIds = new Set<SomaLensId>(somaLenses.map((lens) => lens.id));
 const modeIds = new Set<SomaViewMode>(["context", "isolate", "explode", "xray"]);
+const moleculeStructureColors = [
+  "linear-gradient(90deg, #df5968 0 50%, #e7b66a 50%)",
+  "#9a78d0",
+  "#57c6d9",
+  "#7099d2",
+  "linear-gradient(90deg, #f5c95f, #ec806e, #6fe4e4)",
+] as const;
+const neuronStructureColors = ["#ec8d9d", "#ad8ee0", "#62c4d5", "#e9bd6c", "#77808f"] as const;
 
 function reducer(state: SomaState, action: SomaAction): SomaState {
   switch (action.type) {
@@ -406,7 +421,9 @@ function StageHeading({ state, system }: { state: SomaState; system: SomaSystem 
     return {
       title: visual.cellName,
       latin: visual.cellLatin,
-      summary: state.lens === "anatomy" ? visual.cellSummary : content.summary,
+      summary: state.lens === "anatomy" && state.systemId === "nervous"
+        ? "An experimental 3D reconstruction of a human layer-3 pyramidal neuron reveals its complete dendritic arbor and the traced portion of its axon. Display radii are slightly amplified for legibility."
+        : state.lens === "anatomy" ? visual.cellSummary : content.summary,
       label: state.lens === "anatomy" ? "Cell structures" : content.label,
       items: state.lens === "anatomy" ? visual.cellStructures : content.items,
     };
@@ -427,9 +444,9 @@ function StageHeading({ state, system }: { state: SomaState; system: SomaSystem 
     title: "ATP synthase",
     latin: "complexus ATP synthasis",
     summary:
-      "A rotary molecular machine in the inner mitochondrial membrane that uses proton flow to make ATP, the cell's immediate energy currency.",
-    label: "Molecular context",
-    items: ["proton gradient", "membrane rotor", "catalytic head", "ADP", "ATP"],
+      "A chain-level view derived from the 2.53 Å human ATP synthase structure 8H9S. Proton flow turns its membrane rotor and central shaft, driving ATP production in the catalytic head.",
+    label: "Resolved components",
+    items: ["F₁ catalytic head", "central rotor shaft", "c-ring", "membrane stator", "ATP · ADP · magnesium"],
   };
 }
 
@@ -484,8 +501,19 @@ function Inspector({
       <div className="soma-inspector-structures">
         <p>{heading.label}</p>
         <ul>
-          {heading.items.map((item) => (
-            <li key={item}>{item}</li>
+          {heading.items.map((item, index) => (
+            <li
+              key={item}
+              data-molecular={state.scale === "molecule" || undefined}
+              data-neuronal={state.scale === "cell" && state.systemId === "nervous" || undefined}
+              style={state.scale === "molecule"
+                ? { "--structure-color": moleculeStructureColors[index] } as CSSProperties
+                : state.scale === "cell" && state.systemId === "nervous"
+                  ? { "--structure-color": neuronStructureColors[index] } as CSSProperties
+                  : undefined}
+            >
+              {item}
+            </li>
           ))}
         </ul>
       </div>
@@ -536,14 +564,29 @@ function Inspector({
       <details className="soma-sources">
         <summary>Model notes &amp; sources</summary>
         <p>
-          A schematic educational model, not diagnostic anatomy. Microscopic worlds are representative and normalized between scale stages.
+          Brain, heart, lung, and kidney organ views use optimized Human Reference Atlas models. The nervous-system cell view uses an experimental human pyramidal-neuron reconstruction from NeuroMorpho.Org, and the molecule stage uses a chain-backbone derivative of human ATP synthase structure 8H9S. Other organ and microscopic worlds remain representative educational models, normalized between scale stages. Not diagnostic anatomy.
         </p>
         <div>
           <a href="https://openstax.org/books/anatomy-and-physiology-2e/pages/1-2-structural-organization-of-the-human-body" target="_blank" rel="noreferrer">
             OpenStax · Structural organization
           </a>
           <a href="https://humanatlas.io/3d-reference-library" target="_blank" rel="noreferrer">
-            HuBMAP · Human Reference Atlas
+            HuBMAP · Human Reference Atlas (CC BY 4.0)
+          </a>
+          <a href="/models/hra/manifest.json" target="_blank" rel="noreferrer">
+            Organ model credits &amp; provenance
+          </a>
+          <a href={somaReferenceNeuronSource.url} target="_blank" rel="noreferrer">
+            NeuroMorpho.Org NMO_86976 · Human pyramidal neuron (CC BY 4.0)
+          </a>
+          <a href="/models/neuromorpho/manifest.json" target="_blank" rel="noreferrer">
+            Neuron model credits &amp; provenance
+          </a>
+          <a href="https://www.rcsb.org/structure/8H9S" target="_blank" rel="noreferrer">
+            RCSB PDB 8H9S · Human ATP synthase (CC0)
+          </a>
+          <a href="/models/pdb/manifest.json" target="_blank" rel="noreferrer">
+            Molecular model credits &amp; provenance
           </a>
           <a href="https://github.com/Z-Anatomy/Models-of-human-anatomy" target="_blank" rel="noreferrer">
             Z-Anatomy · body context (CC BY-SA 4.0)
@@ -580,12 +623,34 @@ function ControlButton({
 
 export function SomaExperience() {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const [referenceModelState, setReferenceModelState] = useState<{
+    key: string;
+    status: SomaReferenceModelStatus;
+  }>({ key: "", status: "idle" });
+  const [identifiedStructureState, setIdentifiedStructureState] = useState<{
+    key: string;
+    structure: string | null;
+  }>({ key: "", structure: null });
   const { theme } = useTheme();
   const reducedMotion = useReducedMotion();
   const system = somaSystems.find((item) => item.id === state.systemId) ?? somaSystems[1];
   const activeScaleIndex = scaleOrder.indexOf(state.scale);
   const bodyStage = state.scale === "organism" || state.scale === "system";
   const microscopicStage = activeScaleIndex >= scaleOrder.indexOf("tissue");
+  const referenceOrganStage = state.scale === "organ" && hasSomaReferenceOrgan(state.systemId);
+  const referenceNeuronStage = state.scale === "cell" && state.systemId === "nervous";
+  const referenceMoleculeStage = state.scale === "molecule";
+  const referenceModelStage = referenceOrganStage || referenceNeuronStage || referenceMoleculeStage;
+  const referenceModelKey = referenceOrganStage
+    ? `organ:${state.systemId}`
+    : referenceNeuronStage ? "cell:nervous:nmo86976"
+      : referenceMoleculeStage ? "molecule:8h9s" : null;
+  const referenceModelStatus = referenceModelKey
+    ? referenceModelState.key === referenceModelKey ? referenceModelState.status : "loading"
+    : "idle";
+  const identifiedStructure = referenceModelKey === identifiedStructureState.key
+    ? identifiedStructureState.structure
+    : null;
 
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -633,6 +698,22 @@ export function SomaExperience() {
     dispatch({ type: "select-scale", scale });
   }, []);
 
+  const handleReferenceStatusChange = useCallback((status: SomaReferenceModelStatus) => {
+    if (!referenceModelKey) return;
+    setReferenceModelState((current) =>
+      current.key === referenceModelKey && current.status === status
+        ? current
+        : { key: referenceModelKey, status });
+  }, [referenceModelKey]);
+
+  const handleStructureChange = useCallback((structure: string | null) => {
+    if (!referenceModelKey) return;
+    setIdentifiedStructureState((current) =>
+      current.key === referenceModelKey && current.structure === structure
+        ? current
+        : { key: referenceModelKey, structure });
+  }, [referenceModelKey]);
+
   return (
     <section
       className="soma-experience"
@@ -655,6 +736,32 @@ export function SomaExperience() {
 
       <div className="soma-stage">
         <div className="soma-stage-grid" aria-hidden />
+        {referenceModelStage && referenceModelStatus === "ready" ? (
+          <a
+            className="soma-reference-credit"
+            href={referenceMoleculeStage
+              ? somaReferenceMoleculeSource.url
+              : referenceNeuronStage ? somaReferenceNeuronSource.url : somaReferenceOrganSource.url}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {referenceMoleculeStage ? (
+              <>RCSB PDB 8H9S <span aria-hidden>·</span> {somaReferenceMoleculeSource.license}</>
+            ) : referenceNeuronStage ? (
+              <>NeuroMorpho.Org NMO_86976 <span aria-hidden>·</span> {somaReferenceNeuronSource.license}</>
+            ) : (
+              <>HRA reference source <span aria-hidden>·</span> {somaReferenceOrganSource.license}</>
+            )}
+          </a>
+        ) : referenceModelStage && referenceModelStatus === "loading" ? (
+          <span className="soma-reference-credit" role="status">
+            {referenceMoleculeStage
+              ? "Loading experimental structure"
+              : referenceNeuronStage ? "Loading experimental neuron morphology" : "Loading HRA reference anatomy"}
+          </span>
+        ) : referenceModelStage && referenceModelStatus === "failed" ? (
+          <span className="soma-reference-credit" role="status">Reference unavailable <span aria-hidden>·</span> schematic shown</span>
+        ) : null}
         {state.hydrated ? (
           <SomaAtlasCanvas
             systemId={state.systemId}
@@ -667,6 +774,8 @@ export function SomaExperience() {
             theme={theme}
             onSelectSystem={selectSystem}
             onScaleChange={selectScale}
+            onReferenceStatusChange={handleReferenceStatusChange}
+            onStructureChange={handleStructureChange}
           />
         ) : (
           <div className="soma-canvas-loading" role="status">
@@ -723,7 +832,15 @@ export function SomaExperience() {
         </div>
 
         <p className="soma-stage-instructions">
-          Drag to rotate <span aria-hidden>·</span> Choose a scale to zoom
+          {referenceModelStage && referenceModelStatus === "ready" ? (
+            state.labels ? (
+              <>Drag to rotate <span aria-hidden>·</span> Tap or hover structures</>
+            ) : (
+              <>Drag to rotate <span aria-hidden>·</span> Enable labels to identify structures</>
+            )
+          ) : (
+            <>Drag to rotate <span aria-hidden>·</span> Choose a scale to zoom</>
+          )}
         </p>
       </div>
 
@@ -735,7 +852,9 @@ export function SomaExperience() {
       />
 
       <p className="sr-only" aria-live="polite">
-        {system.name}, {somaScaleStages[activeScaleIndex]?.name} scale, {state.lens} lens.
+        {identifiedStructure
+          ? `Selected anatomy: ${identifiedStructure}.`
+          : `${system.name}, ${somaScaleStages[activeScaleIndex]?.name} scale, ${state.lens} lens.`}
       </p>
 
       <div className="soma-list-fallback">

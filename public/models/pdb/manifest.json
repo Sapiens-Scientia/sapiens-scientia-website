@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "entryId": "8H9S",
+  "title": "Human ATP synthase state 1 (combined)",
+  "organism": "Homo sapiens",
+  "source": "RCSB Protein Data Bank",
+  "entryUrl": "https://www.rcsb.org/structure/8H9S",
+  "pdbDoi": "https://doi.org/10.2210/pdb8H9S/pdb",
+  "publication": {
+    "title": "Structure of the human ATP synthase",
+    "doi": "https://doi.org/10.1016/j.molcel.2023.04.029",
+    "authors": [
+      "Y. Lai",
+      "Y. Zhang",
+      "S. Zhou",
+      "J. Xu",
+      "Z. Du",
+      "Z. Feng",
+      "L. Yu",
+      "Z. Zhao",
+      "W. Wang",
+      "Y. Tang",
+      "X. Yang",
+      "L. W. Guddat",
+      "F. Liu",
+      "Y. Gao",
+      "Z. Rao",
+      "H. Gong"
+    ]
+  },
+  "experiment": {
+    "method": "single-particle cryo-electron microscopy",
+    "resolutionAngstrom": 2.53,
+    "biologicalAssembly": 1
+  },
+  "sourceVersion": "1.4",
+  "sourceVersionDate": "2025-06-18",
+  "sourceFile": "pdb_00008h9s_xyz_v1-4.cif.gz",
+  "sourceUrl": "https://files-versioned.rcsb.org/pdb_versioned/data/entries/h9/pdb_00008h9s/pdb_00008h9s_xyz_v1-4.cif.gz",
+  "sourceSha256": "dde3118a8dd8499fc6b0e2e5c412cf767686b7051f4262a2590aabc338b9f32e",
+  "license": "CC0 1.0",
+  "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "usagePolicyUrl": "https://www.rcsb.org/pages/policies",
+  "derivedAsset": {
+    "file": "atp-synthase-8h9s.glb",
+    "sha256": "01babc75b0fb6446598a3e0e049fde69465868f727b5fcb66bde27788a5b3c2d",
+    "bytes": 468256,
+    "renderTriangles": 74310,
+    "chains": 28,
+    "modeledResidues": 5064,
+    "ligandAtoms": 300,
+    "representation": "alpha-carbon chain backbones with deposited ATP, ADP, magnesium, cardiolipin, and 3PH ligand atoms",
+    "modifications": "Reoriented, normalized, converted to chain-level tubes, ligand atoms represented as low-poly spheres, quantized, and Meshopt-compressed for Soma.",
+    "generator": "scripts/build-soma-atp-synthase.mjs",
+    "transform": {
+      "cliRequest": "@gltf-transform/cli@4.2.1",
+      "embeddedGenerator": "glTF-Transform v4.4.1",
+      "operations": [
+        "deduplicate",
+        "weld",
+        "prune",
+        "sparse accessor optimization",
+        "Meshopt compression"
+      ],
+      "preserved": [
+        "named protein-chain nodes",
+        "chain and entity metadata",
+        "ligand-group nodes"
+      ]
+    }
+  }
+}

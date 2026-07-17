@@ -82,15 +82,34 @@ If the implementation reveals a conceptual mismatch or durable constraint, updat
   in `public/models/README.md`. Regenerate it from a downloaded Z-Anatomy
   `Startup.blend` with `scripts/build-soma-anatomy.py`; Blender is required only
   for that asset-build step, not at website runtime. Its meshes are used as a
-  detailed body context, while selectable system structures and the organ,
-  tissue, cell, organelle, and molecule stages are lightweight procedural
-  geometry. The dense GLB is intentionally loaded only at organism and system
-  scales; direct links to deeper scales must not pay its GPU or network cost.
+  detailed body context, while selectable system structures and most organ,
+  tissue, cell, and organelle stages are lightweight procedural geometry. The
+  dense GLB is intentionally loaded only at organism and system scales; direct
+  links to deeper scales must not pay its GPU or network cost.
   `soma-detail-worlds.tsx` is the registry for system-specific organ, tissue,
   and cell morphology. Preserve that differentiation when adding systems, and
   prefer instanced repeated structures plus standard materials for microscopic
-  scenes. Detail-scene fog distances are deliberately farther than body-scene
-  fog because their cameras sit outside the body camera range.
+  scenes. Brain, heart, lung, and kidney organ stages now lazy-load optimized
+  CC BY 4.0 Human Reference Atlas GLBs through `soma-reference-organ.tsx`, with
+  the procedural registry retained as the Suspense/error fallback. The four
+  assets total about 3.4 MB on disk, retain named anatomical meshes, and are not
+  preloaded at body or microscopic scales. Provenance is pinned in
+  `public/models/hra/manifest.json`. The molecule stage lazy-loads a 468 KB
+  Meshopt GLB derived from the human mitochondrial ATP synthase structure RCSB
+  PDB 8H9S. It retains 28 named chain nodes and deposited ligand groups in a
+  74,310-triangle alpha-carbon backbone representation. Its exact version,
+  CC0 provenance, checksum, and build transform are recorded in
+  `public/models/pdb/manifest.json`; regenerate the raw derivative with
+  `scripts/build-soma-atp-synthase.mjs`. The nervous-system cell stage also
+  lazy-loads a 2.14 MB, 211,100-triangle GLB derived from NeuroMorpho.Org human
+  pyramidal-neuron reconstruction NMO_86976. It retains four selectable
+  compartment meshes and explicitly reports that dendrites are complete while
+  the axonal trace is incomplete. Its CC BY 4.0 attribution, requested
+  citations, checksums, and transform are pinned in
+  `public/models/neuromorpho/manifest.json`; regenerate it with
+  `scripts/build-soma-neuron.mjs`. Detail-scene fog distances are
+  deliberately farther than body-scene fog because their cameras sit outside
+  the body camera range.
   The current runtime LOD expands to roughly 482,000 triangles (down from an
   earlier 1.6-million-triangle export) and about 9.3 MB of mesh data on the GPU.
   Even this asset should not be continuously rendered as a double-sided
@@ -117,6 +136,10 @@ If the implementation reveals a conceptual mismatch or durable constraint, updat
 
 - Run `npm install` before checks in fresh Codex worktrees; dependencies may not be present.
 - Standard checks are `npm run lint` and `npm run build`.
+- On the current local host, Next 16.2.7's default Turbopack production build
+  can stall before emitting compiler output, including from an empty `.next`.
+  `npx next build --webpack` completes successfully; Turbopack development mode
+  remains healthy.
 - The homepage and Meta Earth can fail visually even when lint/build pass,
   especially around Three canvases. Browser verification is important for hero
   changes.

@@ -40,9 +40,9 @@ export const somaSystemVisuals: SomaSystemVisual[] = [
     tissueMeasure: "0.5 mm",
     cellName: "Neuron",
     cellLatin: "neuron",
-    cellMeasure: "soma ~20 µm",
+    cellMeasure: "arbor ~1.07 mm",
     cellSummary: "An excitable cell specialized to receive, integrate, and transmit signals.",
-    cellStructures: ["cell body", "dendrites", "axon", "myelin", "synapse"],
+    cellStructures: ["soma", "basal dendrites", "apical dendrite", "axon", "incomplete experimental arbor"],
   },
   {
     id: "cardiovascular",

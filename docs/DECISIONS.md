@@ -122,3 +122,47 @@ keeps interaction, highlighting, and mobile performance independent from the
 source model's flattened mesh hierarchy. The canonical taxonomy remains ten
 integrated groups, including combined immune/lymphatic and musculoskeletal
 groups.
+
+## Use the Human Reference Atlas for open organ geometry
+
+Soma uses the HuBMAP Consortium's CC BY 4.0 Human Reference Atlas as its
+preferred source for expert-reviewed organ-scale geometry. Reference objects
+must be pinned to exact per-asset source releases and commits, optimized
+locally for the browser, lazy-loaded by system, and accompanied by a
+machine-readable provenance manifest. Preserve named anatomical meshes when
+optimizing so the geometry can support structure labels and selection rather
+than acting as an undifferentiated shell.
+
+Procedural organ worlds remain the immediate loading and failure fallback, and
+the HRA library should be expanded system by system only after each asset meets
+the existing GPU and interaction budget. General NIH 3D uploads and mixed-source
+atlases require an entry-level license and provenance review before inclusion.
+
+## Use versioned RCSB PDB structures for molecular geometry
+
+Soma uses versioned RCSB Protein Data Bank coordinates as its preferred source
+for experimentally determined molecular structures. Each derivative must pin
+the PDB entry version and coordinate checksum, cite the entry and associated
+publication, preserve meaningful chain or ligand identity, and declare how the
+scientific coordinates were reduced for browser rendering.
+
+The ATP synthase stage uses human mitochondrial complex 8H9S version 1.4 under
+the PDB archive's CC0 1.0 dedication. Soma renders alpha-carbon chain backbones
+and selected deposited ligand atoms rather than claiming an all-atom view. The
+procedural molecular world remains the loading and failure fallback.
+
+## Use attributable neuronal reconstructions at cell scale
+
+Soma uses NeuroMorpho.Org as the preferred source for experimentally traced
+neuronal morphology. Each derivative must pin the reconstruction identifier,
+source SWC checksum, brain region, cell class, physical-completeness metadata,
+repository terms, and requested citations. The interface must distinguish a
+measured reconstruction from a generalized textbook neuron and disclose any
+incomplete structural domain.
+
+The nervous-system cell stage uses the CC BY 4.0 human layer-3 pyramidal neuron
+NMO_86976. Its dendritic arbor is complete while its axon is incomplete. The
+browser derivative groups the original SWC compartments into selectable soma,
+axon, basal-dendrite, and apical-dendrite meshes and minimally amplifies process
+radii for legibility. The procedural neuron remains its loading and failure
+fallback.

@@ -581,6 +581,31 @@
   pointer-events: none;
 }
 
+.soma-reference-credit {
+  position: absolute;
+  z-index: 7;
+  top: 2.25rem;
+  right: 1.4rem;
+  display: inline-flex;
+  min-height: 1.8rem;
+  align-items: center;
+  border-bottom: 1px solid color-mix(in srgb, var(--soma-cyan) 45%, transparent);
+  padding-inline: 0.2rem;
+  color: var(--soma-text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.53rem;
+  letter-spacing: 0.065em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: border-color 160ms ease, color 160ms ease;
+}
+
+.soma-reference-credit:hover,
+.soma-reference-credit:focus-visible {
+  border-color: var(--soma-cyan);
+  color: var(--soma-text);
+}
+
 .soma-inspector {
   position: relative;
   z-index: 6;
@@ -705,6 +730,14 @@
   border-radius: 50%;
   background: var(--soma-accent);
   content: "";
+}
+
+.soma-inspector-structures li[data-molecular="true"]::before,
+.soma-inspector-structures li[data-neuronal="true"]::before {
+  width: 0.75rem;
+  height: 2px;
+  border-radius: 0;
+  background: var(--structure-color);
 }
 
 .soma-scale-actions {
@@ -1045,6 +1078,14 @@
     max-width: calc(100% - 2rem);
     transform: translateX(50%);
     text-align: center;
+  }
+
+  .soma-reference-credit {
+    top: 2.2rem;
+    right: 50%;
+    width: max-content;
+    max-width: calc(100% - 2rem);
+    transform: translateX(50%);
   }
 }
 
