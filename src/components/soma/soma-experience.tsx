@@ -3,7 +3,11 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
+  ArrowLeft,
+  ArrowRight,
   BetweenVerticalStart,
+  ChevronDown,
+  ChevronUp,
   Eye,
   Layers3,
   RotateCcw,
@@ -13,8 +17,6 @@ import {
 } from "lucide-react";
 import {
   type CSSProperties,
-  type KeyboardEvent,
-  type WheelEvent,
   useCallback,
   useEffect,
   useMemo,
@@ -94,7 +96,11 @@ function reducer(state: SomaState, action: SomaAction): SomaState {
     case "select-system":
       return { ...state, systemId: action.systemId };
     case "select-scale":
-      return { ...state, scale: action.scale };
+      return {
+        ...state,
+        scale: action.scale,
+        mode: action.scale === "organism" || action.scale === "system" ? state.mode : "context",
+      };
     case "select-lens":
       return { ...state, lens: action.lens };
     case "toggle-mode":
@@ -149,28 +155,47 @@ function useReducedMotion() {
   return reduced;
 }
 
+function scaleSubject(scale: SomaScaleId, system: SomaSystem) {
+  const visual = somaSystemVisualById.get(system.id) ?? somaSystemVisuals[0];
+  if (scale === "organism") return "Whole body";
+  if (scale === "system") return visual.shortName;
+  if (scale === "organ") return visual.organName;
+  if (scale === "tissue") return visual.tissueName;
+  if (scale === "cell") return visual.cellName;
+  if (scale === "organelle") return "Mitochondrion";
+  return "ATP synthase";
+}
+
 function ScaleRail({
   activeScale,
+  system,
   onSelect,
 }: {
   activeScale: SomaScaleId;
+  system: SomaSystem;
   onSelect: (scale: SomaScaleId) => void;
 }) {
   return (
     <nav className="soma-scale-rail" aria-label="Biological scale">
       <div className="soma-scale-rule" aria-hidden />
-      {somaScaleStages.map((stage) => {
+      {somaScaleStages.map((stage, index) => {
         const active = stage.id === activeScale;
+        const subject = scaleSubject(stage.id, system);
         return (
           <button
             key={stage.id}
             type="button"
             className="soma-scale-step"
             aria-current={active ? "step" : undefined}
+            aria-label={`${stage.name}: ${subject}, ${stage.scale}`}
             onClick={() => onSelect(stage.id)}
           >
             <span className="soma-scale-dot" aria-hidden />
-            <span className="soma-scale-name">{stage.name}</span>
+            <span className="soma-scale-index" aria-hidden>{String(index + 1).padStart(2, "0")}</span>
+            <span className="soma-scale-copy">
+              <span className="soma-scale-name">{stage.name}</span>
+              <span className="soma-scale-subject">{subject}</span>
+            </span>
             <span className="soma-scale-value">{stage.scale}</span>
           </button>
         );
@@ -186,22 +211,145 @@ function SystemRail({
   selectedId: string;
   onSelect: (systemId: string) => void;
 }) {
+  const selectedButton = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    selectedButton.current?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [selectedId]);
+
   return (
     <nav className="soma-system-rail" aria-label="Organ systems">
-      {somaSystemVisuals.map((visual) => (
+      {somaSystemVisuals.map((visual, index) => (
         <button
           key={visual.id}
+          ref={selectedId === visual.id ? selectedButton : undefined}
           type="button"
           aria-pressed={selectedId === visual.id}
           onClick={() => onSelect(visual.id)}
           className="soma-system-option"
           style={{ "--system-color": visual.color } as CSSProperties}
         >
-          <span aria-hidden />
-          {visual.shortName}
+          <span className="soma-system-swatch" aria-hidden />
+          <span className="soma-system-index" aria-hidden>{String(index + 1).padStart(2, "0")}</span>
+          <span className="soma-system-name">{visual.shortName}</span>
         </button>
       ))}
     </nav>
+  );
+}
+
+function AtlasNavigator({
+  state,
+  system,
+  onSelectScale,
+  onSelectSystem,
+}: {
+  state: SomaState;
+  system: SomaSystem;
+  onSelectScale: (scale: SomaScaleId) => void;
+  onSelectSystem: (systemId: string) => void;
+}) {
+  const activeIndex = scaleOrder.indexOf(state.scale);
+  const activeStage = somaScaleStages[activeIndex];
+  const previousScale = scaleOrder[activeIndex - 1];
+  const nextScale = scaleOrder[activeIndex + 1];
+
+  return (
+    <aside className="soma-atlas-navigator" aria-label="Atlas navigator">
+      <header className="soma-experience-title">
+        <h1>Soma</h1>
+        <p>The living body, across every scale.</p>
+      </header>
+
+      <section className="soma-nav-section soma-nav-scale">
+        <div className="soma-nav-section-heading">
+          <span>Scale</span>
+          <span>{String(activeIndex + 1).padStart(2, "0")} / {String(scaleOrder.length).padStart(2, "0")}</span>
+        </div>
+        <div className="soma-scale-jump">
+          <button
+            type="button"
+            aria-label="Previous scale"
+            disabled={!previousScale}
+            onClick={() => previousScale && onSelectScale(previousScale)}
+          >
+            <ChevronUp aria-hidden />
+          </button>
+          <div>
+            <span>{activeStage?.name}</span>
+            <strong>{scaleSubject(state.scale, system)}</strong>
+            <small>{activeStage?.scale}</small>
+          </div>
+          <button
+            type="button"
+            aria-label="Next scale"
+            disabled={!nextScale}
+            onClick={() => nextScale && onSelectScale(nextScale)}
+          >
+            <ChevronDown aria-hidden />
+          </button>
+        </div>
+        <ScaleRail activeScale={state.scale} system={system} onSelect={onSelectScale} />
+      </section>
+
+      <section className="soma-nav-section soma-nav-systems">
+        <div className="soma-nav-section-heading">
+          <span>{state.scale === "organism" ? "Highlight system" : "System focus"}</span>
+          <span>10</span>
+        </div>
+        <SystemRail selectedId={state.systemId} onSelect={onSelectSystem} />
+      </section>
+    </aside>
+  );
+}
+
+function MobileAtlasNavigator({
+  state,
+  system,
+  onSelectScale,
+  onSelectSystem,
+}: {
+  state: SomaState;
+  system: SomaSystem;
+  onSelectScale: (scale: SomaScaleId) => void;
+  onSelectSystem: (systemId: string) => void;
+}) {
+  const visual = somaSystemVisualById.get(system.id) ?? somaSystemVisuals[0];
+  return (
+    <div className="soma-mobile-navigator" role="group" aria-label="Atlas navigator">
+      <label>
+        <span>Scale</span>
+        <select
+          data-testid="soma-scale-select"
+          value={state.scale}
+          disabled={!state.hydrated}
+          onChange={(event) => onSelectScale(event.target.value as SomaScaleId)}
+        >
+          {somaScaleStages.map((stage) => (
+            <option key={stage.id} value={stage.id}>
+              {stage.name} · {scaleSubject(stage.id, system)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label>
+        <span>{state.scale === "organism" ? "Highlight system" : "System"}</span>
+        <select
+          data-testid="soma-system-select"
+          value={state.systemId}
+          disabled={!state.hydrated}
+          onChange={(event) => onSelectSystem(event.target.value)}
+        >
+          {somaSystemVisuals.map((item) => (
+            <option key={item.id} value={item.id}>{item.shortName}</option>
+          ))}
+        </select>
+      </label>
+      <p style={{ "--system-color": visual.color } as CSSProperties}>
+        <span aria-hidden />
+        {visual.shortName} <ArrowRight aria-hidden /> {scaleSubject(state.scale, system)}
+      </p>
+    </div>
   );
 }
 
@@ -243,7 +391,7 @@ function StageHeading({ state, system }: { state: SomaState; system: SomaSystem 
 
   if (state.scale === "tissue") {
     return {
-      title: system.histology.tissues[0] ?? "Functional tissue unit",
+      title: visual.tissueName,
       latin: "microarchitectura repraesentativa",
       summary:
         state.lens === "histology"
@@ -298,6 +446,7 @@ function Inspector({
 }) {
   const heading = StageHeading({ state, system });
   const currentIndex = scaleOrder.indexOf(state.scale);
+  const previousScale = scaleOrder[currentIndex - 1];
   const nextScale = scaleOrder[currentIndex + 1];
   const linkedDiseases = useMemo(
     () =>
@@ -308,22 +457,21 @@ function Inspector({
   );
 
   return (
-    <aside className="soma-inspector" aria-live="polite">
+    <aside className="soma-inspector" aria-labelledby="soma-inspector-title">
       <div className="soma-inspector-path">
-        <span>{system.name.replace(/ System| & Lymphatic System/, "")}</span>
+        <span>{state.scale === "organism" ? "Human" : system.name.replace(/ System| & Lymphatic System/, "")}</span>
         <span aria-hidden>/</span>
         <span>{somaScaleStages[currentIndex]?.name}</span>
       </div>
-      <h2>{heading.title}</h2>
+      <h2 id="soma-inspector-title">{heading.title}</h2>
       <p className="soma-inspector-latin">{heading.latin}</p>
 
-      <div className="soma-lens-tabs" role="tablist" aria-label="Disciplinary lens">
+      <div className="soma-lens-tabs" role="group" aria-label="Disciplinary lens">
         {somaLenses.map((lens) => (
           <button
             key={lens.id}
             type="button"
-            role="tab"
-            aria-selected={state.lens === lens.id}
+            aria-pressed={state.lens === lens.id}
             onClick={() => onLensChange(lens.id)}
           >
             {lens.name}
@@ -342,16 +490,30 @@ function Inspector({
         </ul>
       </div>
 
-      {nextScale ? (
-        <button
-          type="button"
-          className="soma-enter-scale"
-          onClick={() => onScaleChange(nextScale)}
-        >
-          Enter {somaScaleStages[currentIndex + 1]?.name.toLowerCase()}
-          <span aria-hidden>→</span>
-        </button>
-      ) : null}
+      <div className="soma-scale-actions" role="group" aria-label="Move through biological scale">
+        {previousScale ? (
+          <button
+            type="button"
+            className="soma-scale-action"
+            data-direction="out"
+            onClick={() => onScaleChange(previousScale)}
+          >
+            <ArrowLeft aria-hidden />
+            <span>Back to {somaScaleStages[currentIndex - 1]?.name.toLowerCase()}</span>
+          </button>
+        ) : <span aria-hidden />}
+        {nextScale ? (
+          <button
+            type="button"
+            className="soma-scale-action"
+            data-direction="in"
+            onClick={() => onScaleChange(nextScale)}
+          >
+            <span>Enter {somaScaleStages[currentIndex + 1]?.name.toLowerCase()}</span>
+            <ArrowRight aria-hidden />
+          </button>
+        ) : null}
+      </div>
 
       <div className="soma-morbus-link">
         <Link href="/platforms/persona/salus/soma/morbus">
@@ -394,7 +556,7 @@ function Inspector({
 
 function ControlButton({
   label,
-  active = false,
+  active,
   onClick,
   children,
 }: {
@@ -407,7 +569,7 @@ function ControlButton({
     <button
       type="button"
       className="soma-canvas-control"
-      aria-pressed={active}
+      aria-pressed={typeof active === "boolean" ? active : undefined}
       onClick={onClick}
     >
       {children}
@@ -420,9 +582,10 @@ export function SomaExperience() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const { theme } = useTheme();
   const reducedMotion = useReducedMotion();
-  const wheelLock = useRef(0);
   const system = somaSystems.find((item) => item.id === state.systemId) ?? somaSystems[1];
   const activeScaleIndex = scaleOrder.indexOf(state.scale);
+  const bodyStage = state.scale === "organism" || state.scale === "system";
+  const microscopicStage = activeScaleIndex >= scaleOrder.indexOf("tissue");
 
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -431,17 +594,19 @@ export function SomaExperience() {
     const requestedScale = url.searchParams.get("scale");
     const requestedLens = url.searchParams.get("lens");
     const requestedMode = url.searchParams.get("mode");
+    const hydratedScale = requestedScale && scaleIds.has(requestedScale as SomaScaleId)
+      ? requestedScale as SomaScaleId
+      : initialState.scale;
+    const hydratedBodyStage = hydratedScale === "organism" || hydratedScale === "system";
     dispatch({
       type: "hydrate",
       state: {
         systemId: requestedSystem && systemIds.has(requestedSystem) ? requestedSystem : initialState.systemId,
-        scale: requestedScale && scaleIds.has(requestedScale as SomaScaleId)
-          ? requestedScale as SomaScaleId
-          : initialState.scale,
+        scale: hydratedScale,
         lens: requestedLens && lensIds.has(requestedLens as SomaLensId)
           ? requestedLens as SomaLensId
           : initialState.lens,
-        mode: requestedMode && modeIds.has(requestedMode as SomaViewMode)
+        mode: hydratedBodyStage && requestedMode && modeIds.has(requestedMode as SomaViewMode)
           ? requestedMode as SomaViewMode
           : initialState.mode,
       },
@@ -468,54 +633,27 @@ export function SomaExperience() {
     dispatch({ type: "select-scale", scale });
   }, []);
 
-  const moveScale = useCallback((direction: -1 | 1) => {
-    const nextIndex = Math.min(scaleOrder.length - 1, Math.max(0, activeScaleIndex + direction));
-    const nextScale = scaleOrder[nextIndex];
-    if (nextScale && nextScale !== state.scale) {
-      dispatch({ type: "select-scale", scale: nextScale });
-    }
-  }, [activeScaleIndex, state.scale]);
-
-  const handleWheel = (event: WheelEvent<HTMLDivElement>) => {
-    if (
-      window.innerWidth <= 760 ||
-      window.matchMedia("(pointer: coarse)").matches ||
-      Math.abs(event.deltaY) < 24
-    ) return;
-    const now = Date.now();
-    if (now < wheelLock.current) return;
-    wheelLock.current = now + 560;
-    moveScale(event.deltaY > 0 ? 1 : -1);
-  };
-
-  const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
-    if (event.key === "ArrowDown" || event.key === "+" || event.key === "=") {
-      event.preventDefault();
-      moveScale(1);
-    } else if (event.key === "ArrowUp" || event.key === "-") {
-      event.preventDefault();
-      moveScale(-1);
-    } else if (event.key === "Escape") {
-      dispatch({ type: "reset-view" });
-    }
-  };
-
   return (
     <section
       className="soma-experience"
       data-theme={theme}
       data-testid="soma-experience"
       aria-label="Soma multiscale human body explorer"
-      onKeyDown={handleKeyDown}
     >
-      <header className="soma-experience-title">
-        <h1>Soma</h1>
-        <p>The living body, across every scale.</p>
-      </header>
+      <AtlasNavigator
+        state={state}
+        system={system}
+        onSelectScale={selectScale}
+        onSelectSystem={selectSystem}
+      />
+      <MobileAtlasNavigator
+        state={state}
+        system={system}
+        onSelectScale={selectScale}
+        onSelectSystem={selectSystem}
+      />
 
-      <ScaleRail activeScale={state.scale} onSelect={selectScale} />
-
-      <div className="soma-stage" onWheel={handleWheel}>
+      <div className="soma-stage">
         <div className="soma-stage-grid" aria-hidden />
         {state.hydrated ? (
           <SomaAtlasCanvas
@@ -537,7 +675,7 @@ export function SomaExperience() {
           </div>
         )}
 
-        <div className="soma-canvas-controls" aria-label="3D view controls">
+        <div className="soma-canvas-controls" role="group" aria-label="3D view controls">
           <ControlButton
             label="Rotate"
             active={state.autoRotate}
@@ -545,45 +683,49 @@ export function SomaExperience() {
           >
             <RotateCw aria-hidden />
           </ControlButton>
-          <ControlButton
-            label="Isolate"
-            active={state.mode === "isolate"}
-            onClick={() => dispatch({ type: "toggle-mode", mode: "isolate" })}
-          >
-            <BetweenVerticalStart aria-hidden />
-          </ControlButton>
-          <ControlButton
-            label="Explode"
-            active={state.mode === "explode"}
-            onClick={() => dispatch({ type: "toggle-mode", mode: "explode" })}
-          >
-            <Layers3 aria-hidden />
-          </ControlButton>
-          <ControlButton
-            label="X-ray"
-            active={state.mode === "xray"}
-            onClick={() => dispatch({ type: "toggle-mode", mode: "xray" })}
-          >
-            <ScanLine aria-hidden />
-          </ControlButton>
-          <ControlButton
-            label="Labels"
-            active={state.labels}
-            onClick={() => dispatch({ type: "toggle-labels" })}
-          >
-            <Tags aria-hidden />
-          </ControlButton>
+          {bodyStage ? (
+            <>
+              <ControlButton
+                label="Isolate"
+                active={state.mode === "isolate"}
+                onClick={() => dispatch({ type: "toggle-mode", mode: "isolate" })}
+              >
+                <BetweenVerticalStart aria-hidden />
+              </ControlButton>
+              <ControlButton
+                label="Explode"
+                active={state.mode === "explode"}
+                onClick={() => dispatch({ type: "toggle-mode", mode: "explode" })}
+              >
+                <Layers3 aria-hidden />
+              </ControlButton>
+              <ControlButton
+                label="X-ray"
+                active={state.mode === "xray"}
+                onClick={() => dispatch({ type: "toggle-mode", mode: "xray" })}
+              >
+                <ScanLine aria-hidden />
+              </ControlButton>
+            </>
+          ) : null}
+          {bodyStage || microscopicStage ? (
+            <ControlButton
+              label="Labels"
+              active={state.labels}
+              onClick={() => dispatch({ type: "toggle-labels" })}
+            >
+              <Tags aria-hidden />
+            </ControlButton>
+          ) : null}
           <ControlButton label="Reset" onClick={() => dispatch({ type: "reset-view" })}>
             <RotateCcw aria-hidden />
           </ControlButton>
         </div>
 
         <p className="soma-stage-instructions">
-          Drag to rotate <span aria-hidden>·</span> Scroll to travel through scale
+          Drag to rotate <span aria-hidden>·</span> Choose a scale to zoom
         </p>
       </div>
-
-      <SystemRail selectedId={state.systemId} onSelect={selectSystem} />
 
       <Inspector
         state={state}

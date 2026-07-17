@@ -15,6 +15,7 @@ import bpy
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_PATH = PROJECT_ROOT / "public" / "models" / "soma-anatomy.glb"
+FINAL_SIMPLIFY_RATIO = 0.3
 
 SOURCE_COLLECTIONS = (
     "4: Muscular system",
@@ -241,6 +242,10 @@ def export(objects: list[bpy.types.Object]) -> None:
         export_lights=False,
         export_animations=False,
         export_yup=True,
+        export_use_gltfpack=True,
+        export_gltfpack_si=FINAL_SIMPLIFY_RATIO,
+        export_gltfpack_sa=True,
+        export_gltfpack_kn=True,
     )
 
     print(f"Exported {len(objects)} anatomical objects to {OUTPUT_PATH}")

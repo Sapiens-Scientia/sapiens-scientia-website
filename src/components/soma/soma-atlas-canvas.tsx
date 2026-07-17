@@ -14,7 +14,15 @@ import {
   useFrame,
   useThree,
 } from "@react-three/fiber";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Component,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import type { SomaLensId, SomaScaleId } from "@/lib/soma";
@@ -25,6 +33,11 @@ import {
   somaSystemVisuals,
   type VectorTuple,
 } from "@/components/soma/soma-scene-data";
+import {
+  CellWorld as DetailCellWorld,
+  OrganWorld,
+  TissueWorld as DetailTissueWorld,
+} from "@/components/soma/soma-detail-worlds";
 
 const anatomyModelPath = "/models/soma-anatomy.glb";
 const SOMA_DPR: [number, number] = [0.9, 1.15];
@@ -62,6 +75,25 @@ type MaterialProps = {
   active?: boolean;
   wireframe?: boolean;
 };
+
+class SomaCanvasErrorBoundary extends Component<
+  { children: ReactNode; onFailure: () => void },
+  { failed: boolean }
+> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch() {
+    this.props.onFailure();
+  }
+
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
 
 const CARDIO_LINES: VectorTuple[][] = [
   [[0.045, 0.32, 0.16], [0.02, 0.5, 0.12], [0, 0.66, 0.08]],
@@ -126,7 +158,7 @@ function Ellipsoid({
 }) {
   return (
     <mesh position={position} scale={scale} rotation={rotation}>
-      <sphereGeometry args={[1, 24, 18]} />
+      <sphereGeometry args={[1, 32, 24]} />
       <AtlasMaterial color={color} opacity={opacity} active={active} />
     </mesh>
   );
@@ -146,7 +178,7 @@ function Tube({
 
   return (
     <mesh>
-      <tubeGeometry args={[curve, 24, radius, 7, false]} />
+      <tubeGeometry args={[curve, 32, radius, 8, false]} />
       <AtlasMaterial color={color} opacity={opacity} active={active} />
     </mesh>
   );
@@ -174,7 +206,7 @@ function BoneBetween({ start, end, radius, opacity }: {
 
   return (
     <mesh position={midpoint} quaternion={quaternion}>
-      <cylinderGeometry args={[radius, radius * 0.82, length, 8]} />
+      <cylinderGeometry args={[radius, radius * 0.82, length, 12]} />
       <AtlasMaterial color="#e4d7c5" opacity={opacity} />
     </mesh>
   );
@@ -196,8 +228,8 @@ function ModelLabel({ systemId }: { systemId: string }) {
 function MicroLabel({ scale, systemId }: { scale: SomaScaleId; systemId: string }) {
   const visual = somaSystemVisualById.get(systemId) ?? somaSystemVisuals[0];
   const content: Partial<Record<SomaScaleId, string>> = {
-    tissue: `${visual.shortName} tissue · 1 mm`,
-    cell: `${visual.cellName} · 12 µm`,
+    tissue: `${visual.tissueName} · ${visual.tissueMeasure}`,
+    cell: `${visual.cellName} · ${visual.cellMeasure}`,
     organelle: "Mitochondrion · 2 µm",
     molecule: "ATP synthase · 10 nm",
   };
@@ -258,6 +290,7 @@ function ContextAnatomy({ opacity, selected }: { opacity: number; selected: bool
       if (!(object instanceof THREE.Mesh)) return;
       const materials = Array.isArray(object.material) ? object.material : [object.material];
       for (const material of materials) material.dispose();
+      object.geometry.dispose();
     });
   }, [model]);
 
@@ -279,8 +312,11 @@ function NervousLayer({ selected, opacity, lens }: SystemLayerProps) {
   const visual = somaSystemVisualById.get("nervous") ?? somaSystemVisuals[0];
   return (
     <>
-      <Ellipsoid position={[-0.032, 0.67, 0.025]} scale={[0.105, 0.09, 0.085]} color={visual.color} opacity={opacity} active={selected} />
-      <Ellipsoid position={[0.052, 0.67, 0.02]} scale={[0.095, 0.088, 0.08]} color={visual.color} opacity={opacity} active={selected} />
+      <Ellipsoid position={[-0.035, 0.695, 0.025]} scale={[0.045, 0.042, 0.05]} color={visual.color} opacity={opacity} active={selected} />
+      <Ellipsoid position={[0.035, 0.695, 0.025]} scale={[0.045, 0.042, 0.05]} color={visual.color} opacity={opacity} active={selected} />
+      <Ellipsoid position={[-0.038, 0.648, 0.025]} scale={[0.047, 0.044, 0.05]} color={visual.color} opacity={opacity} active={selected} />
+      <Ellipsoid position={[0.038, 0.648, 0.025]} scale={[0.047, 0.044, 0.05]} color={visual.color} opacity={opacity} active={selected} />
+      <Ellipsoid position={[0, 0.623, -0.025]} scale={[0.052, 0.03, 0.043]} color={visual.secondaryColor} opacity={opacity * 0.9} active={selected} />
       <Tube points={NERVE_LINES[0]} radius={0.012} color={visual.color} opacity={opacity} active={selected} />
       {NERVE_LINES.slice(1).map((points, index) => (
         <Line key={index} points={points} color={visual.color} transparent opacity={opacity * 0.86} lineWidth={selected ? 1.15 : 0.65} />
@@ -547,7 +583,7 @@ function XrayBodyContext() {
 
 function BodyWorld(props: WorldProps) {
   const { systemId, scale, lens, mode, labels, onSelectSystem } = props;
-  const shellOpacity = mode === "xray" ? 0.08 : scale === "organ" ? 0.14 : 0.27;
+  const shellOpacity = mode === "xray" ? 0.08 : 0.27;
   return (
     <group scale={1.75} rotation={[0, -0.075, 0]}>
       {mode === "xray" ? (
@@ -570,56 +606,6 @@ function BodyWorld(props: WorldProps) {
     </group>
   );
 }
-
-function TissueWorld({ systemId, onScaleChange }: Pick<WorldProps, "systemId" | "onScaleChange">) {
-  const visual = somaSystemVisualById.get(systemId) ?? somaSystemVisuals[0];
-  const cells = useMemo(() => {
-    const positions: Array<[number, number, number]> = [];
-    for (let row = -3; row <= 3; row += 1) {
-      for (let column = -4; column <= 4; column += 1) {
-        positions.push([column * 0.42 + (row % 2) * 0.21, row * 0.34, Math.sin(column * 1.7 + row) * 0.08]);
-      }
-    }
-    return positions;
-  }, []);
-  return (
-    <group rotation={[-0.18, 0.12, 0.03]}>
-      {cells.map((position, index) => {
-        const central = index === Math.floor(cells.length / 2);
-        return (
-          <mesh
-            key={index}
-            position={position}
-            scale={central ? 1.15 : 1}
-            onClick={central ? (event) => { event.stopPropagation(); onScaleChange("cell"); } : undefined}
-          >
-            <sphereGeometry args={[0.23, 18, 14]} />
-            <meshPhysicalMaterial
-              color={central ? visual.color : "#76515c"}
-              transparent
-              opacity={central ? 0.74 : 0.34}
-              roughness={0.38}
-              transmission={0.08}
-              emissive={central ? visual.color : "#000000"}
-              emissiveIntensity={central ? 0.12 : 0}
-            />
-          </mesh>
-        );
-      })}
-      <mesh position={[0, 0, -0.16]}>
-        <planeGeometry args={[4.7, 3.1, 1, 1]} />
-        <meshStandardMaterial color="#2a1119" transparent opacity={0.24} side={THREE.DoubleSide} />
-      </mesh>
-    </group>
-  );
-}
-
-const MITOCHONDRIA: Array<{ position: VectorTuple; rotation: VectorTuple; scale: number }> = [
-  { position: [1.1, -0.45, 0.5], rotation: [0.4, 0.2, -0.6], scale: 0.72 },
-  { position: [-1.1, 0.62, 0.2], rotation: [-0.2, 0.6, 0.2], scale: 0.48 },
-  { position: [0.8, 0.82, -0.42], rotation: [0.2, -0.4, 0.8], scale: 0.42 },
-  { position: [-0.9, -0.75, -0.2], rotation: [0.5, 0.1, -0.4], scale: 0.38 },
-];
 
 function Mitochondrion({
   position,
@@ -651,66 +637,6 @@ function Mitochondrion({
         <mesh key={offset} position={[offset, 0, 0.38]} rotation={[Math.PI / 2, 0, 0]} scale={[0.62, 0.36, 0.5]}>
           <torusGeometry args={[0.34, 0.055, 6, 16, Math.PI * 1.3]} />
           <meshStandardMaterial color="#ffd0bd" transparent opacity={active ? 0.92 : 0.5} emissive="#ff6e62" emissiveIntensity={0.08} />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
-function CellWorld({ systemId, onScaleChange }: Pick<WorldProps, "systemId" | "onScaleChange">) {
-  const visual = somaSystemVisualById.get(systemId) ?? somaSystemVisuals[0];
-  const erPoints = useMemo(() => [
-    [-0.4, 0.8, 0.2], [0.1, 1.0, 0.15], [0.55, 0.6, 0.05], [0.2, 0.25, 0.1], [-0.55, 0.35, 0.18],
-  ] as VectorTuple[], []);
-  const ribosomes = useMemo(
-    () => Array.from({ length: 34 }, (_, index) => {
-      const angle = index * 2.399;
-      const radius = 0.55 + (index % 7) * 0.16;
-      return [Math.cos(angle) * radius, Math.sin(angle) * radius, ((index % 5) - 2) * 0.18] as VectorTuple;
-    }),
-    [],
-  );
-  return (
-    <group scale={0.7}>
-      <mesh renderOrder={-5}>
-        <sphereGeometry args={[2.05, 48, 32]} />
-        <meshPhysicalMaterial
-          color="#8f7585"
-          transparent
-          opacity={0.1}
-          side={THREE.DoubleSide}
-          roughness={0.18}
-          transmission={0.12}
-          depthWrite={false}
-        />
-      </mesh>
-      <mesh position={[-0.32, 0.12, 0]} scale={[1.04, 0.92, 0.92]}>
-        <sphereGeometry args={[0.84, 32, 24]} />
-        <meshPhysicalMaterial color="#6f6198" transparent opacity={0.66} roughness={0.42} emissive="#38295c" emissiveIntensity={0.08} />
-      </mesh>
-      <mesh position={[-0.32, 0.12, 0.74]}>
-        <sphereGeometry args={[0.21, 18, 14]} />
-        <meshStandardMaterial color="#c3afe5" transparent opacity={0.66} />
-      </mesh>
-      <Tube points={erPoints} radius={0.055} color="#6e88b0" opacity={0.62} />
-      {MITOCHONDRIA.map((mitochondrion, index) => (
-        <Mitochondrion
-          key={index}
-          {...mitochondrion}
-          active={index === 0}
-          onClick={index === 0 ? (event) => { event.stopPropagation(); onScaleChange("organelle"); } : undefined}
-        />
-      ))}
-      {[0, 1, 2, 3].map((index) => (
-        <mesh key={index} position={[0.72 + index * 0.11, 0.35 - index * 0.04, 0.58]} rotation={[0.2, 0.2, -0.5]}>
-          <torusGeometry args={[0.58, 0.045, 6, 20, Math.PI * 1.25]} />
-          <meshStandardMaterial color="#c98484" emissive="#742c30" emissiveIntensity={0.08} />
-        </mesh>
-      ))}
-      {ribosomes.map((position, index) => (
-        <mesh key={index} position={position}>
-          <sphereGeometry args={[0.025, 7, 6]} />
-          <meshBasicMaterial color={index % 4 === 0 ? visual.color : "#ddad75"} />
         </mesh>
       ))}
     </group>
@@ -791,13 +717,12 @@ function CameraRig({
   useEffect(() => {
     const controls = controlsRef.current;
     if (!controls) return;
-    const visual = somaSystemVisualById.get(systemId) ?? somaSystemVisuals[0];
     fromPosition.current.copy(camera.position);
     fromTarget.current.copy(controls.target);
 
     if (scale === "organ") {
-      toTarget.current.set(visual.focus[0] * 1.75, visual.focus[1] * 1.75, visual.focus[2] * 1.75);
-      toPosition.current.set(visual.camera[0] * 1.75, visual.camera[1] * 1.75, visual.camera[2]);
+      toTarget.current.set(0, 0, 0);
+      toPosition.current.set(0, 0, 7.3);
     } else if (scale === "organism") {
       toTarget.current.set(0, 0, 0);
       toPosition.current.set(0, 0.04, 7.2);
@@ -806,10 +731,10 @@ function CameraRig({
       toPosition.current.set(0, 0.06, 6.8);
     } else if (scale === "tissue") {
       toTarget.current.set(0, 0, 0);
-      toPosition.current.set(0, 0, 6.2);
+      toPosition.current.set(0, 0, 7.5);
     } else if (scale === "cell") {
       toTarget.current.set(0, 0, 0);
-      toPosition.current.set(0, 0, 7.2);
+      toPosition.current.set(0, 0, 9.4);
     } else if (scale === "organelle") {
       toTarget.current.set(0, 0, 0);
       toPosition.current.set(0, 0, 6.8);
@@ -861,15 +786,16 @@ function AtlasWorld(props: SomaAtlasCanvasProps) {
     <>
       <CameraRig controlsRef={controlsRef} systemId={props.systemId} scale={props.scale} reducedMotion={props.reducedMotion} />
       <ContinuousRender active={props.autoRotate && !props.reducedMotion} />
-      <ambientLight intensity={0.5} />
-      <hemisphereLight args={["#dbeafe", "#2b0d14", 0.72]} />
-      <directionalLight position={[4, 5, 6]} intensity={1.65} color="#fff4ec" />
-      <directionalLight position={[-4, 1, 2]} intensity={0.72} color="#d97f93" />
+      <ambientLight intensity={micro ? 0.82 : 0.5} />
+      <hemisphereLight args={["#dbeafe", "#2b0d14", micro ? 1.02 : 0.72]} />
+      <directionalLight position={[4, 5, 6]} intensity={micro ? 1.95 : 1.65} color="#fff4ec" />
+      <directionalLight position={[-4, 1, 2]} intensity={micro ? 1.05 : 0.72} color="#d97f93" />
       <pointLight position={[0, -2, 3]} intensity={0.38} color="#45c7df" />
       <group>
-        {props.scale === "organism" || props.scale === "system" || props.scale === "organ" ? <BodyWorld {...props} /> : null}
-        {props.scale === "tissue" ? <TissueWorld {...props} /> : null}
-        {props.scale === "cell" ? <CellWorld {...props} /> : null}
+        {props.scale === "organism" || props.scale === "system" ? <BodyWorld {...props} /> : null}
+        {props.scale === "organ" ? <OrganWorld systemId={props.systemId} onScaleChange={props.onScaleChange} /> : null}
+        {props.scale === "tissue" ? <DetailTissueWorld systemId={props.systemId} onScaleChange={props.onScaleChange} /> : null}
+        {props.scale === "cell" ? <DetailCellWorld systemId={props.systemId} onScaleChange={props.onScaleChange} /> : null}
         {props.scale === "organelle" ? <OrganelleWorld {...props} /> : null}
         {props.scale === "molecule" ? <MoleculeWorld /> : null}
         {props.labels && micro ? <MicroLabel scale={props.scale} systemId={props.systemId} /> : null}
@@ -893,6 +819,7 @@ function AtlasWorld(props: SomaAtlasCanvasProps) {
 
 export default function SomaAtlasCanvas(props: SomaAtlasCanvasProps) {
   const background = props.theme === "light" ? "#eee9e4" : "#000000";
+  const detailWorld = props.scale !== "organism" && props.scale !== "system";
   const [canvasEpoch, setCanvasEpoch] = useState(0);
   const [canvasHealth, setCanvasHealth] = useState<"ready" | "recovering">("ready");
   const recoveryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -909,6 +836,12 @@ export default function SomaAtlasCanvas(props: SomaAtlasCanvasProps) {
     detachCanvasListeners.current();
     setCanvasEpoch((current) => current + 1);
   }, [clearRecoveryTimer]);
+
+  const handleCanvasFailure = useCallback(() => {
+    setCanvasHealth("recovering");
+    clearRecoveryTimer();
+    recoveryTimer.current = setTimeout(restartCanvas, 1200);
+  }, [clearRecoveryTimer, restartCanvas]);
 
   const handleCreated = useCallback((state: RootState) => {
     detachCanvasListeners.current();
@@ -949,21 +882,28 @@ export default function SomaAtlasCanvas(props: SomaAtlasCanvasProps) {
     detachCanvasListeners.current();
   }, [clearRecoveryTimer]);
 
+  useEffect(() => {
+    if (props.scale === "organism" || props.scale === "system") {
+      useGLTF.preload(anatomyModelPath, false, true);
+    }
+  }, [props.scale]);
+
   return (
     <div className="soma-canvas" data-canvas-health={canvasHealth}>
       <div className="soma-canvas-webgl" aria-hidden="true">
-        <Canvas
-          key={canvasEpoch}
-          dpr={SOMA_DPR}
-          frameloop="demand"
-          camera={SOMA_CAMERA}
-          gl={SOMA_GL}
-          onCreated={handleCreated}
-        >
-          <color attach="background" args={[background]} />
-          <fog attach="fog" args={[background, 5.5, 10]} />
-          <AtlasWorld {...props} />
-        </Canvas>
+        <SomaCanvasErrorBoundary key={canvasEpoch} onFailure={handleCanvasFailure}>
+          <Canvas
+            dpr={SOMA_DPR}
+            frameloop="demand"
+            camera={SOMA_CAMERA}
+            gl={SOMA_GL}
+            onCreated={handleCreated}
+          >
+            <color attach="background" args={[background]} />
+            <fog attach="fog" args={[background, detailWorld ? 10 : 5.5, detailWorld ? 18 : 10]} />
+            <AtlasWorld {...props} />
+          </Canvas>
+        </SomaCanvasErrorBoundary>
       </div>
       {canvasHealth === "recovering" ? (
         <div className="soma-canvas-recovery" role="status" aria-live="polite">
@@ -975,5 +915,3 @@ export default function SomaAtlasCanvas(props: SomaAtlasCanvasProps) {
     </div>
   );
 }
-
-useGLTF.preload(anatomyModelPath, false, true);

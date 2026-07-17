@@ -82,10 +82,19 @@ If the implementation reveals a conceptual mismatch or durable constraint, updat
   in `public/models/README.md`. Regenerate it from a downloaded Z-Anatomy
   `Startup.blend` with `scripts/build-soma-anatomy.py`; Blender is required only
   for that asset-build step, not at website runtime. Its meshes are used as a
-  detailed body context, while selectable system structures and the tissue,
-  cell, organelle, and molecule stages are lightweight procedural geometry.
-  The GLB expands to roughly 1.6 million triangles and is unsafe as a continuously
-  rendered, double-sided transparent surface in embedded Chromium. Keep the
+  detailed body context, while selectable system structures and the organ,
+  tissue, cell, organelle, and molecule stages are lightweight procedural
+  geometry. The dense GLB is intentionally loaded only at organism and system
+  scales; direct links to deeper scales must not pay its GPU or network cost.
+  `soma-detail-worlds.tsx` is the registry for system-specific organ, tissue,
+  and cell morphology. Preserve that differentiation when adding systems, and
+  prefer instanced repeated structures plus standard materials for microscopic
+  scenes. Detail-scene fog distances are deliberately farther than body-scene
+  fog because their cameras sit outside the body camera range.
+  The current runtime LOD expands to roughly 482,000 triangles (down from an
+  earlier 1.6-million-triangle export) and about 9.3 MB of mesh data on the GPU.
+  Even this asset should not be continuously rendered as a double-sided
+  transparent surface in embedded Chromium. Keep the
   current demand render loop, front-side/single-pass material override, capped
   DPR, material cleanup, and WebGL context recovery. Do not restore
   `preserveDrawingBuffer`; X-ray deliberately substitutes a procedural shell.
