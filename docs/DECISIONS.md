@@ -106,3 +106,19 @@ The halo (a separate Saturn-like data ring beside the planet) was a weak metapho
 ## Rename the journey to The History of the Universe
 
 The homepage journey (formerly "You Are Here") is now titled "The History of the Universe"; the file and export keep the original `you-are-here` slug. "You Are Here" survives as the name of the journey's final frame: Meta Earth's top-left links go back to the journey's start ("The History of the Universe" → `/`) and directly to its finale ("You Are Here" → `/#end`, which the journey honors by opening on its last frame).
+
+## Treat Soma as one staged multiscale atlas
+
+Soma is one integrated exploratory surface from organism through molecule. A
+single state model synchronizes its anatomical scene, scale rail, system index,
+scientific lens, inspector, and shareable URL. The experience uses staged,
+representative worlds at organism, system, organ, tissue, cell, organelle, and
+molecule scales rather than implying that a literal camera zoom can faithfully
+span those orders of magnitude.
+
+The detailed Z-Anatomy derivative remains the body-context asset. Selectable
+organ systems and microscopic structures are semantic procedural layers, which
+keeps interaction, highlighting, and mobile performance independent from the
+source model's flattened mesh hierarchy. The canonical taxonomy remains ten
+integrated groups, including combined immune/lymphatic and musculoskeletal
+groups.

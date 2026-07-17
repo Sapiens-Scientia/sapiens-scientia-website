@@ -114,6 +114,38 @@ into this website rather than embedding the separate app in an iframe.
 - Runtime textures are copied into `public/earth-blue-marble-5400x2700.jpg` and
   `public/assets/milky-way.jpg`.
 
+## Soma Multiscale Atlas
+
+`/platforms/persona/salus/soma` is a single client-owned atlas experience rather
+than a sequence of disconnected page sections.
+
+- `src/components/soma/soma-experience.tsx` owns the selected scale, body
+  system, lens, scene mode, labels, and motion state. It synchronizes the
+  shareable selection to URL query parameters and supplies the complete DOM
+  alternative to the decorative canvas.
+- `src/components/soma/soma-atlas-canvas.tsx` renders staged Three.js worlds for
+  organism, system, organ, tissue, cell, organelle, and molecule scales. These
+  are pedagogical scene transitions, not a claim that one literal model spans
+  every physical order of magnitude.
+- `src/components/soma/soma-scene-data.ts` maps each of the ten integrated
+  system groups to its visual color, representative structures, camera target,
+  and representative cell.
+- `public/models/soma-anatomy.glb` supplies the detailed anatomical silhouette;
+  semantic system layers and microscopic worlds are procedural so they remain
+  selectable and performant. Keep the attribution in `public/models/README.md`.
+- The source shell expands to roughly 1.6 million triangles. The canvas therefore
+  renders on demand at a capped DPR, forces cloned shell materials to a single
+  front-side pass, and never enables `preserveDrawingBuffer`. X-ray uses the
+  lightweight procedural body context instead of the dense GLB. Preserve the
+  context-loss recovery overlay and explicit cloned-material disposal when
+  changing the scene lifecycle.
+- `src/app/soma.css` contains the scoped responsive and light/dark presentation.
+  It is imported once by the root layout.
+
+Treat the URL, inspector, scale rail, and canvas as views of the same state.
+When changing one of them, verify the others and run an in-browser desktop and
+mobile pass; a successful production build cannot detect a blank WebGL scene.
+
 ## Shared Page System
 
 `src/components/page-kit.tsx` provides shared pieces for content-heavy pages:

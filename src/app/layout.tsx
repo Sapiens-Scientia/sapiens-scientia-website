@@ -4,6 +4,7 @@ import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import "./earthview.css";
 import "./big-bang-universe.css";
+import "./soma.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.sapiensscientia.com"),

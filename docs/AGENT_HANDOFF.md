@@ -70,11 +70,25 @@ If the implementation reveals a conceptual mismatch or durable constraint, updat
 - `src/lib/vital-signs.ts` feeds both `/vitals` and Meta Earth vital-sign overlays.
 - `src/lib/data-index.ts` feeds `/projects/sapiens-scientia-data-index` and the Digital Halo/data index surfaces.
 - `src/lib/soma.ts` feeds `/platforms/persona/salus/soma` and the Soma section on `/platforms/persona/salus`.
-- The Soma hero uses `public/models/soma-anatomy.glb`, a Meshopt-compressed
+- The Soma route is one stateful multiscale atlas owned by
+  `src/components/soma/soma-experience.tsx`; its WebGL stage lives in
+  `soma-atlas-canvas.tsx`, its semantic visual mapping in
+  `soma-scene-data.ts`, and its responsive presentation in `src/app/soma.css`.
+  Scale, system, lens, and scene mode are shareable URL parameters. Preserve a
+  complete keyboard-operable DOM representation; the canvas is intentionally
+  hidden from assistive technology.
+- The atlas uses `public/models/soma-anatomy.glb`, a Meshopt-compressed
   derivative of the CC BY-SA Z-Anatomy atlas. Attribution and license details are
   in `public/models/README.md`. Regenerate it from a downloaded Z-Anatomy
   `Startup.blend` with `scripts/build-soma-anatomy.py`; Blender is required only
-  for that asset-build step, not at website runtime.
+  for that asset-build step, not at website runtime. Its meshes are used as a
+  detailed body context, while selectable system structures and the tissue,
+  cell, organelle, and molecule stages are lightweight procedural geometry.
+  The GLB expands to roughly 1.6 million triangles and is unsafe as a continuously
+  rendered, double-sided transparent surface in embedded Chromium. Keep the
+  current demand render loop, front-side/single-pass material override, capped
+  DPR, material cleanup, and WebGL context recovery. Do not restore
+  `preserveDrawingBuffer`; X-ray deliberately substitutes a procedural shell.
 - The Salus global-health section uses the WorldPop Global 2 graphic at
   `public/images/salus/worldpop-population-2025.webp`. It depicts estimated 2025
   residential population in 100 × 100 metre cells; keep the visible source link

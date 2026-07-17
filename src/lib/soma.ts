@@ -53,12 +53,84 @@ export type SomaLevel = {
   detail: string;
 };
 
+export type SomaScaleId =
+  | "organism"
+  | "system"
+  | "organ"
+  | "tissue"
+  | "cell"
+  | "organelle"
+  | "molecule";
+
+export type SomaScaleStage = {
+  id: SomaScaleId;
+  name: string;
+  scale: string;
+  shortScale: string;
+  description: string;
+};
+
+// These are normalized scene stages, not one literal camera distance. Each
+// world is rendered at a stable WebGL scale while the labels keep the physical
+// order of magnitude explicit.
+export const somaScaleStages: SomaScaleStage[] = [
+  {
+    id: "organism",
+    name: "Organism",
+    scale: "1.7 m",
+    shortScale: "metres",
+    description: "Many systems coordinated as one living body.",
+  },
+  {
+    id: "system",
+    name: "System",
+    scale: "10–100 cm",
+    shortScale: "decimetres",
+    description: "A functional network that crosses organs and regions.",
+  },
+  {
+    id: "organ",
+    name: "Organ",
+    scale: "1–30 cm",
+    shortScale: "centimetres",
+    description: "Several tissue types working as one structure.",
+  },
+  {
+    id: "tissue",
+    name: "Tissue",
+    scale: "100 µm–1 mm",
+    shortScale: "millimetres",
+    description: "Repeated microarchitecture where organ function happens.",
+  },
+  {
+    id: "cell",
+    name: "Cell",
+    scale: "10–100 µm",
+    shortScale: "micrometres",
+    description: "A living unit shaped by its neighbors, location, and state.",
+  },
+  {
+    id: "organelle",
+    name: "Organelle",
+    scale: "0.5–10 µm",
+    shortScale: "micrometres",
+    description: "Specialized cellular machinery for energy, synthesis, and transport.",
+  },
+  {
+    id: "molecule",
+    name: "Molecule",
+    scale: "1–10 nm",
+    shortScale: "nanometres",
+    description: "Proteins, lipids, nucleic acids, ions, and metabolites in motion.",
+  },
+];
+
 export const somaLevels: SomaLevel[] = [
   { level: "Chemical", scale: "atoms · molecules", detail: "Atoms bond into the biomolecules — water, ions, proteins, lipids, nucleic acids — that make life chemically possible." },
   { level: "Cellular", scale: "~10 µm", detail: "The cell is the smallest living unit; ~200 specialized human cell types arise from one genome." },
   { level: "Tissue", scale: "epithelial · connective · muscle · nervous", detail: "Groups of like cells and their matrix cooperate as one of the four primary tissues." },
   { level: "Organ", scale: "heart · kidney · skin", detail: "Two or more tissue types combine into a discrete structure with a defined function." },
-  { level: "Organ system", scale: "11 systems", detail: "Organs working toward a shared purpose — circulation, respiration, cognition." },
+  { level: "Organ system", scale: "10 integrated system groups", detail: "Organs working toward a shared purpose — circulation, respiration, cognition." },
   { level: "Organism", scale: "~37 trillion cells", detail: "All systems integrated into a single self-regulating human being." },
 ];
 

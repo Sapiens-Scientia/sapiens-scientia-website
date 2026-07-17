@@ -93,6 +93,12 @@ Soma is the human body module inside Salus. It models the healthy body across:
 
 Its native frame is the organ system, with a nested structural ladder from chemical scale to the whole organism. Soma stands independently from Morbus, but organ systems cross-link to Morbus disease exemplars where failure modes are represented.
 
+The public atlas presents ten integrated system groups. Immune and lymphatic
+structures share one group, and skeletal and muscular structures share the
+musculoskeletal group. Its seven scale stages are representative windows—
+organism, system, organ, tissue, cell, organelle, and molecule—linked as a
+conceptual descent rather than one physically continuous geometric zoom.
+
 The source of truth is `src/lib/soma.ts`.
 
 ## Domus Model
