@@ -91,6 +91,10 @@ export function SiteFooter() {
             Particles → the Sun
           </p>
         </div>
+
+        <p className="pb-6 text-center text-[0.65rem] uppercase tracking-[0.18em] text-slate-600">
+          Made by bnpndk
+        </p>
       </div>
     </footer>
   );

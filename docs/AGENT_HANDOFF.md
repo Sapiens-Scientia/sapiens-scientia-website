@@ -129,7 +129,11 @@ If the implementation reveals a conceptual mismatch or durable constraint, updat
 ## Recent Context To Preserve
 
 - Project memory is local to this repository.
-- The footer contains only site navigation links.
+- The footer contains site navigation links, the project copyright line, and a
+  small creator credit for bnpndk.
+- The favicon is a “knowledge cosmos” mark: three colored nodes for Persona,
+  Societas, and Terra orbit a central point across nested scale rings. Preserve
+  that triadic, multiscale idea when evolving the project’s visual identity.
 - Local docs are meant to be practical and short enough for future agents to actually read.
 
 ## Known Development Notes
