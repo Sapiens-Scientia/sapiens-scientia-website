@@ -135,6 +135,14 @@ body {
   min-height: 100%;
 }
 
+html {
+  scrollbar-width: none;
+}
+
+html::-webkit-scrollbar {
+  display: none;
+}
+
 body {
   font-family: "Roboto", var(--font-geist-sans), Arial, Helvetica, sans-serif;
   background-image: 
