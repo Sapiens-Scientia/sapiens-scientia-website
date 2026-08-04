@@ -1230,10 +1230,17 @@ export function YouAreHereExperience() {
     // 3) the Local Group ------------------------------------------------ 10^22.9
     // The Milky Way here is a true miniature of the next set's disc — same
     // seed (its stars are a subset of the big cloud's), same tilt, same spin —
-    // and the set is pinned by the same landmark (the sun's seat inside it),
-    // so the zoom hands off as ONE spiral at two scales, not two spirals.
+    // and the set is pinned by the same landmark (the sun's seat inside it).
+    // It is drawn oversized so the tableau reads; during the plunge it sheds
+    // that oversize (scaling about the pinned seat, so the seat never leaves
+    // the zoom line) until it sits exactly where — and exactly as big as —
+    // the next set's disc fades in. ONE spiral at two scales, not two spirals.
     const sunMarkerLocal = new THREE.Vector3(1.55, 0.06, 1.55); // ~55% out, between arms
     const MW_MINI_SCALE = 0.62 / 4.0;
+    // the mini's honest scale relative to its display size: at c = MW_HONEST
+    // its world footprint equals the big disc's (refs 22.9 vs 20.9, two
+    // decades apart), so the crossfade superposes them exactly
+    const MW_HONEST = Math.pow(10, 20.9 - 22.9) / MW_MINI_SCALE;
     const mwCenter = new THREE.Vector3(-1.15, -0.2, 0.25);
     const mwSunSeat = sunMarkerLocal.clone()
       .multiplyScalar(MW_MINI_SCALE)
@@ -1243,21 +1250,27 @@ export function YouAreHereExperience() {
     {
       const mw = makePointCloud(750, 0.07, dot, 0.95);
       fillSpiralGalaxy(mw, 4.0, 17, 1);
+      const mwAnchor = new THREE.Group();
+      mwAnchor.position.copy(mwSunSeat);
       const mwTilt = new THREE.Group();
-      mwTilt.position.copy(mwCenter);
+      mwTilt.position.copy(mwCenter).sub(mwSunSeat);
       mwTilt.rotation.x = -1.0;
       mwTilt.scale.setScalar(MW_MINI_SCALE);
       mwTilt.add(mw.points);
+      mwAnchor.add(mwTilt);
       const m31 = makePointCloud(850, 0.07, dot, 0.95);
       fillSpiralGalaxy(m31, 0.78, 9, 0.9);
       m31.points.position.set(1.35, 0.42, -0.4);
       m31.points.rotation.set(1.15, -0.4, 0.35);
       track(mw.points.geometry); track(mw.material);
       track(m31.points.geometry); track(m31.material);
-      groupSet.group.add(mwTilt, m31.points);
-      groupSet.update = (t) => {
+      groupSet.group.add(mwAnchor, m31.points);
+      groupSet.update = (t, s) => {
         // the mini's arms swirl in phase with the big disc's
         mw.points.rotation.y = reduceMotion ? 0 : t * 0.006;
+        // approach: still growing (slowly) while the oversize sheds, then
+        // hold the big disc's honest scale so the handoff is seamless
+        mwAnchor.scale.setScalar(Math.max(MW_HONEST, Math.min(1, Math.pow(s, -0.9))));
       };
       const rng = mulberry32(61);
       const dwarfs = makePointCloud(420, 0.06, dot, 0.7);
@@ -1315,6 +1328,10 @@ export function YouAreHereExperience() {
       // tip the disc toward the camera; the quaternion-aware pinning keeps the
       // sun's seat on the zoom line
       galaxySet.group.rotation.x = -1.0;
+      // arrive late: only fade in once the Local Group's mini has shed its
+      // display oversize and sits superposed underneath — otherwise the
+      // crossfade shows two Milky Ways at different sizes
+      galaxySet.window = (x) => smooth01((x + 0.9) / 0.6) * (1 - smooth01((x - 0.62) / 0.95));
     }
 
     // 5) the stellar neighborhood (a tunnel of naked-eye stars) ---------- 10^19
