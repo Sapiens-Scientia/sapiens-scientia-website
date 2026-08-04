@@ -2596,12 +2596,6 @@ const DIGITAL_MOON_ORBIT_RADIUS = 2.0
 const DIGITAL_MOON_PERIOD_S = 150
 const DIGITAL_MOON_PACKETS = 7
 const DIGITAL_TIDE_PACKETS = 14
-// The hero/finale camera sits 0.95 rad above the ecliptic, so a truly flat
-// orbit projects as a tall oval — the moonlet looping high and low. Tipping
-// the orbit plane toward that camera (leaving ~14° of opening) makes the
-// ring read as a level, shallow ellipse: the Digital Moon sweeps across on
-// the same visual band as the Moon, passing in front of and behind Earth.
-const DIGITAL_MOON_ORBIT_EULER = new THREE.Euler(-0.71, 0, 0)
 
 const TIDE_VERT = `
     varying vec3 vNormal;
@@ -2628,7 +2622,14 @@ const TIDE_FRAG = `
     }
 `
 
-function DigitalMoon({ isDark }: { isDark: boolean }) {
+function DigitalMoon({ isDark, northDirection }: { isDark: boolean; northDirection: THREE.Vector3 }) {
+    // The orbit rides in Earth's equatorial plane — perpendicular to the
+    // planet's real, tilted axis: the belt where the digital infrastructure
+    // actually lives, aligned with the globe's own latitude lines.
+    const orbitQuaternion = useMemo(
+        () => makeEarthTiltQuaternionForNorthDirection(northDirection),
+        [northDirection],
+    )
     const moonletRef = useRef<THREE.Group>(null)
     const spinRef = useRef<THREE.Group>(null)
     const strutsMatRef = useRef<THREE.LineBasicMaterial>(null)
@@ -2673,11 +2674,11 @@ function DigitalMoon({ isDark }: { isDark: boolean }) {
             const a = (i / 128) * Math.PI * 2
             orbitRingPoints.push(
                 new THREE.Vector3(Math.cos(a) * DIGITAL_MOON_ORBIT_RADIUS, 0, -Math.sin(a) * DIGITAL_MOON_ORBIT_RADIUS)
-                    .applyEuler(DIGITAL_MOON_ORBIT_EULER),
+                    .applyQuaternion(orbitQuaternion),
             )
         }
         return { strutsGeometry, nodesGeometry, edges, orbitRingPoints }
-    }, [])
+    }, [orbitQuaternion])
 
     useEffect(() => () => {
         strutsGeometry.dispose()
@@ -2728,7 +2729,7 @@ function DigitalMoon({ isDark }: { isDark: boolean }) {
             Math.cos(angle) * DIGITAL_MOON_ORBIT_RADIUS,
             0,
             -Math.sin(angle) * DIGITAL_MOON_ORBIT_RADIUS,
-        ).applyEuler(DIGITAL_MOON_ORBIT_EULER)
+        ).applyQuaternion(orbitQuaternion)
         dir.copy(pos).normalize()
         if (moonletRef.current) moonletRef.current.position.copy(pos)
         if (spinRef.current) spinRef.current.rotation.y += delta * 0.25
@@ -3012,7 +3013,7 @@ function UnifiedScene({
                 )}
                 {mode !== 'galaxy' && <EarthBody mode={mode} position={earthPos} radius={earthRadius} isDark={isDark} theme={theme} progress={progress} sceneDate={sceneDate} rotationDate={rotationDate} rotationProgress={rotationProgress} sunOrbitProgress={mode === 'globe' ? sunOrbitProgress : 0} sunOrbitActive={mode === 'globe' && sunOrbitActive} northDirection={mode === 'globe' ? globeNorthDirection : undefined} homeCoords={homeCoords} onHomeProject={onHomeProject} />}
                 {mode === 'globe' && moon && <Moon sceneDate={sceneDate} progress={progress} sunOrbitActive={sunOrbitActive} sunOrbitProgress={sunOrbitProgress} isDark={isDark} />}
-                {mode === 'globe' && digitalMoon && <DigitalMoon isDark={isDark} />}
+                {mode === 'globe' && digitalMoon && <DigitalMoon isDark={isDark} northDirection={globeNorthDirection} />}
                 {mode === 'globe' && (
                     <group quaternion={sunOrbitQuaternion}>
                         <NorthPoleYearPathRing earthPos={earthPos} earthRadius={earthRadius} year={sceneDate.getFullYear()} sunAnchorAngle={sunAnchorAngle} isDark={isDark} theme={theme} />
