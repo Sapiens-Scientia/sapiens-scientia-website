@@ -122,3 +122,37 @@ export function getFinaleSunScreenAngle(coords: LabEarthCoords, date = new Date(
 export function getChartContinuationCamera(tilt = 0.95, distance = 3.61) {
   return new THREE.Vector3(0, Math.sin(tilt) * distance, Math.cos(tilt) * distance);
 }
+
+/**
+ * The Moon's real geocentric place, as an offset from the Sun: ecliptic
+ * elongation (radians east of the Sun) and ecliptic latitude (radians).
+ * Truncated Meeus/Almanac series, good to ~0.5° — plenty to put the Moon on
+ * the correct side of the sky with the correct phase. In the globe scene's
+ * ecliptic frame (y = ecliptic north), rotate the rendered sun direction
+ * about +y by the elongation, then lift by the latitude.
+ */
+export function getMoonEclipticOffset(date: Date) {
+  const rad = Math.PI / 180;
+  // Julian centuries from J2000
+  const T = (date.getTime() / 86400000 + 2440587.5 - 2451545.0) / 36525;
+  const D = (297.8501921 + 445267.1114034 * T) * rad; // mean elongation
+  const M = (357.5291092 + 35999.0502909 * T) * rad; // sun mean anomaly
+  const Mp = (134.9633964 + 477198.8675055 * T) * rad; // moon mean anomaly
+  const F = (93.272095 + 483202.0175233 * T) * rad; // argument of latitude
+  const Lp = 218.3164477 + 481267.88123421 * T; // moon mean longitude (deg)
+  const moonLon =
+    Lp +
+    6.289 * Math.sin(Mp) +
+    1.274 * Math.sin(2 * D - Mp) +
+    0.658 * Math.sin(2 * D) -
+    0.214 * Math.sin(2 * Mp) -
+    0.186 * Math.sin(M) -
+    0.114 * Math.sin(2 * F);
+  const sunLon = 280.4664567 + 36000.76982779 * T + 1.915 * Math.sin(M) + 0.02 * Math.sin(2 * M);
+  const latitude = (5.128 * Math.sin(F) + 0.281 * Math.sin(Mp + F)) * rad;
+  // wrap to (-π, π] so the shorter way around is explicit
+  let elongation = ((moonLon - sunLon) * rad) % (Math.PI * 2);
+  if (elongation > Math.PI) elongation -= Math.PI * 2;
+  if (elongation <= -Math.PI) elongation += Math.PI * 2;
+  return { elongation, latitude };
+}

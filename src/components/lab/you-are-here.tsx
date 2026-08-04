@@ -328,7 +328,7 @@ const BEATS: Beat[] = [
   { from: 0.812, to: 0.848, title: "And in between", sub: "Almost all of everything is this: nothing. Cold, clean, patient vacuum." },
   { from: 0.852, to: 0.886, title: "One ordinary star", sub: "The sun we watched ignite, with its eight worlds. Yours is the third — the damp one." },
   { from: 0.89, to: 0.912, title: "One year, from above", sub: "Earth's whole orbit, annotated: the months are places on this ring, and “today” is a location. There you are, on it." },
-  { from: 0.912, to: 0.935, title: "Earth, live", sub: "The daylight on this globe is where daylight actually is, this second." },
+  { from: 0.912, to: 0.935, title: "Earth, live", sub: "The daylight on this globe is where daylight actually is, this second — and the Moon hangs where it really hangs tonight." },
   { from: 0.941, to: 0.97, title: "And after 13.8 billion years…", live: true },
   { from: 0.973, to: 1.01, title: "You are the universe, 13.8 billion years in, looking back at itself.", sub: "Every “here” is the center. This one is yours." },
 ];
@@ -2082,6 +2082,7 @@ export function YouAreHereExperience() {
                   className="h-full w-full"
                   mode="globe"
                   isDarkOverride
+                  moon
                   interactive={finaleOn}
                   enableWheelZoom={false}
                   cameraOverride={FINALE_CAMERA}

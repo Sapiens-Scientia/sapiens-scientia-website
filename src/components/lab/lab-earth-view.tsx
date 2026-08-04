@@ -13,7 +13,7 @@ import * as THREE from 'three'
 import { useAppContext } from '@/components/earthview/contexts'
 import type { ThemeMode } from '@/components/earthview/contexts'
 import { EarthNorthArrowLocalYNorth } from '@/components/earthview/globe/EarthSpinDecor3D'
-import { getHomeFocusCamera } from '@/components/lab/earth-geometry'
+import { getHomeFocusCamera, getMoonEclipticOffset } from '@/components/lab/earth-geometry'
 
 export type EarthVisualizationMode = 'globe' | 'orbit' | 'spiral' | 'galaxy'
 
@@ -2397,26 +2397,255 @@ function GlobeSeasonHalo({
 }
 
 // ---------------------------------------------------------------------------
-// The digital shell: Earth's digital layer rendered as a geodesic web hugging
-// the globe — thin cyan struts, glowing junction nodes, and bright packets
-// drifting along the edges. It spins slowly about its own slightly tilted
-// axis, independent of the planet, and materializes over ~2s on mount.
+// The Moon: the globe's real companion, at its true direction in the sky for
+// the scene's moment — elongation from the rendered sun plus ecliptic
+// latitude (truncated-Meeus accuracy) — with correct phase lighting. Its size
+// is the true ratio to the globe; only the distance is compressed so the two
+// can share a frame, and the label says so.
 // ---------------------------------------------------------------------------
 
-const DIGITAL_SHELL_RADIUS = 1.15
-const DIGITAL_SHELL_PACKETS = 14
+const MOON_DISPLAY_DISTANCE = 2.55
+const MOON_RADIUS = 0.2727 // the Moon's true radius, in Earth radii
 
-function DigitalShell({ isDark }: { isDark: boolean }) {
+/** Procedural regolith: mottling, dark maria, power-law craters, a few rays. */
+function makeMoonTexture() {
+    const w = 1024
+    const h = 512
+    const c = document.createElement('canvas')
+    c.width = w
+    c.height = h
+    const g = c.getContext('2d')!
+    let seed = 77
+    const rng = () => {
+        seed = (seed * 16807) % 2147483647
+        return (seed - 1) / 2147483646
+    }
+    g.fillStyle = '#b9b5ac'
+    g.fillRect(0, 0, w, h)
+    for (let i = 0; i < 70; i++) {
+        const x = rng() * w
+        const y = rng() * h
+        const r = 40 + rng() * 160
+        const v = 168 + Math.floor(rng() * 42)
+        const grad = g.createRadialGradient(x, y, 0, x, y, r)
+        grad.addColorStop(0, `rgba(${v},${v - 3},${v - 10},0.16)`)
+        grad.addColorStop(1, 'rgba(0,0,0,0)')
+        g.fillStyle = grad
+        g.fillRect(x - r, y - r, r * 2, r * 2)
+    }
+    for (let i = 0; i < 9; i++) {
+        const x = rng() * w
+        const y = h * (0.18 + rng() * 0.5)
+        const r = 50 + rng() * 110
+        for (let k = 0; k < 5; k++) {
+            const ox = x + (rng() - 0.5) * r * 1.4
+            const oy = y + (rng() - 0.5) * r * 0.9
+            const rr = r * (0.4 + rng() * 0.6)
+            const grad = g.createRadialGradient(ox, oy, 0, ox, oy, rr)
+            grad.addColorStop(0, 'rgba(86,84,83,0.32)')
+            grad.addColorStop(0.7, 'rgba(92,90,88,0.2)')
+            grad.addColorStop(1, 'rgba(0,0,0,0)')
+            g.fillStyle = grad
+            g.fillRect(ox - rr, oy - rr, rr * 2, rr * 2)
+        }
+    }
+    for (let i = 0; i < 430; i++) {
+        const x = rng() * w
+        const y = rng() * h
+        const r = 1.5 + Math.pow(rng(), 2.6) * 26
+        const floor = g.createRadialGradient(x, y, 0, x, y, r)
+        floor.addColorStop(0, 'rgba(70,68,66,0.36)')
+        floor.addColorStop(0.75, 'rgba(80,78,76,0.22)')
+        floor.addColorStop(1, 'rgba(0,0,0,0)')
+        g.fillStyle = floor
+        g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill()
+        g.strokeStyle = `rgba(232,229,222,${0.22 + rng() * 0.24})`
+        g.lineWidth = Math.max(1, r * 0.16)
+        g.beginPath(); g.arc(x, y, r * 0.92, Math.PI * 0.8, Math.PI * 1.7); g.stroke()
+        g.strokeStyle = `rgba(55,53,50,${0.18 + rng() * 0.2})`
+        g.beginPath(); g.arc(x, y, r * 0.92, Math.PI * -0.2, Math.PI * 0.7); g.stroke()
+    }
+    for (let i = 0; i < 3; i++) {
+        const x = rng() * w
+        const y = h * (0.25 + rng() * 0.5)
+        const rays = 9 + Math.floor(rng() * 6)
+        for (let k = 0; k < rays; k++) {
+            const a = rng() * Math.PI * 2
+            const len = 30 + rng() * 90
+            const ray = g.createLinearGradient(x, y, x + Math.cos(a) * len, y + Math.sin(a) * len)
+            ray.addColorStop(0, 'rgba(235,232,225,0.26)')
+            ray.addColorStop(1, 'rgba(235,232,225,0)')
+            g.strokeStyle = ray
+            g.lineWidth = 1.6
+            g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len); g.stroke()
+        }
+        g.fillStyle = 'rgba(240,238,230,0.5)'
+        g.beginPath(); g.arc(x, y, 4 + rng() * 4, 0, Math.PI * 2); g.fill()
+    }
+    const tex = new THREE.CanvasTexture(c)
+    tex.colorSpace = THREE.SRGBColorSpace
+    return tex
+}
+
+const MOON_VERT = `
+    varying vec3 vNormal;
+    varying vec2 vUv;
+    void main() {
+        vNormal = normalize(mat3(modelMatrix) * normal);
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+`
+// Wrapped lighting: a real terminator and phase, but the night limb stays
+// faintly readable instead of vanishing into the void.
+const MOON_FRAG = `
+    uniform sampler2D map;
+    uniform vec3 sunDir;
+    varying vec3 vNormal;
+    varying vec2 vUv;
+    void main() {
+        vec3 tex = texture2D(map, vUv).rgb;
+        float d = dot(normalize(vNormal), normalize(sunDir));
+        float lit = pow(clamp(d * 0.55 + 0.45, 0.0, 1.0), 1.5);
+        gl_FragColor = vec4(tex * (0.14 + 0.95 * lit), 1.0);
+    }
+`
+
+function Moon({
+    sceneDate,
+    progress,
+    sunOrbitActive,
+    sunOrbitProgress,
+    isDark,
+}: {
+    sceneDate: Date
+    progress: number
+    sunOrbitActive: boolean
+    sunOrbitProgress: number
+    isDark: boolean
+}) {
+    const texture = useMemo(() => makeMoonTexture(), [])
+    useEffect(() => () => texture.dispose(), [texture])
+    const uniformsRef = useRef({
+        map: { value: null as THREE.Texture | null },
+        sunDir: { value: new THREE.Vector3(1, 0, 0) },
+    })
+    uniformsRef.current.map.value = texture
+
+    const { position, leader } = useMemo(() => {
+        // the sun the scene is actually rendering (the year preview rotates it)
+        const renderedSun = sunOrbitActive
+            ? rotateEclipticVector(getSunDirectionFromEarth(progress), sunOrbitProgress)
+            : getSunDirectionFromEarth(progress)
+        // during the one-year preview the calendar advances too, so the Moon
+        // laps the globe ~13 times — as it really would
+        const effectiveDate = sunOrbitActive
+            ? new Date(sceneDate.getTime() + sunOrbitProgress * DISPLAY_YEAR_MS)
+            : sceneDate
+        const { elongation, latitude } = getMoonEclipticOffset(effectiveDate)
+        const dir = renderedSun
+            .clone()
+            .applyAxisAngle(ECLIPTIC_NORTH, elongation)
+            .multiplyScalar(Math.cos(latitude))
+            .add(ECLIPTIC_NORTH.clone().multiplyScalar(Math.sin(latitude)))
+            .normalize()
+        uniformsRef.current.sunDir.value.copy(renderedSun)
+        return {
+            position: dir.clone().multiplyScalar(MOON_DISPLAY_DISTANCE),
+            leader: [dir.clone().multiplyScalar(1.3), dir.clone().multiplyScalar(MOON_DISPLAY_DISTANCE - MOON_RADIUS - 0.12)] as [THREE.Vector3, THREE.Vector3],
+        }
+    }, [progress, sceneDate, sunOrbitActive, sunOrbitProgress])
+
+    const labelColor = isDark ? '#c7cedd' : '#475569'
+    const subColor = isDark ? '#7e8798' : '#94a3b8'
+
+    return (
+        <group>
+            {/* a whisper of a leader so the eye can find the Moon off-frame */}
+            <Line points={leader} color={labelColor} lineWidth={1} transparent opacity={isDark ? 0.12 : 0.14} dashed dashSize={0.03} dashScale={4} gapSize={0.05} />
+            <group position={position}>
+                <mesh>
+                    <sphereGeometry args={[MOON_RADIUS, 44, 44]} />
+                    <shaderMaterial vertexShader={MOON_VERT} fragmentShader={MOON_FRAG} uniforms={uniformsRef.current} />
+                </mesh>
+                <Billboard position={[0, MOON_RADIUS + 0.17, 0]}>
+                    <Text fontSize={0.05} color={labelColor} anchorX="center" anchorY="middle" outlineWidth={0.004} outlineColor={isDark ? '#020617' : '#ffffff'}>
+                        the Moon
+                    </Text>
+                </Billboard>
+                <Billboard position={[0, MOON_RADIUS + 0.095, 0]}>
+                    <Text fontSize={0.028} color={subColor} anchorX="center" anchorY="middle" outlineWidth={0.0024} outlineColor={isDark ? '#020617' : '#ffffff'}>
+                        384,400 km away · drawn nearer
+                    </Text>
+                </Billboard>
+            </group>
+        </group>
+    )
+}
+
+// ---------------------------------------------------------------------------
+// The digital moon: Earth's digital systems as a second, made moon — a
+// geodesic moonlet orbiting the globe, streaming packets to and from the
+// planet and raising a faint second tide on it (the glow gathers at both
+// poles of the Earth–moonlet axis, the way a tide does). Where the Moon
+// pulls oceans, this one pulls attention, data, behavior.
+// ---------------------------------------------------------------------------
+
+const DIGITAL_MOON_RADIUS = 0.19
+const DIGITAL_MOON_ORBIT_RADIUS = 2.0
+const DIGITAL_MOON_PERIOD_S = 150
+const DIGITAL_MOON_PACKETS = 7
+const DIGITAL_TIDE_PACKETS = 14
+const DIGITAL_MOON_ORBIT_EULER = new THREE.Euler(0.3, 0, 0.12)
+
+const TIDE_VERT = `
+    varying vec3 vNormal;
+    varying vec3 vWorldPos;
+    void main() {
+        vNormal = normalize(mat3(modelMatrix) * normal);
+        vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+`
+const TIDE_FRAG = `
+    uniform vec3 uAxis;
+    uniform vec3 uColor;
+    uniform float uIntensity;
+    varying vec3 vNormal;
+    varying vec3 vWorldPos;
+    void main() {
+        vec3 n = normalize(vNormal);
+        vec3 viewDir = normalize(cameraPosition - vWorldPos);
+        float fresnel = pow(1.0 - abs(dot(n, viewDir)), 2.4);
+        float align = dot(n, normalize(uAxis));
+        float bulge = 0.12 + 0.88 * align * align; // both tidal bulges
+        gl_FragColor = vec4(uColor, fresnel * bulge * uIntensity);
+    }
+`
+
+function DigitalMoon({ isDark }: { isDark: boolean }) {
+    const moonletRef = useRef<THREE.Group>(null)
     const spinRef = useRef<THREE.Group>(null)
     const strutsMatRef = useRef<THREE.LineBasicMaterial>(null)
     const nodesMatRef = useRef<THREE.PointsMaterial>(null)
-    const pulseMatRef = useRef<THREE.PointsMaterial>(null)
+    const coreMatRef = useRef<THREE.MeshBasicMaterial>(null)
     const packetsMatRef = useRef<THREE.PointsMaterial>(null)
     const packetsRef = useRef<THREE.Points>(null)
+    const streamMatRef = useRef<THREE.PointsMaterial>(null)
+    const streamRef = useRef<THREE.Points>(null)
     const bornAtRef = useRef<number | null>(null)
 
-    const { strutsGeometry, nodesGeometry, pulseGeometry, edges } = useMemo(() => {
-        const ico = new THREE.IcosahedronGeometry(DIGITAL_SHELL_RADIUS, 2)
+    const tideUniforms = useRef({
+        uAxis: { value: new THREE.Vector3(1, 0, 0) },
+        uColor: { value: new THREE.Color(isDark ? '#54d8f8' : '#0e7490') },
+        uIntensity: { value: 0 },
+    })
+    useEffect(() => {
+        tideUniforms.current.uColor.value.set(isDark ? '#54d8f8' : '#0e7490')
+    }, [isDark])
+
+    const { strutsGeometry, nodesGeometry, edges, orbitRingPoints } = useMemo(() => {
+        const ico = new THREE.IcosahedronGeometry(DIGITAL_MOON_RADIUS, 1)
         const strutsGeometry = new THREE.EdgesGeometry(ico, 1)
         ico.dispose()
         // Unique junctions and the edge endpoint pairs, recovered from the
@@ -2433,22 +2662,25 @@ function DigitalShell({ isDark }: { isDark: boolean }) {
                 if (!junctions.has(key)) junctions.set(key, v)
             }
         }
-        const nodes = [...junctions.values()]
-        const nodesGeometry = new THREE.BufferGeometry().setFromPoints(nodes)
-        const pulseGeometry = new THREE.BufferGeometry().setFromPoints(
-            nodes.filter((_, index) => index % 9 === 0),
-        )
-        return { strutsGeometry, nodesGeometry, pulseGeometry, edges }
+        const nodesGeometry = new THREE.BufferGeometry().setFromPoints([...junctions.values()])
+        const orbitRingPoints: THREE.Vector3[] = []
+        for (let i = 0; i <= 128; i++) {
+            const a = (i / 128) * Math.PI * 2
+            orbitRingPoints.push(
+                new THREE.Vector3(Math.cos(a) * DIGITAL_MOON_ORBIT_RADIUS, 0, -Math.sin(a) * DIGITAL_MOON_ORBIT_RADIUS)
+                    .applyEuler(DIGITAL_MOON_ORBIT_EULER),
+            )
+        }
+        return { strutsGeometry, nodesGeometry, edges, orbitRingPoints }
     }, [])
 
     useEffect(() => () => {
         strutsGeometry.dispose()
         nodesGeometry.dispose()
-        pulseGeometry.dispose()
-    }, [strutsGeometry, nodesGeometry, pulseGeometry])
+    }, [strutsGeometry, nodesGeometry])
 
-    // Packets: a handful of bright points travelling the web, each on its own
-    // edge at its own speed, respawning on a fresh random edge at arrival.
+    // Packets crawling the moonlet's own web, plus the tide stream: packets
+    // flowing Earth <-> moonlet along a gently lifted arc, half each way.
     const packetState = useMemo(() => {
         let seed = 611
         const rand = () => {
@@ -2457,12 +2689,26 @@ function DigitalShell({ isDark }: { isDark: boolean }) {
         }
         return {
             rand,
-            edge: Array.from({ length: DIGITAL_SHELL_PACKETS }, () => Math.floor(rand() * edges.length)),
-            t: Array.from({ length: DIGITAL_SHELL_PACKETS }, () => rand()),
-            speed: Array.from({ length: DIGITAL_SHELL_PACKETS }, () => 0.25 + rand() * 0.4),
-            positions: new Float32Array(DIGITAL_SHELL_PACKETS * 3),
+            edge: Array.from({ length: DIGITAL_MOON_PACKETS }, () => Math.floor(rand() * edges.length)),
+            t: Array.from({ length: DIGITAL_MOON_PACKETS }, () => rand()),
+            speed: Array.from({ length: DIGITAL_MOON_PACKETS }, () => 0.3 + rand() * 0.45),
+            positions: new Float32Array(DIGITAL_MOON_PACKETS * 3),
+            streamT: Array.from({ length: DIGITAL_TIDE_PACKETS }, () => rand()),
+            streamSpeed: Array.from({ length: DIGITAL_TIDE_PACKETS }, () => 0.1 + rand() * 0.14),
+            streamPositions: new Float32Array(DIGITAL_TIDE_PACKETS * 3),
         }
     }, [edges])
+
+    const workVecs = useRef({
+        pos: new THREE.Vector3(),
+        dir: new THREE.Vector3(),
+        start: new THREE.Vector3(),
+        end: new THREE.Vector3(),
+        ctrl: new THREE.Vector3(),
+        lift: new THREE.Vector3(),
+        a: new THREE.Vector3(),
+        b: new THREE.Vector3(),
+    })
 
     useFrame(({ clock }, delta) => {
         const now = clock.elapsedTime
@@ -2470,84 +2716,131 @@ function DigitalShell({ isDark }: { isDark: boolean }) {
         const grow = Math.min(1, (now - bornAtRef.current) / 2)
         const materialize = grow * grow * (3 - 2 * grow)
 
-        if (spinRef.current) spinRef.current.rotation.y += delta * 0.02
+        // the moonlet rides its inclined orbit; phase chosen to open on-camera
+        const { pos, dir, start, end, ctrl, lift, a, b } = workVecs.current
+        const angle = -0.8 + (now / DIGITAL_MOON_PERIOD_S) * Math.PI * 2
+        pos.set(
+            Math.cos(angle) * DIGITAL_MOON_ORBIT_RADIUS,
+            0,
+            -Math.sin(angle) * DIGITAL_MOON_ORBIT_RADIUS,
+        ).applyEuler(DIGITAL_MOON_ORBIT_EULER)
+        dir.copy(pos).normalize()
+        if (moonletRef.current) moonletRef.current.position.copy(pos)
+        if (spinRef.current) spinRef.current.rotation.y += delta * 0.25
 
-        const strutOpacity = (isDark ? 0.2 : 0.32) * materialize
-        const nodeOpacity = (isDark ? 0.55 : 0.6) * materialize
-        const pulseOpacity = (isDark ? 0.5 : 0.55) * (0.55 + 0.45 * Math.sin(now * 2.1)) * materialize
+        tideUniforms.current.uAxis.value.copy(dir)
+        tideUniforms.current.uIntensity.value = (isDark ? 0.5 : 0.4) * materialize
+
+        const strutOpacity = (isDark ? 0.5 : 0.55) * materialize
+        const nodeOpacity = (isDark ? 0.8 : 0.75) * materialize
         if (strutsMatRef.current) strutsMatRef.current.opacity = strutOpacity
         if (nodesMatRef.current) nodesMatRef.current.opacity = nodeOpacity
-        if (pulseMatRef.current) pulseMatRef.current.opacity = pulseOpacity
-        if (packetsMatRef.current) packetsMatRef.current.opacity = 0.9 * materialize
+        if (coreMatRef.current) coreMatRef.current.opacity = (isDark ? 0.2 : 0.14) * (0.75 + 0.25 * Math.sin(now * 1.7)) * materialize
+        if (packetsMatRef.current) packetsMatRef.current.opacity = 0.95 * materialize
+        if (streamMatRef.current) streamMatRef.current.opacity = (isDark ? 0.85 : 0.7) * materialize
 
-        const { rand, edge, t, speed, positions } = packetState
-        for (let i = 0; i < DIGITAL_SHELL_PACKETS; i += 1) {
+        const { rand, edge, t, speed, positions, streamT, streamSpeed, streamPositions } = packetState
+        for (let i = 0; i < DIGITAL_MOON_PACKETS; i += 1) {
             t[i] += delta * speed[i]
             if (t[i] >= 1) {
                 t[i] -= 1
                 edge[i] = Math.floor(rand() * edges.length)
             }
-            const [a, b] = edges[edge[i]]
-            positions[i * 3] = a.x + (b.x - a.x) * t[i]
-            positions[i * 3 + 1] = a.y + (b.y - a.y) * t[i]
-            positions[i * 3 + 2] = a.z + (b.z - a.z) * t[i]
+            const [ea, eb] = edges[edge[i]]
+            positions[i * 3] = ea.x + (eb.x - ea.x) * t[i]
+            positions[i * 3 + 1] = ea.y + (eb.y - ea.y) * t[i]
+            positions[i * 3 + 2] = ea.z + (eb.z - ea.z) * t[i]
         }
         const packetAttr = packetsRef.current?.geometry.getAttribute('position') as THREE.BufferAttribute | undefined
         if (packetAttr) packetAttr.needsUpdate = true
+
+        // the tide stream: a shallow quadratic arc from the planet's face to
+        // the moonlet, packets flowing both directions
+        start.copy(dir).multiplyScalar(1.06)
+        end.copy(pos).sub(a.copy(dir).multiplyScalar(DIGITAL_MOON_RADIUS + 0.05))
+        lift.copy(ECLIPTIC_NORTH).sub(a.copy(dir).multiplyScalar(ECLIPTIC_NORTH.dot(dir))).normalize()
+        ctrl.copy(start).add(end).multiplyScalar(0.5).add(lift.multiplyScalar(0.26))
+        for (let i = 0; i < DIGITAL_TIDE_PACKETS; i += 1) {
+            streamT[i] += delta * streamSpeed[i]
+            if (streamT[i] >= 1) streamT[i] -= 1
+            const f = i % 2 === 0 ? streamT[i] : 1 - streamT[i] // half outbound, half home
+            a.copy(start).lerp(ctrl, f)
+            b.copy(ctrl).lerp(end, f)
+            a.lerp(b, f)
+            streamPositions[i * 3] = a.x
+            streamPositions[i * 3 + 1] = a.y
+            streamPositions[i * 3 + 2] = a.z
+        }
+        const streamAttr = streamRef.current?.geometry.getAttribute('position') as THREE.BufferAttribute | undefined
+        if (streamAttr) streamAttr.needsUpdate = true
     })
 
+    const strutColor = isDark ? '#4cc9f8' : '#0369a1'
+    const nodeColor = isDark ? '#9be8ff' : '#0e7490'
+    const packetColor = isDark ? '#e8fcff' : '#075985'
+    const blending = isDark ? THREE.AdditiveBlending : THREE.NormalBlending
+
     return (
-        <group rotation={[0.18, 0, -0.12]}>
-            <group ref={spinRef}>
-                <lineSegments geometry={strutsGeometry}>
-                    <lineBasicMaterial
-                        ref={strutsMatRef}
-                        color={isDark ? '#4cc9f8' : '#0369a1'}
-                        transparent
-                        opacity={0}
-                        blending={isDark ? THREE.AdditiveBlending : THREE.NormalBlending}
-                        depthWrite={false}
-                    />
-                </lineSegments>
-                <points geometry={nodesGeometry}>
-                    <pointsMaterial
-                        ref={nodesMatRef}
-                        color={isDark ? '#9be8ff' : '#0e7490'}
-                        size={0.018}
-                        sizeAttenuation
-                        transparent
-                        opacity={0}
-                        blending={isDark ? THREE.AdditiveBlending : THREE.NormalBlending}
-                        depthWrite={false}
-                    />
-                </points>
-                <points geometry={pulseGeometry}>
-                    <pointsMaterial
-                        ref={pulseMatRef}
-                        color={isDark ? '#dffaff' : '#0369a1'}
-                        size={0.034}
-                        sizeAttenuation
-                        transparent
-                        opacity={0}
-                        blending={isDark ? THREE.AdditiveBlending : THREE.NormalBlending}
-                        depthWrite={false}
-                    />
-                </points>
-                <points ref={packetsRef}>
-                    <bufferGeometry>
-                        <bufferAttribute attach="attributes-position" args={[packetState.positions, 3]} />
-                    </bufferGeometry>
-                    <pointsMaterial
-                        ref={packetsMatRef}
-                        color={isDark ? '#e8fcff' : '#075985'}
-                        size={0.026}
-                        sizeAttenuation
-                        transparent
-                        opacity={0}
-                        blending={isDark ? THREE.AdditiveBlending : THREE.NormalBlending}
-                        depthWrite={false}
-                    />
-                </points>
+        <group>
+            {/* the second tide the moonlet raises on the planet */}
+            <mesh>
+                <sphereGeometry args={[1.045, 48, 48]} />
+                <shaderMaterial
+                    vertexShader={TIDE_VERT}
+                    fragmentShader={TIDE_FRAG}
+                    uniforms={tideUniforms.current}
+                    transparent
+                    depthWrite={false}
+                    blending={blending}
+                />
+            </mesh>
+            {/* its orbit, faint and dashed — a made thing, not a given one */}
+            <Line points={orbitRingPoints} color={strutColor} lineWidth={1} transparent opacity={isDark ? 0.16 : 0.2} dashed dashSize={0.05} dashScale={3} gapSize={0.05} depthWrite={false} />
+            {/* the earth <-> moonlet packet stream */}
+            <points ref={streamRef}>
+                <bufferGeometry>
+                    <bufferAttribute attach="attributes-position" args={[packetState.streamPositions, 3]} />
+                </bufferGeometry>
+                <pointsMaterial
+                    ref={streamMatRef}
+                    color={packetColor}
+                    size={0.028}
+                    sizeAttenuation
+                    transparent
+                    opacity={0}
+                    blending={blending}
+                    depthWrite={false}
+                />
+            </points>
+            <group ref={moonletRef}>
+                <group ref={spinRef}>
+                    <lineSegments geometry={strutsGeometry}>
+                        <lineBasicMaterial ref={strutsMatRef} color={strutColor} transparent opacity={0} blending={blending} depthWrite={false} />
+                    </lineSegments>
+                    <points geometry={nodesGeometry}>
+                        <pointsMaterial ref={nodesMatRef} color={nodeColor} size={0.02} sizeAttenuation transparent opacity={0} blending={blending} depthWrite={false} />
+                    </points>
+                    <points ref={packetsRef}>
+                        <bufferGeometry>
+                            <bufferAttribute attach="attributes-position" args={[packetState.positions, 3]} />
+                        </bufferGeometry>
+                        <pointsMaterial ref={packetsMatRef} color={packetColor} size={0.022} sizeAttenuation transparent opacity={0} blending={blending} depthWrite={false} />
+                    </points>
+                    <mesh>
+                        <sphereGeometry args={[DIGITAL_MOON_RADIUS * 0.62, 24, 24]} />
+                        <meshBasicMaterial ref={coreMatRef} color={nodeColor} transparent opacity={0} blending={blending} depthWrite={false} />
+                    </mesh>
+                </group>
+                <Billboard position={[0, DIGITAL_MOON_RADIUS + 0.17, 0]}>
+                    <Text fontSize={0.05} color={isDark ? '#9be8ff' : '#0e7490'} anchorX="center" anchorY="middle" outlineWidth={0.004} outlineColor={isDark ? '#020617' : '#ffffff'}>
+                        the digital moon
+                    </Text>
+                </Billboard>
+                <Billboard position={[0, DIGITAL_MOON_RADIUS + 0.095, 0]}>
+                    <Text fontSize={0.028} color={isDark ? '#6d95a8' : '#64748b'} anchorX="center" anchorY="middle" outlineWidth={0.0024} outlineColor={isDark ? '#020617' : '#ffffff'}>
+                        earth&apos;s digital systems · a second tide
+                    </Text>
+                </Billboard>
             </group>
         </group>
     )
@@ -2575,7 +2868,8 @@ function UnifiedScene({
     cameraFocusOnHome = false,
     cameraOverride,
     onHomeProject,
-    digitalShell = false,
+    moon = false,
+    digitalMoon = false,
 }: {
     mode: EarthVisualizationMode
     isDark: boolean
@@ -2598,7 +2892,8 @@ function UnifiedScene({
     cameraFocusOnHome?: boolean
     cameraOverride?: THREE.Vector3
     onHomeProject?: (x: number, y: number, visible: boolean) => void
-    digitalShell?: boolean
+    moon?: boolean
+    digitalMoon?: boolean
 }) {
     const { camera } = useThree()
     const sceneDate = useMemo(() => new Date(Date.now() + dateOffsetMs), [dateOffsetMs])
@@ -2711,7 +3006,8 @@ function UnifiedScene({
                     />
                 )}
                 {mode !== 'galaxy' && <EarthBody mode={mode} position={earthPos} radius={earthRadius} isDark={isDark} theme={theme} progress={progress} sceneDate={sceneDate} rotationDate={rotationDate} rotationProgress={rotationProgress} sunOrbitProgress={mode === 'globe' ? sunOrbitProgress : 0} sunOrbitActive={mode === 'globe' && sunOrbitActive} northDirection={mode === 'globe' ? globeNorthDirection : undefined} homeCoords={homeCoords} onHomeProject={onHomeProject} />}
-                {mode === 'globe' && digitalShell && <DigitalShell isDark={isDark} />}
+                {mode === 'globe' && moon && <Moon sceneDate={sceneDate} progress={progress} sunOrbitActive={sunOrbitActive} sunOrbitProgress={sunOrbitProgress} isDark={isDark} />}
+                {mode === 'globe' && digitalMoon && <DigitalMoon isDark={isDark} />}
                 {mode === 'globe' && (
                     <group quaternion={sunOrbitQuaternion}>
                         <NorthPoleYearPathRing earthPos={earthPos} earthRadius={earthRadius} year={sceneDate.getFullYear()} sunAnchorAngle={sunAnchorAngle} isDark={isDark} theme={theme} />
@@ -2782,11 +3078,13 @@ interface LabEarthViewProps {
     cameraOverride?: THREE.Vector3
     /** Per-frame on-canvas position of the home marker, for outer overlays. */
     onHomeProject?: (x: number, y: number, visible: boolean) => void
-    /** Globe mode only: wrap the planet in the geodesic digital-web shell. */
-    digitalShell?: boolean
+    /** Globe mode only: the real Moon, at its true place in today's sky. */
+    moon?: boolean
+    /** Globe mode only: the digital moon — earth's digital systems as a made moon. */
+    digitalMoon?: boolean
 }
 
-export function LabEarthView({ className, style, mode, dateOffsetMs = 0, rotationOffsetMs = 0, sunOrbitProgress = 0, sunOrbitActive = false, isDarkOverride, orbitTiltView = false, orbitTiltStripsVisible = true, resetViewKey = 0, selectedGalaxyEventKey, galaxyDiskSize, galaxyDiskRotationDeg, homeCoords, timezone, timezoneRingScale = 1, interactive = true, paused = false, enableWheelZoom = true, cameraFocusOnHome = false, cameraOverride, onHomeProject, digitalShell = false }: LabEarthViewProps) {
+export function LabEarthView({ className, style, mode, dateOffsetMs = 0, rotationOffsetMs = 0, sunOrbitProgress = 0, sunOrbitActive = false, isDarkOverride, orbitTiltView = false, orbitTiltStripsVisible = true, resetViewKey = 0, selectedGalaxyEventKey, galaxyDiskSize, galaxyDiskRotationDeg, homeCoords, timezone, timezoneRingScale = 1, interactive = true, paused = false, enableWheelZoom = true, cameraFocusOnHome = false, cameraOverride, onHomeProject, moon = false, digitalMoon = false }: LabEarthViewProps) {
     const { isDark, theme } = useAppContext()
     const [ready, setReady] = useState(false)
     const [contextResetKey, setContextResetKey] = useState(0)
@@ -2828,7 +3126,7 @@ export function LabEarthView({ className, style, mode, dateOffsetMs = 0, rotatio
                 }}
             >
                 <SceneBackground color={bgColor} />
-                <UnifiedScene mode={mode} isDark={sceneIsDark} theme={theme} dateOffsetMs={dateOffsetMs} rotationOffsetMs={rotationOffsetMs} sunOrbitProgress={sunOrbitProgress} sunOrbitActive={sunOrbitActive} homeCoords={homeCoords} timezone={timezone} timezoneRingScale={timezoneRingScale} orbitTiltView={orbitTiltView} orbitTiltStripsVisible={orbitTiltStripsVisible} resetViewKey={resetViewKey} selectedGalaxyEventKey={selectedGalaxyEventKey} galaxyDiskSize={galaxyDiskSize} galaxyDiskRotationDeg={galaxyDiskRotationDeg} interactive={interactive} enableWheelZoom={enableWheelZoom} cameraFocusOnHome={cameraFocusOnHome} cameraOverride={cameraOverride} onHomeProject={onHomeProject} digitalShell={digitalShell} />
+                <UnifiedScene mode={mode} isDark={sceneIsDark} theme={theme} dateOffsetMs={dateOffsetMs} rotationOffsetMs={rotationOffsetMs} sunOrbitProgress={sunOrbitProgress} sunOrbitActive={sunOrbitActive} homeCoords={homeCoords} timezone={timezone} timezoneRingScale={timezoneRingScale} orbitTiltView={orbitTiltView} orbitTiltStripsVisible={orbitTiltStripsVisible} resetViewKey={resetViewKey} selectedGalaxyEventKey={selectedGalaxyEventKey} galaxyDiskSize={galaxyDiskSize} galaxyDiskRotationDeg={galaxyDiskRotationDeg} interactive={interactive} enableWheelZoom={enableWheelZoom} cameraFocusOnHome={cameraFocusOnHome} cameraOverride={cameraOverride} onHomeProject={onHomeProject} moon={moon} digitalMoon={digitalMoon} />
             </Canvas>
         </div>
     )
