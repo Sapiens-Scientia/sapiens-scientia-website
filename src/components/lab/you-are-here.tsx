@@ -353,11 +353,11 @@ const ADDRESS: { p: number; line: string; note: string }[] = [
 const TIME_TICKS: [number, string][] = [
   [-43, "10⁻⁴³ s"], [-35, "inflation"], [0, "1 second"], [2.26, "3 minutes"],
   [13.08, "380,000 yr"], [15.8, "first stars"], [16.6, "galaxies"],
-  [17.06, "the Milky Way"], [17.4655, "the Sun"],
+  [17.06, "Milky Way"], [17.4655, "Sun"],
 ];
 const SCALE_TICKS: [number, string][] = [
   [26.9, "observable universe"], [24.7, "Laniakea"], [23.0, "Local Group"],
-  [21.0, "Milky Way"], [19.0, "the neighborhood"], [13.1, "Solar System"],
+  [21.0, "Milky Way"], [19.0, "solar neighborhood"], [13.1, "Solar System"],
   [11.75, "Earth's orbit"], [7.35, "Earth"],
 ];
 

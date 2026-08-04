@@ -2570,7 +2570,7 @@ function Moon({
                 </mesh>
                 <Billboard position={[0, MOON_RADIUS + 0.17, 0]}>
                     <Text fontSize={0.05} color={labelColor} anchorX="center" anchorY="middle" outlineWidth={0.004} outlineColor={isDark ? '#020617' : '#ffffff'}>
-                        the Moon
+                        Moon
                     </Text>
                 </Billboard>
                 <Billboard position={[0, MOON_RADIUS + 0.095, 0]}>
@@ -2596,7 +2596,9 @@ const DIGITAL_MOON_ORBIT_RADIUS = 2.0
 const DIGITAL_MOON_PERIOD_S = 150
 const DIGITAL_MOON_PACKETS = 7
 const DIGITAL_TIDE_PACKETS = 14
-const DIGITAL_MOON_ORBIT_EULER = new THREE.Euler(0.3, 0, 0.12)
+// Rides essentially in the ecliptic plane, inclined ~5° — the same small
+// tilt the Moon's own orbit carries.
+const DIGITAL_MOON_ORBIT_EULER = new THREE.Euler(0.09, 0, 0)
 
 const TIDE_VERT = `
     varying vec3 vNormal;
@@ -2833,12 +2835,12 @@ function DigitalMoon({ isDark }: { isDark: boolean }) {
                 </group>
                 <Billboard position={[0, DIGITAL_MOON_RADIUS + 0.17, 0]}>
                     <Text fontSize={0.05} color={isDark ? '#9be8ff' : '#0e7490'} anchorX="center" anchorY="middle" outlineWidth={0.004} outlineColor={isDark ? '#020617' : '#ffffff'}>
-                        the digital moon
+                        Digital Moon
                     </Text>
                 </Billboard>
                 <Billboard position={[0, DIGITAL_MOON_RADIUS + 0.095, 0]}>
                     <Text fontSize={0.028} color={isDark ? '#6d95a8' : '#64748b'} anchorX="center" anchorY="middle" outlineWidth={0.0024} outlineColor={isDark ? '#020617' : '#ffffff'}>
-                        earth&apos;s digital systems · a second tide
+                        Earth&apos;s digital systems · a second tide
                     </Text>
                 </Billboard>
             </group>
