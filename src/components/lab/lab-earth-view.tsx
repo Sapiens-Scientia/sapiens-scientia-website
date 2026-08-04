@@ -2596,9 +2596,12 @@ const DIGITAL_MOON_ORBIT_RADIUS = 2.0
 const DIGITAL_MOON_PERIOD_S = 150
 const DIGITAL_MOON_PACKETS = 7
 const DIGITAL_TIDE_PACKETS = 14
-// Rides essentially in the ecliptic plane, inclined ~5° — the same small
-// tilt the Moon's own orbit carries.
-const DIGITAL_MOON_ORBIT_EULER = new THREE.Euler(0.09, 0, 0)
+// The hero/finale camera sits 0.95 rad above the ecliptic, so a truly flat
+// orbit projects as a tall oval — the moonlet looping high and low. Tipping
+// the orbit plane toward that camera (leaving ~14° of opening) makes the
+// ring read as a level, shallow ellipse: the Digital Moon sweeps across on
+// the same visual band as the Moon, passing in front of and behind Earth.
+const DIGITAL_MOON_ORBIT_EULER = new THREE.Euler(-0.71, 0, 0)
 
 const TIDE_VERT = `
     varying vec3 vNormal;
