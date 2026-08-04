@@ -152,21 +152,28 @@ function orbitPos(progress: number, radius: number, y = 0) {
 
 // Scroll fraction → log10(seconds since the Big Bang). Movement I, through
 // the birth of the Milky Way (~17.06) and the Sun (~17.46); after that the
-// clock hands over to Earth-age time below.
-const pToLogT = piecewise([
-  [0.02, -43], [0.05, -35], [0.085, 0], [0.115, 2.26],
-  [0.155, 13.08], [0.195, 15.8], [0.24, 16.6], [0.3, 17.06], [0.363, 17.4655],
-]);
+// clock hands over to Earth-age time below. Stops are placed so the clock
+// reaches each narrated moment INSIDE its caption's window — nucleosynthesis
+// while "Three minutes in" is up, recombination (and its flash) mid-way
+// through "380,000 years" — then dwells at the Sun's formation while the
+// planets condense.
+const TIME_STOPS: [number, number][] = [
+  [0.02, -43], [0.045, -35], [0.075, 0], [0.09, 2.26],
+  [0.13, 13.08], [0.19, 15.8], [0.24, 16.6], [0.3, 17.06],
+  [0.33, 17.4629], [0.363, 17.4655],
+];
+const pToLogT = piecewise(TIME_STOPS);
 
 // Scroll fraction → millions of years BEFORE PRESENT, for Earth's own history
 // (Movement I·b). Dwells sit on the geologic beats.
-const pToAgoMa = piecewise([
+const AGO_STOPS: [number, number][] = [
   [0.365, 4540], [0.418, 4000], [0.46, 2600], [0.468, 2400], [0.494, 800],
   [0.5, 650], [0.505, 538.8],
   // the vertebrate → human climb, paced so each milestone gets even scroll
   [0.516, 425], [0.524, 375], [0.532, 320], [0.54, 210], [0.548, 66],
   [0.553, 20], [0.558, 6], [0.562, 0.3], [0.575, 0],
-]);
+];
+const pToAgoMa = piecewise(AGO_STOPS);
 
 // The geologic time scale rail (colors shared with the site's galaxy helix).
 const GEO_EONS = [
@@ -275,11 +282,12 @@ function lifeYAtAge(age: number) {
 // Scroll fraction → log10(metres across the view). Movements II & III.
 // Dwells sit on each address line; the long plunges land on the "emptiness"
 // beats between them. Starts after the pivot's beat of black.
-const pToLogM = piecewise([
+const SCALE_STOPS: [number, number][] = [
   [0.602, 26.95], [0.63, 26.2], [0.657, 24.6], [0.695, 22.9], [0.739, 20.9],
   [0.763, 19.55], [0.783, 18.85], [0.807, 17.9], [0.84, 14.6], [0.853, 13.4],
   [0.874, 12.6], [0.893, 11.78], [0.906, 11.6], [0.936, 7.35], [1.0, 7.35],
-]);
+];
+const pToLogM = piecewise(SCALE_STOPS);
 
 type Beat = {
   from: number;
@@ -294,17 +302,17 @@ type Beat = {
 const BEATS: Beat[] = [
   // Movement I — cosmic time
   { from: 0.0, to: 0.028, title: "This is everything there is.", sub: "Every galaxy, every atom of you — in a point smaller than small. Scroll, and let it begin." },
-  { from: 0.032, to: 0.062, title: "10⁻³⁵ seconds", sub: "Space itself tears outward, doubling and doubling, faster than light." },
-  { from: 0.068, to: 0.1, title: "Three minutes in", sub: "The universe is a furnace forging the first nuclei — hydrogen and helium, the stuff of every future sun." },
-  { from: 0.112, to: 0.148, title: "380,000 years", sub: "The fog clears and light gets loose. That first flash is still all around you — part of the static between radio stations." },
-  { from: 0.155, to: 0.19, title: "The dark ages", sub: "A hundred million years of nothing but cooling gas. Then, one by one, the lights come on." },
-  { from: 0.196, to: 0.235, title: "The age of galaxies", sub: "Gravity spends billions of years braiding gas into hundreds of billions of galaxies." },
+  { from: 0.032, to: 0.064, title: "10⁻³⁵ seconds", sub: "Space itself tears outward, doubling and doubling, faster than light." },
+  { from: 0.069, to: 0.106, title: "Three minutes in", sub: "The universe is a furnace forging the first nuclei — hydrogen and helium, the stuff of every future sun." },
+  { from: 0.111, to: 0.15, title: "380,000 years", sub: "The fog clears and light gets loose. That first flash is still all around you — part of the static between radio stations." },
+  { from: 0.155, to: 0.192, title: "The dark ages", sub: "A hundred million years of nothing but cooling gas. Then, one by one, the lights come on." },
+  { from: 0.197, to: 0.24, title: "The age of galaxies", sub: "Gravity spends billions of years braiding gas into hundreds of billions of galaxies." },
   // Movement I·b — home is built
-  { from: 0.245, to: 0.298, title: "Home is built", sub: "Our galaxy assembles itself out of smaller ones. The disc you live in settles into a slow, patient spin." },
-  { from: 0.31, to: 0.36, title: "9.2 billion years in", sub: "A cloud of recycled star-dust collapses. A new sun switches on, and the leftovers dry into worlds." },
-  { from: 0.37, to: 0.418, title: "Earth, day one", sub: "A ball of molten rock under a rain of asteroids. One collision the size of a planet carves off the Moon." },
-  { from: 0.428, to: 0.458, title: "3.7 billion years ago", sub: "In the young oceans, chemistry learns to copy itself — and one unbroken thread of that first life leads, cell by cell, all the way to you." },
-  { from: 0.466, to: 0.498, title: "2.4 billion years ago", sub: "Microbes exhale oxygen; the sky turns blue. Then cells learn to keep a nucleus — the start of everything larger than a smudge." },
+  { from: 0.246, to: 0.3, title: "Home is built", sub: "Our galaxy assembles itself out of smaller ones. The disc you live in settles into a slow, patient spin." },
+  { from: 0.306, to: 0.362, title: "9.2 billion years in", sub: "A cloud of recycled star-dust collapses. A new sun switches on, and the leftovers dry into worlds." },
+  { from: 0.368, to: 0.423, title: "Earth, day one", sub: "A ball of molten rock under a rain of asteroids. One collision the size of a planet carves off the Moon." },
+  { from: 0.428, to: 0.462, title: "3.7 billion years ago", sub: "In the young oceans, chemistry learns to copy itself — and one unbroken thread of that first life leads, cell by cell, all the way to you." },
+  { from: 0.466, to: 0.5, title: "2.4 billion years ago", sub: "Microbes exhale oxygen; the sky turns blue. Then cells learn to keep a nucleus — the start of everything larger than a smudge." },
   { from: 0.505, to: 0.518, title: "540 million years ago", sub: "The Cambrian explosion invents almost every kind of body at once — including the first with a nerve cord down its back, the line that becomes us." },
   { from: 0.521, to: 0.532, title: "375 million years ago", sub: "A fish with sturdy fins hauls itself onto land. Every animal that has walked since is its descendant." },
   { from: 0.535, to: 0.549, title: "In the dinosaurs' shadow", sub: "For 150 million years our ancestors stay small and warm-blooded. Then, 66 million years ago, the sky falls — and the survivors inherit the world." },
@@ -344,15 +352,43 @@ const ADDRESS: { p: number; line: string; note: string }[] = [
 
 const TIME_TICKS: [number, string][] = [
   [-43, "10⁻⁴³ s"], [-35, "inflation"], [0, "1 second"], [2.26, "3 minutes"],
-  [13.08, "380,000 yr"], [15.8, "first stars"], [17.64, "today"],
+  [13.08, "380,000 yr"], [15.8, "first stars"], [16.6, "galaxies"],
+  [17.06, "the Milky Way"], [17.4655, "the Sun"],
 ];
 const SCALE_TICKS: [number, string][] = [
   [26.9, "observable universe"], [24.7, "Laniakea"], [23.0, "Local Group"],
   [21.0, "Milky Way"], [19.0, "the neighborhood"], [13.1, "Solar System"],
   [11.75, "Earth's orbit"], [7.35, "Earth"],
 ];
-const TIME_RANGE: [number, number] = [-43, 17.64];
-const SCALE_RANGE: [number, number] = [27.2, 7.0];
+
+// The altimeter lays out its ticks — and moves its cursor — in SCROLL space:
+// the fraction of the journey at which each value is actually reached. A
+// linear log/Ma axis crushed the eventful late universe into the rail's last
+// few pixels (and the whole Phanerozoic into a sliver) while the cursor
+// sprinted, then crawled. Story-paced spacing keeps the cursor gliding evenly
+// with the scroll; the labels still carry the true values.
+const TIME_P: [number, number] = [0.02, 0.363];
+const GEO_P: [number, number] = [0.365, 0.575];
+const SCALE_P: [number, number] = [0.602, 0.936];
+
+/** Inverse of piecewise(): the x at which the map first reaches value v. */
+function pAt(stops: [number, number][], v: number) {
+  for (let i = 0; i < stops.length - 1; i++) {
+    const [x0, y0] = stops[i];
+    const [x1, y1] = stops[i + 1];
+    if (v >= Math.min(y0, y1) && v <= Math.max(y0, y1)) {
+      return x0 + ((v - y0) / (y1 - y0 || 1)) * (x1 - x0);
+    }
+  }
+  const [firstX, firstY] = stops[0];
+  const [lastX, lastY] = stops[stops.length - 1];
+  return (lastY >= firstY ? v < firstY : v > firstY) ? firstX : lastX;
+}
+const railF = (stops: [number, number][], span: [number, number]) =>
+  (v: number) => mapRange(pAt(stops, v), span[0], span[1]);
+const timeTickF = railF(TIME_STOPS, TIME_P);
+const scaleTickF = railF(SCALE_STOPS, SCALE_P);
+const geoRailF = railF(AGO_STOPS, GEO_P);
 
 const SCROLL_VH = 2100; // scrollable length of the piece, in viewport-heights
 
@@ -1574,10 +1610,12 @@ export function YouAreHereExperience() {
         p < 0.365 ? "time" : p < 0.594 ? "geo" : p < 0.932 ? "scale" : "now";
       setAltMode(mode);
       if (cursorRef.current) {
+        // the cursor rides in scroll space, matching the tick layout — an
+        // even glide instead of a log-axis sprint-then-crawl
         let f = 0;
-        if (mode === "time") f = mapRange(pToLogT(p), TIME_RANGE[0], TIME_RANGE[1]);
-        else if (mode === "geo") f = (EARTH_AGE_MA - pToAgoMa(p)) / EARTH_AGE_MA;
-        else if (mode === "scale") f = mapRange(pToLogM(p), SCALE_RANGE[0], SCALE_RANGE[1]);
+        if (mode === "time") f = mapRange(p, TIME_P[0], TIME_P[1]);
+        else if (mode === "geo") f = mapRange(p, GEO_P[0], GEO_P[1]);
+        else if (mode === "scale") f = mapRange(p, SCALE_P[0], SCALE_P[1]);
         else f = 1;
         cursorRef.current.style.top = `${(f * 100).toFixed(2)}%`;
       }
@@ -1955,8 +1993,6 @@ export function YouAreHereExperience() {
 
   // ------------------------------------------------------------------- UI
   const beat = beatIdx >= 0 ? BEATS[beatIdx] : null;
-  const ticks = altMode === "time" ? TIME_TICKS : SCALE_TICKS;
-  const range = altMode === "time" ? TIME_RANGE : SCALE_RANGE;
 
   return (
     <div ref={journeyRef} className="yah relative bg-[#050308] text-[#f2ece1]">
@@ -2077,10 +2113,12 @@ export function YouAreHereExperience() {
               {/* keyed by mode so each coordinate system visibly re-arms */}
               <div key={altMode} className="absolute inset-0 [animation:yahFade_1.1s_ease_both]">
               {altMode === "geo" ? (
-                // the geologic time scale: four eons, oldest at the top
+                // the geologic time scale: four eons, oldest at the top,
+                // each spanning the scroll it actually occupies — so the
+                // Phanerozoic gets room for its run of milestones
                 GEO_EONS.map((eon) => {
-                  const top = ((EARTH_AGE_MA - eon.from) / EARTH_AGE_MA) * 100;
-                  const height = ((eon.from - eon.to) / EARTH_AGE_MA) * 100;
+                  const top = geoRailF(eon.from) * 100;
+                  const height = geoRailF(eon.to) * 100 - top;
                   return (
                     <div key={eon.name}>
                       <div
@@ -2097,8 +2135,8 @@ export function YouAreHereExperience() {
                   );
                 })
               ) : altMode !== "now" ? (
-                ticks.map(([v, label]) => {
-                  const f = mapRange(v, range[0], range[1]);
+                (altMode === "time" ? TIME_TICKS : SCALE_TICKS).map(([v, label]) => {
+                  const f = (altMode === "time" ? timeTickF : scaleTickF)(v);
                   return (
                     <div key={label} className="absolute left-0" style={{ top: `${f * 100}%` }}>
                       <div className="h-px w-2 bg-[#f2ece1]/40" />
@@ -2257,7 +2295,7 @@ export function YouAreHereExperience() {
           ) : beat ? (
             <div
               key={beatIdx}
-              className="pointer-events-none absolute bottom-[26vh] left-1/2 z-40 w-[min(38rem,calc(100vw-3rem))] -translate-x-1/2 text-center [animation:yahRise_0.9s_ease_both] sm:bottom-[16vh]"
+              className="pointer-events-none absolute bottom-[26vh] left-1/2 z-40 w-[min(38rem,calc(100vw-3rem))] -translate-x-1/2 text-center [animation:yahRise_0.7s_ease_both] sm:bottom-[16vh]"
             >
               <h2 className="text-2xl font-light leading-tight tracking-tight text-[#f2ece1] drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)] sm:text-4xl">
                 {beat.title}
