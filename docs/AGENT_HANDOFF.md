@@ -65,7 +65,7 @@ If the implementation reveals a conceptual mismatch or durable constraint, updat
   `public/standalone/big-bang-universe/index.html`. The sitewide Universe
   Timeline is hidden on that route so the standalone app's controls are not
   covered.
-- `src/components/earth-overlay.tsx` owns Meta Earth overlays: Earth Systems, Digital Systems, Sapiens Platforms, vital signs popout, data index popout, and clock.
+- `src/components/earth-overlay.tsx` owns Meta Earth overlays: the three system panels (Physical Systems, Meta Systems, Information Systems), Sapiens Platforms, vital signs popout, data index popout, connectivity legend, and clock. Those first and third labels are display names for the Earth Systems and Digital Systems ontology domains — see the naming note in `docs/CONTENT_MODEL.md` before renaming either.
 - `src/lib/earth-systems.ts` is the Meta Earth taxonomy source for Earth Systems, Digital Systems, and platform bridge highlighting.
 - `src/lib/vital-signs.ts` feeds both `/vitals` and Meta Earth vital-sign overlays.
 - `src/lib/data-index.ts` feeds `/projects/sapiens-scientia-data-index` and the Digital Halo/data index surfaces.

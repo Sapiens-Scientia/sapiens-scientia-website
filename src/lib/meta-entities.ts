@@ -14,6 +14,14 @@
 export const metaEntityDefinition =
   "A Meta-Entity is an emergent, persistent structure composed of people, technologies, rules, and information that maintains its identity despite continual turnover of its individual components.";
 
+// ---------------------------------------------------------------------------
+// The Meta Systems panel on the Meta Earth hero: the Meta-Entities it lists,
+// beside the Physical Systems and Information Systems trees. A deliberately
+// short opening set — extend it here as the taxonomy fills in.
+// ---------------------------------------------------------------------------
+
+export const metaSystemsEntities = ["Nations", "Corporations", "Markets"];
+
 /** The turnover argument, in the order it should be read. */
 export const metaEntityTurnover = [
   "Individuals are born and die.",

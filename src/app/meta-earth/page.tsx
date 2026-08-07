@@ -5,7 +5,7 @@ import { MetaEarthExperience } from "@/components/meta-earth-experience";
 export const metadata: Metadata = {
   title: "Meta Earth | Sapiens Scientia",
   description:
-    "Meta Earth: the live sunlit Earth carrying its planetary connectivity layer — fiber, submarine cable, wireless, and data centers — with the Earth Systems, Digital Systems, platform map, and the Meta-Entity framework.",
+    "Meta Earth: the live sunlit Earth carrying its planetary connectivity layer — fiber, submarine cable, wireless, and data centers — with the Physical Systems, Information Systems, and Meta Systems panels, the platform map, and the Meta-Entity framework.",
 };
 
 export default function MetaEarthPage() {

@@ -120,6 +120,21 @@ The Meta Earth side panels are not arbitrary navigation lists. They are conceptu
 - Digital Systems: compute, communication, data systems, and intelligence systems, visualized as the Digital Halo rather than as a second Earth.
 - Sapiens Platforms: Persona, Societas, and Terra connect the Earth side to the Digital side.
 
+### Hero panel display names
+
+The Meta Earth hero labels its three panels **Physical Systems**, **Meta Systems**,
+and **Information Systems**. Two of those are display names rather than ontology
+terms: Physical Systems shows the Earth Systems domain, and Information Systems
+shows the Digital Systems domain. The ontology keeps its own canonical names
+(`ontology/earth-systems.ts`, `ontology/digital-systems.ts`), and `docs/ONTOLOGY.md`
+renders those — change one layer without the other only deliberately.
+
+Meta Systems is the third panel, centred above the globe. Physical Systems reads
+the planet's matter, Information Systems reads its built information layer, and
+Meta Systems names the level above both, listing the Meta-Entities that emerge
+where the two couple. Its list lives in `metaSystemsEntities`
+(`src/lib/meta-entities.ts`) and links down to the Meta-Entity framework section.
+
 Both the Earth Systems and Digital Systems trees are projected from `src/lib/ontology/` (the Earth tree is a curated projection with its own order/nesting/inclusion — e.g. it omits Data Centers). The platform bridges derive their highlights from each platform's `studies` scope in the ontology. `src/lib/earth-systems.ts` holds only the projection logic.
 
 ## Morbus Model

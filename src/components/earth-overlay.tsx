@@ -14,6 +14,7 @@ import {
   type ConceptNode,
   type HumanPlatformBridge,
 } from "@/lib/earth-systems";
+import { metaSystemsEntities } from "@/lib/meta-entities";
 import { earthVitalSignHighlights, type EarthVitalSign } from "@/lib/vital-signs";
 import { useLiveVitalSigns, type LiveVitalSignsStatus } from "@/hooks/use-live-vital-signs";
 import { VitalSignChart } from "@/components/vital-sign-chart";
@@ -560,6 +561,9 @@ function EarthSystemsColumn({
   );
 }
 
+// Displayed as "Information Systems". The ontology domain behind it is still
+// named Digital Systems (`src/lib/ontology/digital-systems.ts`), the same way
+// this hero shows the Earth Systems domain as "Physical Systems".
 function DigitalSystemsColumn({
   activeBridge,
   panelRef,
@@ -594,7 +598,7 @@ function DigitalSystemsColumn({
           onPanelPointerLeave={onPanelPointerLeave}
           panelRef={panelRef}
           noWrapTitle
-          title="Digital Systems"
+          title="Information Systems"
           collapsed={!isColumnOpen}
           onToggleCollapse={() =>
             setIsColumnOpen((value) => {
@@ -604,7 +608,7 @@ function DigitalSystemsColumn({
               return !value;
             })
           }
-          listId="digital-systems-list"
+          listId="information-systems-list"
           secondaryToggle={{
             label: "Global Data Index",
             expanded: isDataIndexOpen,
@@ -769,6 +773,78 @@ function ConnectivityLegend() {
   );
 }
 
+// Meta Systems: the third panel, centred above the globe between the two flanking
+// columns. Physical Systems reads the planet's matter, Information Systems reads
+// its built information layer, and this one names the level above both — the
+// Meta-Entities that emerge where the two couple, and outlive every part of
+// themselves. It opens into a list, the same way its two neighbours do.
+function MetaSystemsPanel({
+  onPanelPointerEnter,
+  onPanelPointerLeave,
+}: {
+  onPanelPointerEnter: () => void;
+  onPanelPointerLeave: () => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const { handlePanelWheel, panelRef } = useManualPanelWheel<HTMLElement>();
+
+  return (
+    <aside
+      ref={panelRef}
+      className={[
+        "scrollbar-hidden pointer-events-auto overscroll-contain px-6 py-4 text-center",
+        "w-64 max-w-[calc(100vw-2rem)] max-lg:w-full",
+        "bg-black/42 text-white shadow-[0_0_28px_rgba(59,130,246,0.16)] backdrop-blur-sm",
+        isOpen ? "max-h-[46vh] overflow-y-auto lg:max-h-[56vh]" : "h-auto overflow-visible",
+      ].join(" ")}
+      aria-label="Meta Systems"
+      onPointerEnter={onPanelPointerEnter}
+      onPointerLeave={onPanelPointerLeave}
+      onWheel={handlePanelWheel}
+      onWheelCapture={handlePanelWheel}
+      onTouchMoveCapture={stopPanelScrollPropagation}
+    >
+      <div className="flex items-center justify-center gap-2">
+        <h2 className="text-2xl font-semibold leading-none text-white max-lg:text-xl">
+          <button
+            type="button"
+            onClick={() => setIsOpen((value) => !value)}
+            aria-expanded={isOpen}
+            aria-controls="meta-systems-list"
+            aria-label={`${isOpen ? "Hide" : "Show"} Meta Systems`}
+            className="cursor-pointer text-inherit transition-colors hover:text-blue-200 focus:outline-none focus-visible:text-blue-200"
+          >
+            Meta Systems
+            <span aria-hidden className="ml-2 inline-block align-middle text-sm text-slate-400">
+              {isOpen ? "▾" : "▸"}
+            </span>
+          </button>
+        </h2>
+      </div>
+      {isOpen ? (
+        <div className="text-left">
+          <p className="mb-2 mt-3 text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-blue-300/80">
+            Meta-Entities
+          </p>
+          <ol id="meta-systems-list" className="space-y-1.5">
+            {metaSystemsEntities.map((entity) => (
+              <li key={entity} className="text-sm font-semibold leading-tight text-sky-100">
+                {entity}
+              </li>
+            ))}
+          </ol>
+          <a
+            href="#meta-entities"
+            className="mt-3 inline-flex text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-blue-300/85 underline-offset-4 transition-colors hover:text-white hover:underline focus:outline-none focus-visible:text-white focus-visible:underline"
+          >
+            Read the framework →
+          </a>
+        </div>
+      ) : null}
+    </aside>
+  );
+}
+
 // The live local clock, bottom-left — the same reading, in the same seat and
 // style, as the end of The History of the Universe journey, so the handoff
 // keeps its continuity.
@@ -828,6 +904,10 @@ export function EarthOverlay({
           Sapiens Scientia
         </p>
         <ConnectivityLegend />
+        <MetaSystemsPanel
+          onPanelPointerEnter={onPanelPointerEnter}
+          onPanelPointerLeave={onPanelPointerLeave}
+        />
       </header>
       <LocalClock />
       <div className="pointer-events-none absolute inset-x-0 top-1/2 z-10 flex -translate-y-1/2 items-center justify-between gap-6 px-8 max-lg:inset-x-4 max-lg:bottom-36 max-lg:top-auto max-lg:grid max-lg:translate-y-0 max-lg:grid-cols-2 max-lg:px-0 max-md:grid-cols-1">
