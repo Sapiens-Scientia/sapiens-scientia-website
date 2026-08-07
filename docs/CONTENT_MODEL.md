@@ -18,9 +18,60 @@ This is the single source of truth: the Ladder of Scale (`src/lib/scales.ts`), t
 The Meta Earth page visualizes this as:
 
 - Physical Earth: the material planet and Earth systems.
+- Planetary Connectivity Layer: the built information layer on the planet's surface — terrestrial fiber corridors, submarine cable systems, wireless relays, and the metropolitan exchange points and data-center clusters they join.
 - Digital Halo: orbiting digital knowledge infrastructure, data systems, models, and networks.
 - Meta Earth: the bridge between planetary reality and digital representation.
 - Sapiens Platforms: Persona, Societas, and Terra as interpretive bridges.
+- Meta-Entities: the structures that build and maintain all of the above.
+
+## Planetary Connectivity Layer
+
+The Meta Earth hero globe carries a surface network layer arguing that humanity
+has constructed a second planetary layer composed not of biology or geology but
+of information infrastructure. It draws four channels:
+
+- Terrestrial fiber corridors (warm amber), hugging the surface between metros.
+- Submarine cable systems (cyan), routed through the real straits and canals — Malacca, Bab-el-Mandeb, Suez, Luzon, Hormuz.
+- Wireless relays (pale indigo), arcing above the surface for satellite, microwave, and cellular backhaul.
+- Nodes (pale cyan) at major internet exchange points, cable landings, and data-center clusters, sized by tier.
+
+Light pulses run continuously through every channel, and both routes and nodes
+brighten on the planet's night side, the way city lights do from orbit.
+
+The geography is a legible, illustrative sample rather than an exhaustive
+inventory. The source of truth is `src/lib/planetary-network.ts`; the renderer is
+`PlanetaryNetwork` in `src/components/lab/lab-earth-view.tsx`, enabled by
+`LabEarthView`'s `connectivity` prop.
+
+## Meta-Entities
+
+Meta-Entities are a core conceptual building block of Sapiens Scientia, alongside
+the Ladder of Scale and the Arc of Time.
+
+A Meta-Entity is an emergent, persistent structure composed of people,
+technologies, rules, and information that maintains its identity despite
+continual turnover of its individual components. Individuals are born and die;
+employees come and go; governments change leadership; corporations replace entire
+workforces. The larger structure persists.
+
+Examples include governments, nation states, corporations, universities, markets,
+scientific institutions, religions, nonprofit organizations, digital platforms,
+financial systems, and the Internet itself. Each possesses persistent identity,
+internal rules, memory, decision-making processes, resource flows, and adaptation
+over time.
+
+The Meta Earth page presents them through a nested levels-of-organization
+diagram — Cell, Individual, Household, Organization, Institution, Nation State,
+Global Civilization — with a marked threshold at the point where a structure
+first outlives every one of its components. The diagram emphasizes emergence,
+persistence, and interconnectedness rather than hierarchy alone: components drift
+and turn over while the ring they belong to does not move.
+
+Individuals and Meta-Entities are complementary levels of organization, not
+competing explanations. Persona reads the individual; Societas reads the
+Meta-Entity.
+
+The source of truth is `src/lib/meta-entities.ts`.
 
 ## Platform Naming
 

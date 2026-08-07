@@ -708,6 +708,67 @@ function HumanPlatformsBridgePanel({
   );
 }
 
+// A key for the globe's planetary connectivity layer, sitting under the
+// wordmark: four channels, in the same colours the 3D scene draws them.
+// Restrained on purpose — the globe is the subject, this only names what the
+// reader is already looking at.
+//
+// The light swatches run a shade deeper than the scene's light palette: the
+// scene draws on the dark globe, the legend sits on the paper background.
+const connectivityKey = [
+  { label: "Fiber routes", dark: "#f0a95e", light: "#c47a20", mark: "line" },
+  { label: "Submarine cables", dark: "#4cc9f8", light: "#1d84b5", mark: "line" },
+  { label: "Wireless links", dark: "#9fb0f2", light: "#5d6ac4", mark: "arc" },
+  { label: "Data centers & exchanges", dark: "#bde9ff", light: "#3d9fbb", mark: "dot" },
+] as const;
+
+function ConnectivityLegend() {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
+  return (
+    <div className="pointer-events-none hidden flex-col items-center gap-2 sm:flex">
+      <ul className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5">
+        {connectivityKey.map((entry) => {
+          const color = isDark ? entry.dark : entry.light;
+
+          return (
+            <li
+              key={entry.label}
+              className={`flex items-center gap-2 font-mono text-[0.56rem] uppercase tracking-[0.16em] ${
+                isDark ? "text-slate-400" : "text-slate-600"
+              }`}
+            >
+              <span aria-hidden className="flex h-2 w-4 items-center justify-center">
+                {entry.mark === "dot" ? (
+                  <span
+                    className="h-[5px] w-[5px] rounded-full"
+                    style={{ backgroundColor: color, boxShadow: `0 0 7px ${color}` }}
+                  />
+                ) : entry.mark === "arc" ? (
+                  <svg viewBox="0 0 16 8" className="h-2 w-4" fill="none">
+                    <path d="M1 7 Q8 0 15 7" stroke={color} strokeWidth="1.2" strokeLinecap="round" />
+                  </svg>
+                ) : (
+                  <span className="h-[1.5px] w-4 rounded-full" style={{ backgroundColor: color }} />
+                )}
+              </span>
+              {entry.label}
+            </li>
+          );
+        })}
+      </ul>
+      <p
+        className={`max-w-md text-center text-[0.58rem] uppercase tracking-[0.16em] ${
+          isDark ? "text-slate-500" : "text-slate-500"
+        }`}
+      >
+        A second planetary layer — built, not inherited
+      </p>
+    </div>
+  );
+}
+
 // The live local clock, bottom-left — the same reading, in the same seat and
 // style, as the end of The History of the Universe journey, so the handoff
 // keeps its continuity.
@@ -766,6 +827,7 @@ export function EarthOverlay({
         <p className="site-wordmark bg-gradient-to-r from-emerald-300/84 to-blue-300/88 bg-clip-text text-2xl font-semibold uppercase tracking-[0.22em] text-transparent drop-shadow-[0_0_18px_rgba(96,165,250,0.42)] sm:text-4xl sm:tracking-[0.35em] md:text-5xl">
           Sapiens Scientia
         </p>
+        <ConnectivityLegend />
       </header>
       <LocalClock />
       <div className="pointer-events-none absolute inset-x-0 top-1/2 z-10 flex -translate-y-1/2 items-center justify-between gap-6 px-8 max-lg:inset-x-4 max-lg:bottom-36 max-lg:top-auto max-lg:grid max-lg:translate-y-0 max-lg:grid-cols-2 max-lg:px-0 max-md:grid-cols-1">

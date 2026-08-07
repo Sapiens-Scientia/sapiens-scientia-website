@@ -156,3 +156,46 @@ If the implementation reveals a conceptual mismatch or durable constraint, updat
   Galaxy view and Meta Earth hero.
 - Keep `docs/ROUTES.md` current when adding or removing public pages.
 - Consider adding tests around route metadata or data-module shape if the site continues to grow.
+
+## Meta Earth Connectivity Layer And Meta-Entity Section
+
+- The Meta Earth hero's geodesic digital shell was removed and replaced by
+  `PlanetaryNetwork` (`src/components/lab/lab-earth-view.tsx`), which renders the
+  fiber / submarine / wireless / node layer from `src/lib/planetary-network.ts`.
+  `LabEarthView`'s `digitalShell` prop is gone; use `connectivity` instead.
+- The layer is mounted inside `EarthBody`'s spin group so every route stays
+  locked to its real geography as the planet turns. `EarthBody` passes it the
+  world-space sun direction; the component carries that into its own spinning
+  frame each tick for the night-side brightening.
+- **react-three-fiber deep-copies a `uniforms` prop onto a ShaderMaterial.**
+  Mutating the object you passed in JSX does nothing — the material holds a
+  clone. `PlanetaryNetwork` therefore writes uniforms through material refs each
+  frame. Any future custom-shader work in this file should do the same; the
+  failure mode is silent (geometry present, nothing drawn).
+- The new Meta-Entity section is `src/components/meta-entity-framework.tsx`,
+  rendered by `MetaEarthExperience` after `HomeOverview`, with content from
+  `src/lib/meta-entities.ts` and its animation keyframes (`me-orbit`,
+  `me-turnover`, `.me-ring-label`) in `src/app/globals.css`.
+- SVG coordinates computed with trigonometry must be rounded before rendering
+  (`round()` in that component) or React reports a hydration mismatch on the
+  differing float tails.
+- `:root --background` resolves to a light value even in the dark theme, so it is
+  not usable as a "dark surface" token. The `.me-ring-label` knockout pins `#000`
+  and overrides under `.light-theme`, mirroring the `.light-theme .bg-black` rule.
+
+## Known Development Notes (browser verification)
+
+- The in-app Browser pane's GPU process can wedge after repeated reloads of the
+  Three-heavy pages: every canvas then renders black, including on unrelated
+  routes, and new tabs inherit the wedged process. Restarting the dev server does
+  not fix it.
+- A working alternative that needs no extension: start
+  `chrome-headless-shell` (Playwright's cache has one) with
+  `--remote-debugging-port=9222 --enable-unsafe-swiftshader`, then drive
+  `Page.navigate` / `Page.captureScreenshot` over CDP from a small Node 22 script
+  using the global `WebSocket`. Give the page 10–15s before capturing so the
+  5400×2700 Earth texture and the drei fonts have loaded.
+- `THREE.WebGLRenderer: Context Lost.` appears on the Meta Earth hero under
+  software rendering (SwiftShader) with or without the connectivity layer. It is
+  a property of the scene's weight in software rasterization, not a regression
+  from the network layer — verified by A/B with `connectivity={false}`.

@@ -435,6 +435,58 @@ canvas {
   }
 }
 
+/* Meta-Entity levels diagram. The component dots orbit their ring and fade out
+   to be replaced; the ring itself never moves. That contrast is the point. */
+.me-orbit {
+  transform-box: view-box;
+  transform-origin: 50% 50%;
+  animation-name: me-orbit;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.me-dot {
+  animation-name: me-turnover;
+  animation-duration: 6.4s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+/* Ring labels sit on the ring line, so they knock a gap out of it. The stroke
+   has to match the section's own surface, which is bg-black in dark and the
+   paper background in light — the same pair the .light-theme .bg-black rule
+   below maps. (:root --background is not that pair.) */
+.me-ring-label {
+  paint-order: stroke;
+  stroke: #000000;
+  stroke-width: 6px;
+  stroke-linejoin: round;
+}
+
+.light-theme .me-ring-label {
+  stroke: var(--background);
+}
+
+@keyframes me-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes me-turnover {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  14%,
+  62% {
+    opacity: 1;
+  }
+  82% {
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .big-bang-gate--active .big-bang-pulse,
   .big-bang-gate--active .big-bang-rings,
@@ -444,6 +496,15 @@ canvas {
   .quiet-singularity::before,
   .quiet-singularity__core {
     animation-duration: 1ms;
+  }
+
+  .me-orbit,
+  .me-dot {
+    animation: none;
+  }
+
+  .me-dot {
+    opacity: 0.8;
   }
 }
 

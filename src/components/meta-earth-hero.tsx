@@ -9,13 +9,14 @@ import { getChartContinuationCamera } from "@/components/lab/earth-geometry";
 import { guessLocation } from "@/lib/guess-location";
 import { useTheme } from "@/lib/use-theme";
 
-// The Meta Earth hero: the homepage journey's Current Sunlight globe wrapped
-// in the geodesic digital shell and attended by its two moons — the real
-// Moon at its true place in the sky, and the Digital Moon, Earth's digital
-// systems as a made moon raising a second tide — under the Meta Earth
-// overlay chrome. It opens from the same constant camera as the journey's
-// finale, so "enter meta earth" reads as the overlays changing over an
-// unmoved globe while the digital layer materializes.
+// The Meta Earth hero: the homepage journey's Current Sunlight globe carrying
+// its planetary connectivity layer — the fiber corridors, submarine cables,
+// wireless relays, and exchange nodes humanity has built as a second planetary
+// shell — and attended by its two moons: the real Moon at its true place in the
+// sky, and the Digital Moon, Earth's digital systems as a made moon raising a
+// second tide. It opens from the same constant camera as the journey's finale,
+// so "enter meta earth" reads as the overlays changing over an unmoved globe
+// while the digital layer materializes.
 const SunlightGlobe = dynamic(
   () => import("@/components/lab/lab-earth-view").then((m) => m.LabEarthView),
   { ssr: false },
@@ -144,7 +145,7 @@ export function MetaEarthHero() {
             className="h-full w-full"
             mode="globe"
             moon
-            digitalShell
+            connectivity
             digitalMoon
             isDarkOverride={theme === "dark"}
             cameraOverride={HERO_CAMERA}

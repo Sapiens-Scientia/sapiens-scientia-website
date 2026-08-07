@@ -166,3 +166,48 @@ browser derivative groups the original SWC compartments into selectable soma,
 axon, basal-dendrite, and apical-dendrite meshes and minimally amplifies process
 radii for legibility. The procedural neuron remains its loading and failure
 fallback.
+
+## Replace the geodesic digital shell with a planetary connectivity layer
+
+The Meta Earth hero previously wrapped the globe in an abstract geodesic web at
+1.15 Earth radii. That shell has been removed. In its place the globe carries a
+geographically real connectivity layer drawn on the surface itself: terrestrial
+fiber corridors, submarine cable systems routed through the actual straits and
+canals, wireless relay arcs, and glowing nodes at major exchange points, cable
+landings, and data-center clusters. Light pulses run every channel continuously.
+
+The argument is the reason for the change. An abstract lattice says "there is a
+digital layer." A real network of routes and landings says "humanity built a
+second planetary layer, and here is where it runs" — digital infrastructure as
+fundamental to civilization as transport, energy, and water. Routes and nodes
+brighten on the night side, so the layer reads the way city lights do from orbit.
+
+The geography is an illustrative sample, not an inventory, and the module says so.
+Keep it restrained and scientifically framed rather than futuristic: this layer
+must complement the sunlit globe, the season halo, and the Digital Moon, never
+compete with them.
+
+Source of truth: `src/lib/planetary-network.ts`. Renderer: `PlanetaryNetwork` in
+`src/components/lab/lab-earth-view.tsx`, behind `LabEarthView`'s `connectivity`
+prop (which replaced `digitalShell`). The Digital Moon is unchanged.
+
+## Adopt Meta-Entities as a core conceptual building block
+
+Sapiens Scientia now names a third core concept alongside the Ladder of Scale and
+the Arc of Time: the Meta-Entity — an emergent, persistent structure composed of
+people, technologies, rules, and information that maintains its identity despite
+continual turnover of its individual components.
+
+This is positioned as a complementary level of organization, never a competing
+explanation. The project studies humans both as biological organisms and as
+participants in larger emergent systems; understanding civilization requires
+both. Persona reads the individual, Societas reads the Meta-Entity.
+
+The public treatment lives on Meta Earth, directly after the site overview, so it
+reads as the answer to the question the hero raises: who built the layer around
+the planet? Its visualization is a nested levels-of-organization diagram with a
+marked threshold where a structure first outlives every one of its components,
+and it emphasizes emergence and persistence over hierarchy — components drift and
+turn over while the ring holding them does not move.
+
+Source of truth: `src/lib/meta-entities.ts`.

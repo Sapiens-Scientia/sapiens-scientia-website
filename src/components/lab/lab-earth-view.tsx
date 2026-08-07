@@ -14,6 +14,7 @@ import { useAppContext } from '@/components/earthview/contexts'
 import type { ThemeMode } from '@/components/earthview/contexts'
 import { EarthNorthArrowLocalYNorth } from '@/components/earthview/globe/EarthSpinDecor3D'
 import { getHomeFocusCamera, getMoonEclipticOffset } from '@/components/lab/earth-geometry'
+import { networkNodes, networkRoutes, resolveRoutePath, type NetworkChannel } from '@/lib/planetary-network'
 
 export type EarthVisualizationMode = 'globe' | 'orbit' | 'spiral' | 'galaxy'
 
@@ -963,6 +964,7 @@ function EarthBody({
     northDirection,
     homeCoords,
     onHomeProject,
+    connectivity = false,
 }: {
     mode: EarthVisualizationMode
     position: THREE.Vector3
@@ -978,6 +980,7 @@ function EarthBody({
     northDirection?: THREE.Vector3
     homeCoords?: EarthCoords
     onHomeProject?: (x: number, y: number, visible: boolean) => void
+    connectivity?: boolean
 }) {
     const year = sceneDate.getFullYear()
     const bodyRef = useRef<THREE.Group>(null)
@@ -1002,6 +1005,14 @@ function EarthBody({
     ), [sunOrbitActive, sunOrbitProgress, tiltQuaternion])
     const textureRotationOffset = sunOrbitActive ? sunOrbitProgress * Math.PI * 2 : 0
     const spinSunDirection = useMemo(() => getSunDirectionFromEarth(rotationProgress), [rotationProgress])
+    // The same sun direction, left in world space: the connectivity layer lives
+    // inside the spin group and carries it into its own frame each tick.
+    const worldSunDirection = useMemo(() => (
+        (sunOrbitActive
+            ? rotateEclipticVector(shaderBaseSunDirection.current, sunOrbitProgress)
+            : shaderBaseSunDirection.current.clone()
+        ).normalize()
+    ), [sunOrbitActive, sunOrbitProgress])
 
     useEffect(() => {
         spinInitializedRef.current = false
@@ -1027,6 +1038,7 @@ function EarthBody({
             <group ref={scaleRef} quaternion={tiltQuaternion} scale={initialScale.current}>
                 <group ref={spinRef}>
                     <EarthTexture isDark={isDark} theme={theme} rotationOffset={textureRotationOffset} />
+                    {mode === 'globe' && connectivity && <PlanetaryNetwork isDark={isDark} sunDirection={worldSunDirection} />}
                     {mode === 'globe' && homeCoords && <LocalRotationPath coords={homeCoords} isDark={isDark} theme={theme} onProject={onHomeProject} />}
                     {mode === 'globe' && <GlobeLatitudeReferenceLines isDark={isDark} theme={theme} />}
                     {mode === 'globe' && <GlobeSubsolarTrack year={year} rotationDate={rotationDate} northDirection={northDirection} isDark={isDark} theme={theme} />}
@@ -2613,158 +2625,490 @@ function EarthLabel({ isDark }: { isDark: boolean }) {
 }
 
 // ---------------------------------------------------------------------------
-// The digital shell: Earth's digital layer rendered as a geodesic web hugging
-// the globe — thin cyan struts, glowing junction nodes, and bright packets
-// drifting along the edges. It spins slowly about its own slightly tilted
-// axis, independent of the planet, and materializes over ~2s on mount.
+// The planetary connectivity layer: humanity's second planetary shell, the one
+// made of information rather than rock, water, or air. Terrestrial fiber
+// corridors and submarine cables are drawn hugging the surface, faint wireless
+// relays arc above them, and the metropolitan exchange points and data-center
+// clusters they join glow as small nodes. Light pulses run the whole web
+// continuously — the traffic that never stops.
+//
+// The layer rides inside the globe's spin group, so every route stays locked to
+// its real geography as the planet turns. Its geography lives in
+// `src/lib/planetary-network.ts`.
 // ---------------------------------------------------------------------------
 
-const DIGITAL_SHELL_RADIUS = 1.15
-const DIGITAL_SHELL_PACKETS = 14
+const NET_FIBER_RADIUS = 1.006
+const NET_SUBMARINE_RADIUS = 1.0035
+const NET_NODE_RADIUS = 1.011
+const NET_WIRELESS_BASE = 1.014
+const NET_WIRELESS_PEAK = 1.088
+/** Target arc length, in radians, between sampled points along a route. */
+const NET_SAMPLE_ARC = 0.018
+/** Points behind each pulse head, drawn as a fading comet tail. */
+const NET_TRAIL = 4
+const NET_TRAIL_ALPHA = [1, 0.46, 0.22, 0.09]
+const NET_TRAIL_SIZE = [1, 0.78, 0.6, 0.45]
 
-function DigitalShell({ isDark }: { isDark: boolean }) {
-    const spinRef = useRef<THREE.Group>(null)
-    const strutsMatRef = useRef<THREE.LineBasicMaterial>(null)
-    const nodesMatRef = useRef<THREE.PointsMaterial>(null)
-    const pulseMatRef = useRef<THREE.PointsMaterial>(null)
-    const packetsMatRef = useRef<THREE.PointsMaterial>(null)
-    const packetsRef = useRef<THREE.Points>(null)
-    const bornAtRef = useRef<number | null>(null)
+type NetworkChannelStyle = {
+    /** Pulses launched per route. */
+    pulses: number
+    /** Fraction of the route travelled per second, min and max. */
+    speed: [number, number]
+    /** Spacing between trail points, as a fraction of the route. */
+    trailGap: number
+    line: { dark: string; light: string }
+    lineOpacity: { dark: number; light: number }
+    /** How much brighter the line reads on the planet's night side. */
+    nightBoost: number
+    pulse: { dark: string; light: string }
+    pulseSize: number
+}
 
-    const { strutsGeometry, nodesGeometry, pulseGeometry, edges } = useMemo(() => {
-        const ico = new THREE.IcosahedronGeometry(DIGITAL_SHELL_RADIUS, 2)
-        const strutsGeometry = new THREE.EdgesGeometry(ico, 1)
-        ico.dispose()
-        // Unique junctions and the edge endpoint pairs, recovered from the
-        // edge segments so nodes and packets share the struts' exact frame.
-        const pos = strutsGeometry.getAttribute('position')
-        const junctions = new Map<string, THREE.Vector3>()
-        const edges: [THREE.Vector3, THREE.Vector3][] = []
-        for (let i = 0; i < pos.count; i += 2) {
-            const a = new THREE.Vector3().fromBufferAttribute(pos, i)
-            const b = new THREE.Vector3().fromBufferAttribute(pos, i + 1)
-            edges.push([a, b])
-            for (const v of [a, b]) {
-                const key = `${v.x.toFixed(4)},${v.y.toFixed(4)},${v.z.toFixed(4)}`
-                if (!junctions.has(key)) junctions.set(key, v)
-            }
+const NET_CHANNEL_STYLES: Record<NetworkChannel, NetworkChannelStyle> = {
+    // Land corridors read warm, the colour of lit ground seen from orbit.
+    fiber: {
+        pulses: 1,
+        speed: [0.05, 0.1],
+        trailGap: 0.009,
+        line: { dark: '#f0a95e', light: '#e08a2e' },
+        lineOpacity: { dark: 0.28, light: 0.44 },
+        nightBoost: 1.15,
+        pulse: { dark: '#ffe0b0', light: '#ffcf8f' },
+        pulseSize: 0.028,
+    },
+    // Sea routes take the cool hue the rest of the digital layer already uses.
+    submarine: {
+        pulses: 1,
+        speed: [0.035, 0.07],
+        trailGap: 0.008,
+        line: { dark: '#4cc9f8', light: '#2a9fd6' },
+        lineOpacity: { dark: 0.28, light: 0.42 },
+        nightBoost: 0.8,
+        pulse: { dark: '#d8f6ff', light: '#8fdcf5' },
+        pulseSize: 0.026,
+    },
+    // Wireless stays deliberately faint: present, but never the subject.
+    wireless: {
+        pulses: 1,
+        speed: [0.08, 0.15],
+        trailGap: 0.012,
+        line: { dark: '#9fb0f2', light: '#7a86d8' },
+        lineOpacity: { dark: 0.2, light: 0.28 },
+        nightBoost: 0.45,
+        pulse: { dark: '#e2e8ff', light: '#b9c3f2' },
+        pulseSize: 0.022,
+    },
+}
+
+const NET_CHANNEL_ORDER: NetworkChannel[] = ['submarine', 'fiber', 'wireless']
+
+/** Great-circle interpolation between two unit vectors. */
+function slerpUnit(a: THREE.Vector3, b: THREE.Vector3, t: number, out: THREE.Vector3) {
+    const dot = THREE.MathUtils.clamp(a.dot(b), -1, 1)
+    const theta = Math.acos(dot)
+    if (theta < 1e-6) return out.copy(a)
+    const sin = Math.sin(theta)
+    return out
+        .set(0, 0, 0)
+        .addScaledVector(a, Math.sin((1 - t) * theta) / sin)
+        .addScaledVector(b, Math.sin(t * theta) / sin)
+        .normalize()
+}
+
+/**
+ * Trace a waypoint chain as great-circle arcs on the unit sphere, then resample
+ * it at even arc length so a pulse crossing it travels at a constant speed.
+ */
+function sampleGreatCircleRoute(waypoints: [number, number][]): THREE.Vector3[] {
+    const corners = waypoints.map(([lat, lng]) => latLngToEarthPoint(lat, lng, 1))
+    const dense: THREE.Vector3[] = []
+    let totalArc = 0
+    const work = new THREE.Vector3()
+    for (let i = 0; i < corners.length - 1; i += 1) {
+        const from = corners[i]
+        const to = corners[i + 1]
+        const arc = from.angleTo(to)
+        totalArc += arc
+        const steps = Math.max(1, Math.ceil(arc / NET_SAMPLE_ARC))
+        for (let step = 0; step < steps; step += 1) {
+            dense.push(slerpUnit(from, to, step / steps, work).clone())
         }
-        const nodes = [...junctions.values()]
-        const nodesGeometry = new THREE.BufferGeometry().setFromPoints(nodes)
-        const pulseGeometry = new THREE.BufferGeometry().setFromPoints(
-            nodes.filter((_, index) => index % 9 === 0),
-        )
-        return { strutsGeometry, nodesGeometry, pulseGeometry, edges }
+    }
+    dense.push(corners[corners.length - 1].clone())
+    if (dense.length < 2) return dense
+
+    const count = THREE.MathUtils.clamp(Math.round(totalArc / NET_SAMPLE_ARC), 16, 220)
+    const cumulative = [0]
+    for (let i = 1; i < dense.length; i += 1) {
+        cumulative.push(cumulative[i - 1] + dense[i].distanceTo(dense[i - 1]))
+    }
+    const total = cumulative[cumulative.length - 1]
+    const resampled: THREE.Vector3[] = []
+    let cursor = 0
+    for (let i = 0; i < count; i += 1) {
+        const target = (i / (count - 1)) * total
+        while (cursor < cumulative.length - 2 && cumulative[cursor + 1] < target) cursor += 1
+        const span = cumulative[cursor + 1] - cumulative[cursor]
+        const f = span > 1e-9 ? (target - cumulative[cursor]) / span : 0
+        resampled.push(dense[cursor].clone().lerp(dense[cursor + 1], f).normalize())
+    }
+    return resampled
+}
+
+// Both the routes and the nodes shade toward the night side, so the layer reads
+// the way city lights do from orbit: the structure is always there, but you see
+// it best where the planet is dark.
+const NET_LINE_VERT = `
+    uniform vec3 uSun;
+    varying float vNight;
+    void main() {
+        vNight = 1.0 - smoothstep(-0.18, 0.22, dot(normalize(position), uSun));
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+`
+const NET_LINE_FRAG = `
+    uniform vec3 uColor;
+    uniform float uOpacity;
+    uniform float uNightBoost;
+    varying float vNight;
+    void main() {
+        gl_FragColor = vec4(uColor, uOpacity * (1.0 + uNightBoost * vNight));
+    }
+`
+
+// Round, softly falling-off sprites — points with a per-vertex size and alpha,
+// so pulse tails and node twinkle need only one draw call each.
+const NET_POINT_VERT = `
+    attribute float aSize;
+    attribute float aAlpha;
+    uniform vec3 uSun;
+    uniform float uScale;
+    varying float vAlpha;
+    varying float vNight;
+    void main() {
+        vAlpha = aAlpha;
+        vNight = 1.0 - smoothstep(-0.18, 0.22, dot(normalize(position), uSun));
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        gl_PointSize = clamp(aSize * uScale / -mv.z, 1.0, 64.0);
+        gl_Position = projectionMatrix * mv;
+    }
+`
+const NET_POINT_FRAG = `
+    uniform vec3 uColor;
+    uniform float uOpacity;
+    uniform float uNightBoost;
+    varying float vAlpha;
+    varying float vNight;
+    void main() {
+        float d = length(gl_PointCoord - vec2(0.5));
+        float mask = smoothstep(0.5, 0.05, d);
+        float alpha = mask * vAlpha * uOpacity * (1.0 + uNightBoost * vNight);
+        if (alpha < 0.004) discard;
+        gl_FragColor = vec4(uColor, alpha);
+    }
+`
+
+function PlanetaryNetwork({ isDark, sunDirection }: { isDark: boolean; sunDirection: THREE.Vector3 }) {
+    const { gl } = useThree()
+    const groupRef = useRef<THREE.Group>(null)
+    const bornAtRef = useRef<number | null>(null)
+    // react-three-fiber deep-copies a `uniforms` prop onto the material, so the
+    // per-frame writes have to go through the material itself, not through the
+    // object handed to the JSX.
+    const lineMaterials = useRef<Partial<Record<NetworkChannel, THREE.ShaderMaterial>>>({})
+    const pulseMaterials = useRef<Partial<Record<NetworkChannel, THREE.ShaderMaterial>>>({})
+    const nodeMaterial = useRef<THREE.ShaderMaterial>(null)
+    const haloMaterial = useRef<THREE.ShaderMaterial>(null)
+
+    // Every route resampled once, grouped by channel, plus the concatenated
+    // line-segment buffers the three lineSegments draw calls share.
+    const layer = useMemo(() => {
+        const perChannel = NET_CHANNEL_ORDER.map((channel) => {
+            const radiusAt = (t: number) => {
+                if (channel === 'fiber') return NET_FIBER_RADIUS
+                if (channel === 'submarine') return NET_SUBMARINE_RADIUS
+                return NET_WIRELESS_BASE + (NET_WIRELESS_PEAK - NET_WIRELESS_BASE) * Math.sin(Math.PI * t)
+            }
+
+            const paths = networkRoutes
+                .filter((route) => route.channel === channel)
+                .map((route) => {
+                    const unit = sampleGreatCircleRoute(resolveRoutePath(route))
+                    return unit.map((point, index) =>
+                        point.clone().multiplyScalar(radiusAt(index / Math.max(1, unit.length - 1))),
+                    )
+                })
+
+            const segmentCount = paths.reduce((sum, path) => sum + Math.max(0, path.length - 1), 0)
+            const positions = new Float32Array(segmentCount * 6)
+            let offset = 0
+            paths.forEach((path) => {
+                for (let i = 0; i < path.length - 1; i += 1) {
+                    positions[offset++] = path[i].x
+                    positions[offset++] = path[i].y
+                    positions[offset++] = path[i].z
+                    positions[offset++] = path[i + 1].x
+                    positions[offset++] = path[i + 1].y
+                    positions[offset++] = path[i + 1].z
+                }
+            })
+
+            const geometry = new THREE.BufferGeometry()
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+            return { channel, paths, geometry }
+        })
+
+        // Nodes: one buffer for the whole set, sized by tier, with a per-node
+        // phase so the field breathes instead of blinking in unison.
+        const nodePositions = new Float32Array(networkNodes.length * 3)
+        const nodeSizes = new Float32Array(networkNodes.length)
+        const nodeAlphas = new Float32Array(networkNodes.length)
+        const nodePhases = new Float32Array(networkNodes.length)
+        const haloPositions: number[] = []
+        const haloSizes: number[] = []
+        const haloAlphas: number[] = []
+        networkNodes.forEach((node, index) => {
+            const point = latLngToEarthPoint(node.lat, node.lng, NET_NODE_RADIUS)
+            nodePositions[index * 3] = point.x
+            nodePositions[index * 3 + 1] = point.y
+            nodePositions[index * 3 + 2] = point.z
+            nodeSizes[index] = node.tier === 1 ? 0.035 : 0.021
+            nodeAlphas[index] = 0.8
+            nodePhases[index] = (index * 2.399963) % (Math.PI * 2)
+            if (node.tier === 1) {
+                haloPositions.push(point.x, point.y, point.z)
+                haloSizes.push(0.105)
+                haloAlphas.push(0.22)
+            }
+        })
+
+        const nodeGeometry = new THREE.BufferGeometry()
+        nodeGeometry.setAttribute('position', new THREE.BufferAttribute(nodePositions, 3))
+        nodeGeometry.setAttribute('aSize', new THREE.BufferAttribute(nodeSizes, 1))
+        nodeGeometry.setAttribute('aAlpha', new THREE.BufferAttribute(nodeAlphas, 1))
+
+        const haloGeometry = new THREE.BufferGeometry()
+        haloGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(haloPositions), 3))
+        haloGeometry.setAttribute('aSize', new THREE.BufferAttribute(new Float32Array(haloSizes), 1))
+        haloGeometry.setAttribute('aAlpha', new THREE.BufferAttribute(new Float32Array(haloAlphas), 1))
+
+        return { perChannel, nodeGeometry, haloGeometry, nodePhases }
     }, [])
 
-    useEffect(() => () => {
-        strutsGeometry.dispose()
-        nodesGeometry.dispose()
-        pulseGeometry.dispose()
-    }, [strutsGeometry, nodesGeometry, pulseGeometry])
-
-    // Packets: a handful of bright points travelling the web, each on its own
-    // edge at its own speed, respawning on a fresh random edge at arrival.
-    const packetState = useMemo(() => {
-        let seed = 611
+    // The pulses: one travelling head per route plus its fading tail, packed
+    // into a single buffer per channel.
+    const pulses = useMemo(() => {
+        let seed = 8191
         const rand = () => {
             seed = (seed * 16807) % 2147483647
             return (seed - 1) / 2147483646
         }
+        return layer.perChannel.map(({ channel, paths }) => {
+            const style = NET_CHANNEL_STYLES[channel]
+            const heads = paths.length * style.pulses
+            const route: number[] = []
+            const t: number[] = []
+            const speed: number[] = []
+            for (let i = 0; i < heads; i += 1) {
+                route.push(i % paths.length)
+                t.push(rand())
+                speed.push(style.speed[0] + rand() * (style.speed[1] - style.speed[0]))
+            }
+            const count = heads * NET_TRAIL
+            const positions = new Float32Array(count * 3)
+            const sizes = new Float32Array(count)
+            const alphas = new Float32Array(count)
+            for (let i = 0; i < heads; i += 1) {
+                for (let trail = 0; trail < NET_TRAIL; trail += 1) {
+                    sizes[i * NET_TRAIL + trail] = style.pulseSize * NET_TRAIL_SIZE[trail]
+                    alphas[i * NET_TRAIL + trail] = NET_TRAIL_ALPHA[trail]
+                }
+            }
+            const geometry = new THREE.BufferGeometry()
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+            geometry.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1))
+            geometry.setAttribute('aAlpha', new THREE.BufferAttribute(alphas, 1))
+            return { channel, paths, route, t, speed, positions, geometry, style }
+        })
+    }, [layer])
+
+    useEffect(() => () => {
+        layer.perChannel.forEach(({ geometry }) => geometry.dispose())
+        layer.nodeGeometry.dispose()
+        layer.haloGeometry.dispose()
+        pulses.forEach(({ geometry }) => geometry.dispose())
+    }, [layer, pulses])
+
+    // Starting uniform values for the JSX; the live values are written straight
+    // onto each material every frame.
+    const initialUniforms = useMemo(() => {
+        const make = (nightBoost: number) => ({
+            uSun: { value: new THREE.Vector3(1, 0, 0) },
+            uScale: { value: 1 },
+            uColor: { value: new THREE.Color('#ffffff') },
+            uOpacity: { value: 0 },
+            uNightBoost: { value: nightBoost },
+        })
         return {
-            rand,
-            edge: Array.from({ length: DIGITAL_SHELL_PACKETS }, () => Math.floor(rand() * edges.length)),
-            t: Array.from({ length: DIGITAL_SHELL_PACKETS }, () => rand()),
-            speed: Array.from({ length: DIGITAL_SHELL_PACKETS }, () => 0.25 + rand() * 0.4),
-            positions: new Float32Array(DIGITAL_SHELL_PACKETS * 3),
+            line: Object.fromEntries(
+                NET_CHANNEL_ORDER.map((channel) => [channel, make(NET_CHANNEL_STYLES[channel].nightBoost)]),
+            ) as Record<NetworkChannel, ReturnType<typeof make>>,
+            pulse: Object.fromEntries(
+                NET_CHANNEL_ORDER.map((channel) => [channel, make(0)]),
+            ) as Record<NetworkChannel, ReturnType<typeof make>>,
+            node: make(0.55),
+            halo: make(0.7),
         }
-    }, [edges])
+    }, [])
+
+    // Both palettes, pre-parsed, so the per-frame write is a colour copy.
+    const palette = useMemo(() => {
+        const pair = (dark: string, light: string) => ({ dark: new THREE.Color(dark), light: new THREE.Color(light) })
+        return {
+            line: Object.fromEntries(
+                NET_CHANNEL_ORDER.map((channel) => [
+                    channel,
+                    pair(NET_CHANNEL_STYLES[channel].line.dark, NET_CHANNEL_STYLES[channel].line.light),
+                ]),
+            ) as Record<NetworkChannel, { dark: THREE.Color; light: THREE.Color }>,
+            pulse: Object.fromEntries(
+                NET_CHANNEL_ORDER.map((channel) => [
+                    channel,
+                    pair(NET_CHANNEL_STYLES[channel].pulse.dark, NET_CHANNEL_STYLES[channel].pulse.light),
+                ]),
+            ) as Record<NetworkChannel, { dark: THREE.Color; light: THREE.Color }>,
+            // The globe stays dark in both themes, so the light palette shifts to
+            // mid-tones rather than inks: dark hues would read on the sunlit face
+            // and disappear entirely on the night side.
+            node: pair('#bde9ff', '#7ecfe8'),
+            halo: pair('#57c8ee', '#3ba9cc'),
+        }
+    }, [])
+
+    const localSun = useRef(new THREE.Vector3(1, 0, 0))
+    const worldQuaternion = useRef(new THREE.Quaternion())
+    const viewport = useRef(new THREE.Vector2())
 
     useFrame(({ clock }, delta) => {
         const now = clock.elapsedTime
         if (bornAtRef.current === null) bornAtRef.current = now
-        const grow = Math.min(1, (now - bornAtRef.current) / 2)
+        const grow = Math.min(1, (now - bornAtRef.current) / 2.4)
         const materialize = grow * grow * (3 - 2 * grow)
 
-        if (spinRef.current) spinRef.current.rotation.y += delta * 0.02
-
-        const strutOpacity = (isDark ? 0.2 : 0.32) * materialize
-        const nodeOpacity = (isDark ? 0.55 : 0.6) * materialize
-        const pulseOpacity = (isDark ? 0.5 : 0.55) * (0.55 + 0.45 * Math.sin(now * 2.1)) * materialize
-        if (strutsMatRef.current) strutsMatRef.current.opacity = strutOpacity
-        if (nodesMatRef.current) nodesMatRef.current.opacity = nodeOpacity
-        if (pulseMatRef.current) pulseMatRef.current.opacity = pulseOpacity
-        if (packetsMatRef.current) packetsMatRef.current.opacity = 0.9 * materialize
-
-        const { rand, edge, t, speed, positions } = packetState
-        for (let i = 0; i < DIGITAL_SHELL_PACKETS; i += 1) {
-            t[i] += delta * speed[i]
-            if (t[i] >= 1) {
-                t[i] -= 1
-                edge[i] = Math.floor(rand() * edges.length)
-            }
-            const [a, b] = edges[edge[i]]
-            positions[i * 3] = a.x + (b.x - a.x) * t[i]
-            positions[i * 3 + 1] = a.y + (b.y - a.y) * t[i]
-            positions[i * 3 + 2] = a.z + (b.z - a.z) * t[i]
+        // The routes turn with the planet, so the sun direction has to be
+        // carried into the spinning frame before the night shading can use it.
+        if (groupRef.current) {
+            groupRef.current.getWorldQuaternion(worldQuaternion.current)
+            localSun.current.copy(sunDirection).applyQuaternion(worldQuaternion.current.invert()).normalize()
         }
-        const packetAttr = packetsRef.current?.geometry.getAttribute('position') as THREE.BufferAttribute | undefined
-        if (packetAttr) packetAttr.needsUpdate = true
+        gl.getSize(viewport.current)
+        const pointScale = viewport.current.y * gl.getPixelRatio() * 0.5
+
+        const tone = isDark ? 'dark' : 'light'
+        const apply = (material: THREE.ShaderMaterial | null | undefined, color: THREE.Color, opacity: number) => {
+            if (!material) return
+            material.uniforms.uSun.value.copy(localSun.current)
+            material.uniforms.uScale.value = pointScale
+            material.uniforms.uColor.value.copy(color)
+            material.uniforms.uOpacity.value = opacity
+        }
+
+        NET_CHANNEL_ORDER.forEach((channel) => {
+            const style = NET_CHANNEL_STYLES[channel]
+            apply(lineMaterials.current[channel], palette.line[channel][tone], style.lineOpacity[tone] * materialize)
+            apply(pulseMaterials.current[channel], palette.pulse[channel][tone], (isDark ? 0.95 : 0.85) * materialize)
+        })
+        apply(nodeMaterial.current, palette.node[tone], (isDark ? 0.95 : 0.85) * materialize)
+        apply(haloMaterial.current, palette.halo[tone], (isDark ? 0.6 : 0.4) * materialize)
+
+        // Node twinkle: a slow, out-of-phase breath across the whole field.
+        const nodeAlphaAttr = layer.nodeGeometry.getAttribute('aAlpha') as THREE.BufferAttribute
+        const alphas = nodeAlphaAttr.array as Float32Array
+        for (let i = 0; i < alphas.length; i += 1) {
+            alphas[i] = 0.62 + 0.38 * Math.sin(now * 0.9 + layer.nodePhases[i])
+        }
+        nodeAlphaAttr.needsUpdate = true
+
+        // Advance every pulse head and drag its tail behind it.
+        pulses.forEach(({ geometry, paths, route, t, speed, positions, style }) => {
+            for (let head = 0; head < route.length; head += 1) {
+                t[head] += delta * speed[head]
+                if (t[head] >= 1) t[head] -= 1
+                const path = paths[route[head]]
+                const last = path.length - 1
+                for (let trail = 0; trail < NET_TRAIL; trail += 1) {
+                    const at = Math.max(0, t[head] - trail * style.trailGap)
+                    const raw = at * last
+                    const index = Math.min(last - 1, Math.floor(raw))
+                    const f = raw - index
+                    const a = path[index]
+                    const b = path[index + 1]
+                    const slot = (head * NET_TRAIL + trail) * 3
+                    positions[slot] = a.x + (b.x - a.x) * f
+                    positions[slot + 1] = a.y + (b.y - a.y) * f
+                    positions[slot + 2] = a.z + (b.z - a.z) * f
+                }
+            }
+            ;(geometry.getAttribute('position') as THREE.BufferAttribute).needsUpdate = true
+        })
     })
 
+    const blending = isDark ? THREE.AdditiveBlending : THREE.NormalBlending
+
     return (
-        <group rotation={[0.18, 0, -0.12]}>
-            <group ref={spinRef}>
-                <lineSegments geometry={strutsGeometry}>
-                    <lineBasicMaterial
-                        ref={strutsMatRef}
-                        color={isDark ? '#4cc9f8' : '#0369a1'}
+        <group ref={groupRef}>
+            {layer.perChannel.map(({ channel, geometry }) => (
+                <lineSegments key={channel} geometry={geometry}>
+                    <shaderMaterial
+                        ref={(instance) => {
+                            lineMaterials.current[channel] = instance ?? undefined
+                        }}
+                        vertexShader={NET_LINE_VERT}
+                        fragmentShader={NET_LINE_FRAG}
+                        uniforms={initialUniforms.line[channel]}
                         transparent
-                        opacity={0}
-                        blending={isDark ? THREE.AdditiveBlending : THREE.NormalBlending}
                         depthWrite={false}
+                        blending={blending}
                     />
                 </lineSegments>
-                <points geometry={nodesGeometry}>
-                    <pointsMaterial
-                        ref={nodesMatRef}
-                        color={isDark ? '#9be8ff' : '#0e7490'}
-                        size={0.018}
-                        sizeAttenuation
+            ))}
+            <points geometry={layer.haloGeometry}>
+                <shaderMaterial
+                    ref={haloMaterial}
+                    vertexShader={NET_POINT_VERT}
+                    fragmentShader={NET_POINT_FRAG}
+                    uniforms={initialUniforms.halo}
+                    transparent
+                    depthWrite={false}
+                    blending={blending}
+                />
+            </points>
+            <points geometry={layer.nodeGeometry}>
+                <shaderMaterial
+                    ref={nodeMaterial}
+                    vertexShader={NET_POINT_VERT}
+                    fragmentShader={NET_POINT_FRAG}
+                    uniforms={initialUniforms.node}
+                    transparent
+                    depthWrite={false}
+                    blending={blending}
+                />
+            </points>
+            {pulses.map(({ channel, geometry }) => (
+                <points key={channel} geometry={geometry}>
+                    <shaderMaterial
+                        ref={(instance) => {
+                            pulseMaterials.current[channel] = instance ?? undefined
+                        }}
+                        vertexShader={NET_POINT_VERT}
+                        fragmentShader={NET_POINT_FRAG}
+                        uniforms={initialUniforms.pulse[channel]}
                         transparent
-                        opacity={0}
-                        blending={isDark ? THREE.AdditiveBlending : THREE.NormalBlending}
                         depthWrite={false}
+                        blending={blending}
                     />
                 </points>
-                <points geometry={pulseGeometry}>
-                    <pointsMaterial
-                        ref={pulseMatRef}
-                        color={isDark ? '#dffaff' : '#0369a1'}
-                        size={0.034}
-                        sizeAttenuation
-                        transparent
-                        opacity={0}
-                        blending={isDark ? THREE.AdditiveBlending : THREE.NormalBlending}
-                        depthWrite={false}
-                    />
-                </points>
-                <points ref={packetsRef}>
-                    <bufferGeometry>
-                        <bufferAttribute attach="attributes-position" args={[packetState.positions, 3]} />
-                    </bufferGeometry>
-                    <pointsMaterial
-                        ref={packetsMatRef}
-                        color={isDark ? '#e8fcff' : '#075985'}
-                        size={0.026}
-                        sizeAttenuation
-                        transparent
-                        opacity={0}
-                        blending={isDark ? THREE.AdditiveBlending : THREE.NormalBlending}
-                        depthWrite={false}
-                    />
-                </points>
-            </group>
+            ))}
         </group>
     )
 }
@@ -3061,7 +3405,7 @@ function UnifiedScene({
     cameraOverride,
     onHomeProject,
     moon = false,
-    digitalShell = false,
+    connectivity = false,
     digitalMoon = false,
 }: {
     mode: EarthVisualizationMode
@@ -3086,7 +3430,7 @@ function UnifiedScene({
     cameraOverride?: THREE.Vector3
     onHomeProject?: (x: number, y: number, visible: boolean) => void
     moon?: boolean
-    digitalShell?: boolean
+    connectivity?: boolean
     digitalMoon?: boolean
 }) {
     const { camera } = useThree()
@@ -3199,10 +3543,9 @@ function UnifiedScene({
                         gapSize={0.06}
                     />
                 )}
-                {mode !== 'galaxy' && <EarthBody mode={mode} position={earthPos} radius={earthRadius} isDark={isDark} theme={theme} progress={progress} sceneDate={sceneDate} rotationDate={rotationDate} rotationProgress={rotationProgress} sunOrbitProgress={mode === 'globe' ? sunOrbitProgress : 0} sunOrbitActive={mode === 'globe' && sunOrbitActive} northDirection={mode === 'globe' ? globeNorthDirection : undefined} homeCoords={homeCoords} onHomeProject={onHomeProject} />}
+                {mode !== 'galaxy' && <EarthBody mode={mode} position={earthPos} radius={earthRadius} isDark={isDark} theme={theme} progress={progress} sceneDate={sceneDate} rotationDate={rotationDate} rotationProgress={rotationProgress} sunOrbitProgress={mode === 'globe' ? sunOrbitProgress : 0} sunOrbitActive={mode === 'globe' && sunOrbitActive} northDirection={mode === 'globe' ? globeNorthDirection : undefined} homeCoords={homeCoords} onHomeProject={onHomeProject} connectivity={connectivity} />}
                 {mode === 'globe' && moon && <Moon sceneDate={sceneDate} progress={progress} sunOrbitActive={sunOrbitActive} sunOrbitProgress={sunOrbitProgress} isDark={isDark} />}
                 {mode === 'globe' && moon && <EarthLabel isDark={isDark} />}
-                {mode === 'globe' && digitalShell && <DigitalShell isDark={isDark} />}
                 {mode === 'globe' && digitalMoon && <DigitalMoon isDark={isDark} northDirection={globeNorthDirection} />}
                 {mode === 'globe' && (
                     <group quaternion={sunOrbitQuaternion}>
@@ -3276,13 +3619,13 @@ interface LabEarthViewProps {
     onHomeProject?: (x: number, y: number, visible: boolean) => void
     /** Globe mode only: the real Moon, at its true place in today's sky. */
     moon?: boolean
-    /** Globe mode only: wrap the planet in the geodesic digital-web shell. */
-    digitalShell?: boolean
+    /** Globe mode only: the planetary connectivity layer — fiber, submarine cable, wireless, exchange nodes. */
+    connectivity?: boolean
     /** Globe mode only: the Digital Moon — Earth's digital systems as a made moon. */
     digitalMoon?: boolean
 }
 
-export function LabEarthView({ className, style, mode, dateOffsetMs = 0, rotationOffsetMs = 0, sunOrbitProgress = 0, sunOrbitActive = false, isDarkOverride, orbitTiltView = false, orbitTiltStripsVisible = true, resetViewKey = 0, selectedGalaxyEventKey, galaxyDiskSize, galaxyDiskRotationDeg, homeCoords, timezone, timezoneRingScale = 1, interactive = true, paused = false, enableWheelZoom = true, cameraFocusOnHome = false, cameraOverride, onHomeProject, moon = false, digitalShell = false, digitalMoon = false }: LabEarthViewProps) {
+export function LabEarthView({ className, style, mode, dateOffsetMs = 0, rotationOffsetMs = 0, sunOrbitProgress = 0, sunOrbitActive = false, isDarkOverride, orbitTiltView = false, orbitTiltStripsVisible = true, resetViewKey = 0, selectedGalaxyEventKey, galaxyDiskSize, galaxyDiskRotationDeg, homeCoords, timezone, timezoneRingScale = 1, interactive = true, paused = false, enableWheelZoom = true, cameraFocusOnHome = false, cameraOverride, onHomeProject, moon = false, connectivity = false, digitalMoon = false }: LabEarthViewProps) {
     const { isDark, theme } = useAppContext()
     const [ready, setReady] = useState(false)
     const [contextResetKey, setContextResetKey] = useState(0)
@@ -3324,7 +3667,7 @@ export function LabEarthView({ className, style, mode, dateOffsetMs = 0, rotatio
                 }}
             >
                 <SceneBackground color={bgColor} />
-                <UnifiedScene mode={mode} isDark={sceneIsDark} theme={theme} dateOffsetMs={dateOffsetMs} rotationOffsetMs={rotationOffsetMs} sunOrbitProgress={sunOrbitProgress} sunOrbitActive={sunOrbitActive} homeCoords={homeCoords} timezone={timezone} timezoneRingScale={timezoneRingScale} orbitTiltView={orbitTiltView} orbitTiltStripsVisible={orbitTiltStripsVisible} resetViewKey={resetViewKey} selectedGalaxyEventKey={selectedGalaxyEventKey} galaxyDiskSize={galaxyDiskSize} galaxyDiskRotationDeg={galaxyDiskRotationDeg} interactive={interactive} enableWheelZoom={enableWheelZoom} cameraFocusOnHome={cameraFocusOnHome} cameraOverride={cameraOverride} onHomeProject={onHomeProject} moon={moon} digitalShell={digitalShell} digitalMoon={digitalMoon} />
+                <UnifiedScene mode={mode} isDark={sceneIsDark} theme={theme} dateOffsetMs={dateOffsetMs} rotationOffsetMs={rotationOffsetMs} sunOrbitProgress={sunOrbitProgress} sunOrbitActive={sunOrbitActive} homeCoords={homeCoords} timezone={timezone} timezoneRingScale={timezoneRingScale} orbitTiltView={orbitTiltView} orbitTiltStripsVisible={orbitTiltStripsVisible} resetViewKey={resetViewKey} selectedGalaxyEventKey={selectedGalaxyEventKey} galaxyDiskSize={galaxyDiskSize} galaxyDiskRotationDeg={galaxyDiskRotationDeg} interactive={interactive} enableWheelZoom={enableWheelZoom} cameraFocusOnHome={cameraFocusOnHome} cameraOverride={cameraOverride} onHomeProject={onHomeProject} moon={moon} connectivity={connectivity} digitalMoon={digitalMoon} />
             </Canvas>
         </div>
     )
