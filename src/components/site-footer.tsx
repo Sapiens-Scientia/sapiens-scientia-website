@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ExploreNext } from "@/components/explore-next";
 import { EARTHVIEW_PAGE_PATH } from "@/lib/projects";
 
 // Sitewide footer for content surfaces, rendered by PageShell and by pages that
@@ -41,10 +42,11 @@ export function SiteFooter() {
 
   return (
     <footer className="mt-20 border-t border-white/10 pt-10">
+      <ExploreNext />
       <div className="mx-auto flex max-w-7xl flex-col gap-10">
         <div className="grid gap-10 md:grid-cols-[1.4fr_repeat(3,1fr)]">
           <div className="max-w-xs">
-            <p className="bg-gradient-to-r from-emerald-300/84 to-blue-300/88 bg-clip-text text-lg font-semibold uppercase tracking-[0.16em] text-transparent">
+            <p className="text-lg font-medium tracking-tight text-slate-100">
               Sapiens Scientia
             </p>
             <p className="mt-3 text-sm leading-6 text-slate-400">

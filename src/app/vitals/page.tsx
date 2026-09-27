@@ -12,11 +12,11 @@ import {
 export const metadata: Metadata = {
   title: "Vital Signs | Sapiens Scientia",
   description:
-    "The Earth's vital signs: a sourced dashboard of planetary indicators — population, climate, ocean, land, and waste — each charted from 1970 with a projection to 2050.",
+    "The Earth's vital signs: a sourced dashboard of planetary indicators — population, climate, ocean, land, and waste — with dated reference series and illustrative projections to 2050.",
   openGraph: {
     title: "The Earth's Vital Signs | Sapiens Scientia",
     description:
-      "A sourced dashboard of planetary indicators — population, climate, ocean, land, and waste — each charted with a projection to 2050.",
+      "A sourced dashboard of planetary indicators — population, climate, ocean, land, and waste — with reference series and illustrative projections to 2050.",
     url: "/vitals",
     type: "website",
   },
@@ -32,9 +32,9 @@ export default function VitalsPage() {
       >
         <p>
           A patient is read through their vital signs; so is a planet. These are
-          the measured trends of the one Earth system human civilization is
-          embedded in — each one charted from the 1970s, handed off to a dashed
-          projection toward 2050, and linked back to the body that publishes it.
+          indicators of the one Earth system human civilization is
+          embedded in — shown through dated reference values, historical series,
+          and illustrative projections toward 2050.
         </p>
       </PageHeader>
 
@@ -52,17 +52,18 @@ export default function VitalsPage() {
           Reading the chart
         </h2>
         <p className="text-base leading-7 text-slate-300">
-          Each card shows the latest published value, a sparkline of the measured
-          record, and a dashed line extending the trend to mid-century. The solid
-          dot marks where measurement ends and projection begins. Filter by
-          domain, or sort by how far each line has moved across its own record.
-          Every figure links to its primary source.
+          Each card shows a dated reference value or a fetched source update. The solid
+          line connects curated historical reference points; the dashed line
+          shows an illustrative projection. An outlined point marks a fetched
+          observation, which may use a different period or source from the
+          reference series. Open “View chart data” to read every plotted value.
+          Filter by domain, or compare changes within each reference series.
         </p>
         <p className="text-sm leading-6 text-slate-500">
-          Projections are simple trend extensions for orientation, not formal
-          forecasts. The same dataset annotates the Earth model on the{" "}
-          <Link href="/" className="text-emerald-200 transition-colors hover:text-emerald-50">
-            homepage
+          Projections are for orientation, not formal forecasts. Source updates
+          do not recalculate them. The same dataset annotates the Earth model in{" "}
+          <Link href="/meta-earth" className="text-emerald-200 transition-colors hover:text-emerald-50">
+            Meta Earth
           </Link>
           .
         </p>

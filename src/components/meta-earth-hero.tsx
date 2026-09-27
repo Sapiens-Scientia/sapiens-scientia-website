@@ -4,9 +4,10 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppProvider } from "@/components/earthview/contexts";
 import { EarthOverlay } from "@/components/earth-overlay";
-import { HomeNav } from "@/components/home-nav";
 import { getChartContinuationCamera } from "@/components/lab/earth-geometry";
 import { guessLocation } from "@/lib/guess-location";
+import { useVisibleScene } from "@/hooks/use-visible-scene";
+import { useCameraMirror } from "@/hooks/use-camera-mirror";
 import { useTheme } from "@/lib/use-theme";
 
 // The Meta Earth hero: the homepage journey's Current Sunlight globe carrying
@@ -14,9 +15,8 @@ import { useTheme } from "@/lib/use-theme";
 // wireless relays, and exchange nodes humanity has built as a second planetary
 // shell — and attended by its two moons: the real Moon at its true place in the
 // sky, and the Digital Moon, Earth's digital systems as a made moon raising a
-// second tide. It opens from the same constant camera as the journey's finale,
-// so "enter meta earth" reads as the overlays changing over an unmoved globe
-// while the digital layer materializes.
+// second tide. This advanced workspace opens from the atlas and retains the
+// journey finale's camera as its initial perspective.
 const SunlightGlobe = dynamic(
   () => import("@/components/lab/lab-earth-view").then((m) => m.LabEarthView),
   { ssr: false },
@@ -29,19 +29,17 @@ const HERO_CAMERA = getChartContinuationCamera();
 const ZOOM_ZONE_WIDTH = 0.5;
 const ZOOM_ZONE_HEIGHT = 0.55;
 
-type MirrorState = "off" | "pending" | "on" | "denied";
 
 export function MetaEarthHero() {
   const [isPanelPointerActive, setIsPanelPointerActive] = useState(false);
   const sceneRef = useRef<HTMLDivElement>(null);
+  const sceneActive = useVisibleScene(sceneRef);
 
   // The mirror: a live camera porthole hanging from the reader's pin on the
   // globe, carried over from The History of the Universe finale. The stream
   // never leaves the device.
-  const [mirror, setMirror] = useState<MirrorState>("off");
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const { mirror, videoRef, mirrorOnRef, openMirror, closeMirror } = useCameraMirror();
   const mirrorWinRef = useRef<HTMLDivElement | null>(null);
-  const mirrorOnRef = useRef(false);
 
   const { theme, toggleTheme } = useTheme();
 
@@ -57,38 +55,7 @@ export function MetaEarthHero() {
     }
   });
 
-  const openMirror = useCallback(async () => {
-    setMirror("pending");
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user" },
-        audio: false,
-      });
-      const video = videoRef.current;
-      if (!video) {
-        stream.getTracks().forEach((tr) => tr.stop());
-        return;
-      }
-      video.srcObject = stream;
-      await video.play();
-      mirrorOnRef.current = true;
-      setMirror("on");
-    } catch {
-      setMirror("denied");
-    }
-  }, []);
-  const closeMirror = useCallback(() => {
-    const video = videoRef.current;
-    const stream = video?.srcObject as MediaStream | null;
-    stream?.getTracks().forEach((tr) => tr.stop());
-    if (video) video.srcObject = null;
-    mirrorOnRef.current = false;
-    setMirror("off");
-  }, []);
-  useEffect(() => () => {
-    const stream = videoRef.current?.srcObject as MediaStream | null;
-    stream?.getTracks().forEach((tr) => tr.stop());
-  }, []);
+
 
   // The porthole hangs from the home marker: LabEarthView reports the
   // marker's on-canvas position each frame, and the porthole hides while the
@@ -103,7 +70,7 @@ export function MetaEarthHero() {
     el.style.left = `${x}px`;
     el.style.top = `${y + 10}px`;
     el.style.opacity = "1";
-  }, []);
+  }, [mirrorOnRef]);
 
   // Confine the globe's wheel-to-zoom to a central rectangle. A capture-phase
   // listener stops wheel events from reaching OrbitControls when the cursor is
@@ -144,6 +111,7 @@ export function MetaEarthHero() {
           <SunlightGlobe
             className="h-full w-full"
             mode="globe"
+            paused={!sceneActive}
             moon
             connectivity
             digitalMoon
@@ -223,12 +191,11 @@ export function MetaEarthHero() {
         )}
       </div>
 
-      <HomeNav />
 
       <div className="pointer-events-auto absolute right-6 top-8 z-50 max-lg:top-4">
         <button
           onClick={toggleTheme}
-          className="theme-toggle-btn pointer-events-auto rounded border border-white/10 bg-black/40 px-3 py-1.5 text-xs font-semibold tracking-wide text-slate-300 transition-all hover:bg-black/60 hover:text-white cursor-pointer backdrop-blur-sm"
+          className="theme-toggle-btn pointer-events-auto min-h-11 rounded border border-white/10 bg-black/40 px-3 py-1.5 text-xs font-semibold tracking-wide text-slate-300 transition-all hover:bg-black/60 hover:text-white cursor-pointer backdrop-blur-sm"
           aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
         >
           {theme === "dark" ? "☀ Light" : "☾ Dark"}

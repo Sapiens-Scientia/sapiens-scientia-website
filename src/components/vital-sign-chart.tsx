@@ -1,285 +1,122 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import type { EarthVitalSign } from "@/lib/vital-signs";
 
+type ChartPoint = { year: number; value: number; kind: "Reference" | "Projection" | "Source update"; period: string };
+const WIDTH = 320;
+const HEIGHT = 132;
+const PAD = { top: 14, right: 12, bottom: 22, left: 38 };
+const number = (value: number) => value.toLocaleString("en-US", { maximumFractionDigits: 3 });
+
+function formatValue(value: number, unit: string) {
+  return unit.startsWith("$") ? `$${number(value)}${unit.slice(1)}` : `${number(value)} ${unit}`.trim();
+}
+
+/** Shared by the dashboard and globe, with a native disclosure for non-pointer access. */
 export function VitalSignChart({ sign }: { sign: EarthVitalSign }) {
-  const [hoveredPoint, setHoveredPoint] = useState<{ year: number; value: number } | null>(null);
+  const gradientId = useId();
+  const [selected, setSelected] = useState<ChartPoint | null>(null);
   const data = sign.historicalData;
   if (!data) return null;
+  const points: ChartPoint[] = data.points.map((point) => ({ ...point, kind: "Reference", period: String(point.year) }));
+  const projection: ChartPoint[] = (data.projection ?? []).map((point) => ({ ...point, kind: "Projection", period: String(point.year) }));
+  const latest: ChartPoint | null = sign.liveChartPoint
+    ? { ...sign.liveChartPoint, kind: "Source update", period: sign.updated }
+    : null;
+  const all = [...points, ...projection, ...(latest ? [latest] : [])];
+  if (!all.length) return null;
 
-  const points = data.points;
-  const projection = data.projection || [];
-  const livePoint = sign.liveChartPoint;
-  const allPoints = [
-    ...points,
-    ...projection,
-    ...(livePoint ? [livePoint] : []),
-  ];
-  if (allPoints.length === 0) return null;
+  const minYear = Math.min(...all.map((point) => point.year));
+  const maxYear = Math.max(...all.map((point) => point.year));
+  const minValue = Math.min(...all.map((point) => point.value));
+  const maxValue = Math.max(...all.map((point) => point.value));
+  const buffer = (maxValue - minValue || 1) * 0.1;
+  const baseline = HEIGHT - PAD.bottom;
+  const x = (year: number) => PAD.left + (year - minYear) / (maxYear - minYear || 1) * (WIDTH - PAD.left - PAD.right);
+  const y = (value: number) => baseline - (value - minValue + buffer) / (maxValue - minValue + 2 * buffer) * (baseline - PAD.top);
+  const path = (series: ChartPoint[]) => series.length ? `M ${series.map((point) => `${x(point.year)},${y(point.value)}`).join(" L ")}` : "";
+  const historyPath = path(points);
+  const last = points.at(-1);
+  const area = last ? `${historyPath} L ${x(last.year)},${baseline} L ${x(points[0].year)},${baseline} Z` : "";
+  const source = sign.referenceSource ?? { label: sign.source, href: sign.sourceHref };
 
-  // Find mins and maxs
-  const years = allPoints.map((p) => p.year);
-  const values = allPoints.map((p) => p.value);
-  const minYear = Math.min(...years);
-  const maxYear = Math.max(...years);
-  const minValue = Math.min(...values);
-  const maxValue = Math.max(...values);
-
-  // Buffer values slightly so the line doesn't clip at top/bottom
-  const valRange = maxValue - minValue || 1;
-  const yMin = minValue - valRange * 0.1;
-  const yMax = maxValue + valRange * 0.1;
-  const yearRange = maxYear - minYear || 1;
-
-  // SVG dimensions
-  const width = 280;
-  const height = 110;
-  const padding = { top: 15, right: 15, bottom: 20, left: 35 };
-
-  // Map coordinates
-  const getX = (year: number) => padding.left + ((year - minYear) / yearRange) * (width - padding.left - padding.right);
-  const getY = (value: number) => height - padding.bottom - ((value - yMin) / (yMax - yMin)) * (height - padding.top - padding.bottom);
-
-  // Generate path for historical data
-  const histPoints = points.map((p) => `${getX(p.year)},${getY(p.value)}`);
-  const histPath = `M ${histPoints.join(" L ")}`;
-
-  // Generate path for area gradient fill
-  const areaPath = points.length > 0 ? `${histPath} L ${getX(points[points.length - 1].year)},${height - padding.bottom} L ${getX(points[0].year)},${height - padding.bottom} Z` : "";
-
-  // Generate path for projection data (dashed line)
-  let projPath = "";
-  if (projection.length > 0 && points.length > 0) {
-    const lastHist = points[points.length - 1];
-    const projPoints = [lastHist, ...projection].map((p) => `${getX(p.year)},${getY(p.value)}`);
-    projPath = `M ${projPoints.join(" L ")}`;
-  }
-
-  // Interactive tooltip tracking state
-
-  const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-
-    // Find the closest point in x direction
-    let closest = allPoints[0];
-    let minDist = Math.abs(getX(allPoints[0].year) - x);
-
-    for (let i = 1; i < allPoints.length; i++) {
-      const dist = Math.abs(getX(allPoints[i].year) - x);
-      if (dist < minDist) {
-        minDist = dist;
-        closest = allPoints[i];
-      }
-    }
-
-    setHoveredPoint(closest);
-  };
-
-  const handlePointerLeave = () => {
-    setHoveredPoint(null);
+  const selectPoint = (event: React.PointerEvent<SVGSVGElement>) => {
+    // Use the actual SVG transform, including viewBox scaling and letterboxing.
+    const matrix = event.currentTarget.getScreenCTM();
+    if (!matrix) return;
+    const cursor = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse());
+    const closest = all.reduce((best, point) =>
+      Math.hypot(x(point.year) - cursor.x, y(point.value) - cursor.y) < Math.hypot(x(best.year) - cursor.x, y(best.value) - cursor.y) ? point : best,
+    );
+    setSelected(closest);
   };
 
   return (
-    <div className="mt-3 border border-white/5 bg-white/[0.015] p-2 rounded" onClick={(e) => e.stopPropagation()}>
-      <div className="flex justify-between items-center text-[0.62rem] font-mono text-slate-400 mb-1">
-        <span>Historical Trend & Projection</span>
-        <span className="text-white font-semibold">
-          {hoveredPoint
-            ? `${hoveredPoint.year.toFixed(hoveredPoint.year % 1 === 0 ? 0 : 1)}: ${hoveredPoint.value}${data.unit}`
-            : livePoint
-              ? `Live: ${livePoint.value}${data.unit}`
-              : "Hover for details"}
-        </span>
+    <div className="min-w-0 text-slate-400">
+      {data.label && <p className="mb-2 text-xs leading-5 text-slate-300">Chart: {data.label}</p>}
+      <div className="min-h-9 font-mono text-[0.65rem] leading-4">
+        {selected
+          ? `${selected.kind} · ${selected.period}: ${formatValue(selected.value, data.unit)}`
+          : "Explore the chart or open its data below"}
       </div>
-
       <svg
-        width="100%"
-        height={height}
-        viewBox={`0 0 ${width} ${height}`}
-        onPointerMove={handlePointerMove}
-        onPointerLeave={handlePointerLeave}
-        className="overflow-visible select-none cursor-crosshair"
+        viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+        className="vital-sparkline w-full cursor-crosshair select-none overflow-visible"
+        role="img"
+        aria-label={`${sign.label}. ${data.label ?? data.unit}. Reference series from ${points[0]?.year ?? minYear} to ${last?.year ?? maxYear}${projection.length ? ", with a dashed illustrative projection" : ""}${latest ? " and a separate source update" : ""}. All values are available in View chart data.`}
+        onPointerMove={selectPoint}
+        onPointerDown={selectPoint}
+        onPointerLeave={(event) => { if (event.pointerType === "mouse") setSelected(null); }}
       >
         <defs>
-          <linearGradient id={`grad-${sign.label.replace(/\s+/g, "-")}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={sign.accent} stopOpacity={0.35} />
-            <stop offset="100%" stopColor={sign.accent} stopOpacity={0.0} />
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={sign.accent} stopOpacity={0.3} />
+            <stop offset="100%" stopColor={sign.accent} stopOpacity={0} />
           </linearGradient>
         </defs>
-
-        {/* X axis line */}
-        <line
-          x1={padding.left}
-          y1={height - padding.bottom}
-          x2={width - padding.right}
-          y2={height - padding.bottom}
-          stroke="#334155"
-          strokeWidth="1"
-          opacity="0.6"
-        />
-
-        {/* Grid lines (min, max) */}
-        <line
-          x1={padding.left}
-          y1={getY(minValue)}
-          x2={width - padding.right}
-          y2={getY(minValue)}
-          stroke="#1e293b"
-          strokeWidth="1"
-          strokeDasharray="2 3"
-        />
-        <line
-          x1={padding.left}
-          y1={getY(maxValue)}
-          x2={width - padding.right}
-          y2={getY(maxValue)}
-          stroke="#1e293b"
-          strokeWidth="1"
-          strokeDasharray="2 3"
-        />
-
-        {/* Y Axis Labels */}
-        <text
-          x={padding.left - 6}
-          y={getY(minValue) + 3}
-          textAnchor="end"
-          fontSize="8"
-          fill="#94a3b8"
-          fontFamily="monospace"
-        >
-          {minValue.toFixed(minValue % 1 === 0 ? 0 : 1)}
-        </text>
-        <text
-          x={padding.left - 6}
-          y={getY(maxValue) + 3}
-          textAnchor="end"
-          fontSize="8"
-          fill="#94a3b8"
-          fontFamily="monospace"
-        >
-          {maxValue.toFixed(maxValue % 1 === 0 ? 0 : 1)}
-        </text>
-
-        {/* X Axis Labels */}
-        <text
-          x={getX(minYear)}
-          y={height - padding.bottom + 12}
-          textAnchor="middle"
-          fontSize="8"
-          fill="#94a3b8"
-          fontFamily="monospace"
-        >
-          {minYear}
-        </text>
-        <text
-          x={getX(maxYear)}
-          y={height - padding.bottom + 12}
-          textAnchor="middle"
-          fontSize="8"
-          fill="#94a3b8"
-          fontFamily="monospace"
-        >
-          {maxYear}
-        </text>
-
-        {/* Area fill under historical line */}
-        {areaPath && (
-          <path
-            d={areaPath}
-            fill={`url(#grad-${sign.label.replace(/\s+/g, "-")})`}
-          />
-        )}
-
-        {/* Historical line */}
-        <path
-          d={histPath}
-          fill="none"
-          stroke={sign.accent}
-          strokeWidth="1.75"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-
-        {/* Projection line (dashed) */}
-        {projPath && (
-          <path
-            d={projPath}
-            fill="none"
-            stroke={sign.accent}
-            strokeWidth="1.75"
-            strokeDasharray="3 3"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            opacity="0.8"
-          />
-        )}
-
-        {/* Data points (circles) */}
-        {points.map((p, idx) => (
-          <circle
-            key={`p-${idx}`}
-            cx={getX(p.year)}
-            cy={getY(p.value)}
-            r={hoveredPoint?.year === p.year ? 4 : 2}
-            fill="var(--chart-point-bg, #0f172a)"
-            stroke={sign.accent}
-            strokeWidth={1.5}
-            className="transition-all duration-200"
-          />
+        {[minValue, maxValue].map((value, index) => (
+          <g key={index}>
+            <line x1={PAD.left} y1={y(value)} x2={WIDTH - PAD.right} y2={y(value)} stroke="currentColor" strokeOpacity={0.2} strokeDasharray="2 3" />
+            <text x={PAD.left - 6} y={y(value) + 3} textAnchor="end" fontSize={9} fill="currentColor" fontFamily="monospace">{number(value)}</text>
+          </g>
         ))}
-
-        {/* Projection points (circles) */}
-        {projection.map((p, idx) => (
-          <circle
-            key={`proj-${idx}`}
-            cx={getX(p.year)}
-            cy={getY(p.value)}
-            r={hoveredPoint?.year === p.year ? 4 : 2}
-            fill="var(--chart-point-bg, #0f172a)"
-            stroke={sign.accent}
-            strokeWidth={1.25}
-            strokeDasharray="1 1"
-            className="transition-all duration-200"
-          />
+        <line x1={PAD.left} y1={baseline} x2={WIDTH - PAD.right} y2={baseline} stroke="currentColor" strokeOpacity={0.3} />
+        {[minYear, maxYear].map((year, index) => (
+          <text key={index} x={x(year)} y={baseline + 14} textAnchor="middle" fontSize={9} fill="currentColor" fontFamily="monospace">{Math.floor(year)}</text>
         ))}
-
-        {livePoint && (
+        {area && <path d={area} fill={`url(#${gradientId})`} />}
+        {historyPath && <path d={historyPath} fill="none" stroke={sign.accent} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" />}
+        {projection.length > 0 && <path d={path(last ? [last, ...projection] : projection)} fill="none" stroke={sign.accent} strokeWidth={1.7} strokeDasharray="3 3" strokeLinecap="round" />}
+        {last && <circle cx={x(last.year)} cy={y(last.value)} r={2.6} fill={sign.accent} />}
+        {latest && <circle cx={x(latest.year)} cy={y(latest.value)} r={4} fill="var(--chart-point-bg, #0f172a)" stroke={sign.accent} strokeWidth={2} />}
+        {selected && (
           <g>
-            <circle
-              cx={getX(livePoint.year)}
-              cy={getY(livePoint.value)}
-              r={7}
-              fill={sign.accent}
-              fillOpacity={0.2}
-              className="animate-pulse"
-            />
-            <circle
-              cx={getX(livePoint.year)}
-              cy={getY(livePoint.value)}
-              r={4}
-              fill={sign.accent}
-              stroke="var(--chart-point-bg, #0f172a)"
-              strokeWidth={1.5}
-            />
+            <line x1={x(selected.year)} y1={PAD.top} x2={x(selected.year)} y2={baseline} stroke="currentColor" strokeOpacity={0.5} strokeDasharray="2 2" />
+            <circle cx={x(selected.year)} cy={y(selected.value)} r={3.5} fill={sign.accent} />
           </g>
         )}
-
-        {/* Vertical hover marker line */}
-        {hoveredPoint && (
-          <line
-            x1={getX(hoveredPoint.year)}
-            y1={padding.top}
-            x2={getX(hoveredPoint.year)}
-            y2={height - padding.bottom}
-            stroke="#64748b"
-            strokeWidth="0.75"
-            strokeDasharray="2 2"
-            opacity="0.8"
-          />
-        )}
       </svg>
+      <details className="border-t border-white/10 text-xs">
+        <summary className="min-h-10 cursor-pointer py-3 text-slate-300">View chart data<span className="sr-only"> for {sign.label}</span></summary>
+        <p className="mb-3 leading-5">
+          Solid line: curated reference series. Dashed line: illustrative projection, not a forecast.
+          {latest && " The outlined point is a separately fetched source observation; it does not revise the reference series or projection."}
+        </p>
+        <div className="max-h-64 overflow-auto" tabIndex={0} role="region" aria-label={`${sign.label} chart data`}>
+          <table className="w-full text-left text-[0.65rem] leading-5">
+            <caption className="sr-only">{sign.label}{data.label ? `: ${data.label}` : ""} — reference, projection and source values</caption>
+            <thead><tr className="border-b border-white/10"><th scope="col" className="pr-2 py-1">Period</th><th scope="col" className="pr-2">Value</th><th scope="col">Series</th></tr></thead>
+            <tbody>{all.sort((a, b) => a.year - b.year).map((point, index) => (
+              <tr key={`${point.kind}-${index}`} className="border-b border-white/5">
+                <th scope="row" className="pr-2 py-1.5 font-normal">{point.period}</th>
+                <td className="pr-2">{formatValue(point.value, data.unit)}</td><td>{point.kind}</td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+        <p className="mt-3 leading-5">Reference source: <a href={source.href} target="_blank" rel="noreferrer" className="underline underline-offset-2">{source.label}</a>. Values are curated, rounded reference points rather than a complete source dataset.</p>
+      </details>
     </div>
   );
 }

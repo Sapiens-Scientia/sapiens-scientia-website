@@ -45,12 +45,12 @@ export default function DomusModulePage() {
     <main className="min-h-screen bg-black px-6 py-8 text-white sm:px-10">
       <BreadcrumbTrail path="/platforms/persona/domus" />
 
-      <section className="mx-auto flex max-w-7xl flex-col gap-12">
+      <section id="main-content" tabIndex={-1} className="mx-auto flex max-w-7xl flex-col gap-12">
         <header className="max-w-4xl">
-          <p className="mb-3 text-xl font-medium uppercase tracking-[0.24em] text-blue-400">
+          <p className="mb-4 text-xs font-medium uppercase tracking-[0.16em] text-blue-400">
             Persona · Home Module
           </p>
-          <h1 className="text-5xl font-semibold tracking-normal sm:text-7xl">
+          <h1 className="text-4xl font-medium leading-[1.08] tracking-tight sm:text-6xl lg:text-7xl">
             Domus
           </h1>
           <p className="mt-8 max-w-3xl text-lg leading-8 text-slate-300">

@@ -14,10 +14,14 @@ This document describes how the Sapiens Scientia website is built and where futu
 Useful commands:
 
 ```bash
-npm install
+npm ci
 npm run dev
 npm run lint
+npm test
+npx tsc --noEmit
 npm run build
+# Local fallback if the Turbopack build stalls:
+npx next build --webpack
 ```
 
 ## Source Layout
@@ -48,15 +52,14 @@ The site is mostly static pages with client-side interactive islands.
   `BigBangUniverseExperience` inside a React/Next project page shell in embedded
   mode, so the public project route keeps the site navigation, page rhythm, and
   footer without using an iframe.
-- `src/app/meta-earth/page.tsx` renders `MetaEarthExperience`: the
-  `MetaEarthHero` (the journey's Current Sunlight globe wrapped in the
-  geodesic digital shell, under the Meta Earth overlays) plus the overview
-  content. `src/components/meta-earth-hero.tsx` owns the hero shell, theme
-  toggle, wheel-zoom zone, and pointer interlock between overlay panels and
-  orbit controls; it opens from the same `getChartContinuationCamera()` the
-  homepage finale uses, so the handoff reads as overlays changing over an
-  unmoved globe. The former Physical Earth / Digital Halo scene
-  (`earth-scene.tsx`, `earth-hero.tsx`) was removed with it.
+- `src/app/meta-earth/page.tsx` renders `MetaEarthExperience`, the atlas hub.
+  `AtlasOverview` explains the three platform lenses alongside an interactive
+  connected Earth. `#globe` opens the full `MetaEarthHero` workspace with the
+  Physical Systems / Meta Systems / Information Systems overlays. The workspace
+  module loads dynamically on entry. Only one
+  Earth canvas is mounted at a time. `HomeOverview` offers question-led paths;
+  the Meta-Entity framework remains available at `#meta-entities`.
+  `atlas.css` holds this shared editorial visual system.
 - `src/app/projects/earthview/page.tsx` renders the imported EarthView 3D
   React/Three experience directly from `src/components/earthview/`; it is not
   an iframe wrapper.
@@ -77,7 +80,10 @@ The homepage is the most sensitive surface.
   tuned for this UX) from the orbit chart's own continuation camera
   (`src/components/lab/earth-geometry.ts`). Persistent chrome — spacetime
   altimeter, cosmic address, big readout — fades in after the first scroll;
-  the end shows "begin again" and the "enter meta earth" handoff link.
+  the end shows "begin again" and the "enter meta earth" handoff link. Chapter
+  controls and a persistent atlas shortcut bypass the long scroll when useful.
+  A text reading mode is the default for reduced motion or unavailable WebGL.
+  Compact viewports simplify the finale controls and globe guides.
 - `src/components/big-bang-universe-experience.tsx`: React-owned DOM shell for
   the Big Bang Universe canvas runtime. The public project route uses
   `embedded`, which hides the runtime's duplicate internal title; the runtime's
@@ -98,8 +104,8 @@ The homepage is the most sensitive surface.
   shared by the homepage finale and the Meta Earth hero.
 - `src/components/earth-overlay.tsx`: the Meta Earth overlay panels, clock,
   popouts, and platform bridges (pure DOM over the hero canvas).
-- `src/components/home-nav.tsx`: compact nav shown over the hero.
-- `src/components/home-overview.tsx`: content below the hero.
+- `src/components/home-overview.tsx`: question-led paths below the atlas.
+- `src/lib/exploration.ts`: shared public wayfinding copy and suggested paths.
 
 When editing the homepage or Meta Earth, verify in a browser. Build and lint can pass even if a Three canvas is visually blank or incorrectly sized.
 
@@ -109,8 +115,10 @@ The `/projects/earthview` route imports the standalone EarthView 3D codebase
 into this website rather than embedding the separate app in an iframe.
 
 - Source lives under `src/components/earthview/`.
-- Global EarthView-specific class styles live in `src/app/earthview.css`, which
-  is imported by the root layout.
+- EarthView-specific styles live in `src/app/earthview.css`, imported by the
+  root layout but scoped to `.earth-shell`. Do not restore global `:root`,
+  `button`, or universal rules from the standalone application: they override
+  every other route's theme and typography.
 - Runtime textures are copied into `public/earth-blue-marble-5400x2700.jpg` and
   `public/assets/milky-way.jpg`.
 
@@ -133,7 +141,7 @@ than a sequence of disconnected page sections.
 - `public/models/soma-anatomy.glb` supplies the detailed anatomical silhouette;
   semantic system layers and microscopic worlds are procedural so they remain
   selectable and performant. Keep the attribution in `public/models/README.md`.
-- The source shell expands to roughly 1.6 million triangles. The canvas therefore
+- The current optimized source shell expands to roughly 482,000 triangles. The canvas therefore
   renders on demand at a capped DPR, forces cloned shell materials to a single
   front-side pass, and never enables `preserveDrawingBuffer`. X-ray uses the
   lightweight procedural body context instead of the dense GLB. Preserve the
@@ -156,6 +164,57 @@ mobile pass; a successful production build cannot detect a blank WebGL scene.
 
 Pages using this shell include `/scales`, `/chronos`, and `/vitals`.
 
+- `SiteNav` exposes Atlas, Platforms, Scale, Time, and Evidence on every content
+  page. Its mobile menu and grouped links use disclosure buttons, focus return,
+  and Escape handling. `BreadcrumbTrail` adds canonical ancestry under Atlas.
+- `PlatformIntroduction` gives Persona, Societas, and Terra consistent lens
+  navigation, purpose, and a first action.
+- `ExploreNext` in `SiteFooter` offers contextual continuation through the same
+  paths shown on the atlas, without storing browsing history.
+- `DimensionExplorer` provides Scale and Time's shared list/inspector interaction.
+  `ScaleLadder` and `ChronosArc` adapt their existing scientific data into it.
+  Selection, filtering, copying a link, and mobile inline details are shared;
+  filtering actually removes other groups from the list.
+- `useUrlHash` keeps explorer selections consistent on reload and Back/Forward,
+  with a stable server snapshot to avoid hydration mismatch. Selections preserve
+  the query string and Next's history state. Use its setter for same-page state
+  links; plain `history.pushState` does not dispatch `hashchange`.
+- `useTheme` follows the HTML class and synchronizes explicit preferences across
+  tabs, including the interval between the pre-paint script and hydration.
+
+## Graphics And Media Lifecycle
+
+- Both Earth renderers use `ResilientEarthCanvas`: WebGL2 capability detection,
+  an isolated scene error boundary, at most two automatic context-loss retries,
+  and a readable retry state while the surrounding page remains usable.
+- `earthview/globe/earth-surface.tsx` shares texture processing and night shading,
+  with disposal of derived textures and defined GLSL smoothstep intervals.
+- `useWebGLSupport` also protects Soma and its bounded scene recovery.
+- `useVisibleScene` pauses the atlas, workspace, and EarthView render loops while
+  outside the viewport or in a hidden tab. Reduced motion uses demand rendering.
+- `useCameraMirror` owns the camera stream independently from the video element.
+  Closing, changing view, playback failure, and unmount stop all tracks. A late
+  permission response is discarded if the request is no longer active.
+- The Big Bang project provides native start and playback controls. Its embedded
+  container needs an explicit height at every breakpoint; a min-height alone
+  leaves its absolutely positioned, percentage-height runtime at zero on mobile.
+  Keyboard shortcuts are scoped to the timeline region, not the document.
+
+## Vital-Sign Provenance
+
+`fetchLiveVitalSignUpdates` isolates each public source's fetch, body decoding,
+validation, and parsing with a ten-second timeout. NASA uses its published J–D
+annual mean; NOAA skips missing sentinels; World Bank skips absent/nonfinite
+observations and requests recent nonempty years. A failed source does not remove
+successful updates. Individual source requests have a daily cache; the API stays
+dynamic and returns `no-store` with no fetched timestamp when all sources fail.
+
+The dashboard and globe use the same `VitalSignChart`. Curated, rounded reference
+points and illustrative projections stay separate from newly fetched source
+observations. Changing a headline's provider must not relabel the historical
+reference series. The native data disclosure supplies values, periods, units,
+series types, and reference attribution for keyboard and assistive access.
+
 ## Data And Content Sources
 
 Most durable content lives in `src/lib/` modules instead of page-local arrays.
@@ -170,6 +229,7 @@ Most durable content lives in `src/lib/` modules instead of page-local arrays.
 | `data-index.ts` | Data Index categories, entries, slugs, and counts. |
 | `vital-signs.ts` | Planetary vital-sign domains, indicator values, history, projection, and sources. |
 | `morbus.ts` | Morbus disease groups, exemplars, axes, crosswalks, and counts. |
+| `societas.ts` | Dated civilizational references, source links, domains, and illustrative scenario presets. |
 | `projects.ts` | Public project links and EarthView route path. |
 
 Prefer updating these modules over duplicating content in individual pages.

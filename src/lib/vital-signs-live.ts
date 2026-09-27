@@ -3,236 +3,156 @@ export type LiveVitalSignUpdate = {
   value: string;
   updated: string;
   live: true;
-  chartPoint?: { year: number; value: number };
+  source: string;
+  sourceHref: string;
+  note: string;
+  chartPoint: { year: number; value: number };
 };
 
 const GISTEMP_URL = "https://data.giss.nasa.gov/gistemp/tabledata_v4/GLB.Ts+dSST.csv";
 const CO2_URL = "https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.txt";
 const CH4_URL = "https://gml.noaa.gov/webdata/ccgg/trends/ch4/ch4_mm_gl.txt";
+// MRNEV asks for recent non-empty observations, without a date range that
+// silently expires as the site ages. The parser still validates every row.
 const WORLD_POPULATION_URL =
-  "https://api.worldbank.org/v2/country/WLD/indicator/SP.POP.TOTL?format=json&date=2024:2026&per_page=5";
+  "https://api.worldbank.org/v2/country/WLD/indicator/SP.POP.TOTL?format=json&mrnev=5&per_page=5";
 const WORLD_GDP_URL =
-  "https://api.worldbank.org/v2/country/WLD/indicator/NY.GDP.MKTP.CD?format=json&date=2023:2025&per_page=5";
+  "https://api.worldbank.org/v2/country/WLD/indicator/NY.GDP.MKTP.CD?format=json&mrnev=5&per_page=5";
 
-const monthNames = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
+const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-function parseGistempAnomaly(csv: string): { value: number; year: number } | null {
-  const rows = csv
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => /^\d{4},/.test(line));
+type AnnualReading = { value: number; year: number };
+type MonthlyReading = AnnualReading & { month: number };
 
-  for (let index = rows.length - 1; index >= 0; index -= 1) {
-    const parts = rows[index].split(",");
-    const year = Number(parts[0]);
-    if (!Number.isFinite(year)) {
-      continue;
+function finiteNumber(value: unknown): number | null {
+  if (typeof value !== "number" && typeof value !== "string") return null;
+  if (typeof value === "string" && value.trim() === "") return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+/** Use NASA's published January–December mean, never a partial-year average. */
+export function parseGistempAnomaly(csv: string): AnnualReading | null {
+  const lines = csv.split(/\r?\n/).map((line) => line.trim());
+  const header = lines.find((line) => line.startsWith("Year,"))?.split(",");
+  const annualColumn = header?.findIndex((column) => column.trim() === "J-D") ?? -1;
+  if (annualColumn < 0) return null;
+
+  let latest: AnnualReading | null = null;
+  for (const line of lines) {
+    if (!/^\d{4},/.test(line)) continue;
+    const columns = line.split(",");
+    const year = Number(columns[0]);
+    const value = finiteNumber(columns[annualColumn]);
+    if (value !== null && (!latest || year > latest.year)) latest = { year, value };
+  }
+  return latest;
+}
+
+/** Both NOAA monthly formats put concentration in the fourth column. */
+export function parseNoaaGreenhouseGas(text: string): MonthlyReading | null {
+  let latest: MonthlyReading | null = null;
+  for (const line of text.split(/\r?\n/)) {
+    const columns = line.trim().split(/\s+/);
+    if (!/^\d{4}$/.test(columns[0])) continue;
+    const year = Number(columns[0]);
+    const month = Number(columns[1]);
+    const value = finiteNumber(columns[3]);
+    // Negative sentinel values are missing readings, not concentrations.
+    if (!Number.isInteger(month) || month < 1 || month > 12 || value === null || value <= 0) continue;
+    if (!latest || year * 12 + month > latest.year * 12 + latest.month) {
+      latest = { year, month, value };
     }
+  }
+  return latest;
+}
 
-    const monthly = parts.slice(1, 13).map((value) => {
-      const trimmed = value.trim();
-      if (!trimmed || trimmed === "***") {
-        return null;
-      }
-      const parsed = Number(trimmed);
-      return Number.isFinite(parsed) ? parsed : null;
+export function parseWorldBankIndicator(json: unknown): AnnualReading | null {
+  if (!Array.isArray(json) || !Array.isArray(json[1])) return null;
+  let latest: AnnualReading | null = null;
+  for (const row of json[1]) {
+    if (!row || typeof row !== "object" || !/^\d{4}$/.test(String(row.date))) continue;
+    const year = Number(row.date);
+    const value = finiteNumber(row.value);
+    // Number(null) is zero; absent observations must remain absent.
+    if (value !== null && (!latest || year > latest.year)) latest = { year, value };
+  }
+  return latest;
+}
+
+export async function fetchLiveVitalSignUpdates(fetcher: typeof fetch = fetch): Promise<LiveVitalSignUpdate[]> {
+  const read = async (url: string) => {
+    const response = await fetcher(url, {
+      next: { revalidate: 86_400 },
+      signal: AbortSignal.timeout(10_000),
     });
+    if (!response.ok) throw new Error(`Source returned HTTP ${response.status}`);
+    return response;
+  };
 
-    const valid = monthly.filter((value): value is number => value !== null);
-    if (valid.length < 6) {
-      continue;
-    }
+  const temperature = async (): Promise<LiveVitalSignUpdate | null> => {
+    const response = await read(GISTEMP_URL);
+    const reading = parseGistempAnomaly(await response.text());
+    if (!reading) return null;
+    return {
+      id: "global-temperature",
+      value: `${reading.value >= 0 ? "+" : ""}${reading.value.toFixed(2)} °C`,
+      updated: `${reading.year} annual`,
+      live: true,
+      source: "NASA GISS",
+      sourceHref: "https://data.giss.nasa.gov/gistemp/",
+      note: `${reading.year} published annual land–ocean temperature anomaly relative to NASA's 1951–1980 baseline.`,
+      chartPoint: reading,
+    };
+  };
 
-    const average = valid.reduce((sum, value) => sum + value, 0) / valid.length;
-    return { value: average, year };
-  }
+  const greenhouseGas = async (url: string, id: string, unit: string): Promise<LiveVitalSignUpdate | null> => {
+    const response = await read(url);
+    const reading = parseNoaaGreenhouseGas(await response.text());
+    if (!reading) return null;
+    return {
+      id,
+      value: `${Math.round(reading.value).toLocaleString("en-US")} ${unit}`,
+      updated: `${monthNames[reading.month - 1]} ${reading.year} monthly`,
+      live: true,
+      source: "NOAA GML",
+      sourceHref: url,
+      note: id === "atmospheric-co2"
+        ? "Monthly mean carbon dioxide at Mauna Loa; seasonal variation is included."
+        : "Globally averaged monthly mean atmospheric methane.",
+      chartPoint: { year: reading.year + (reading.month - 1) / 12, value: reading.value },
+    };
+  };
 
-  return null;
-}
+  const worldBank = async (url: string, id: string): Promise<LiveVitalSignUpdate | null> => {
+    const response = await read(url);
+    const reading = parseWorldBankIndicator(await response.json());
+    if (!reading || reading.value <= 0) return null;
+    const population = id === "human-population";
+    return {
+      id,
+      value: population ? `${(reading.value / 1e9).toFixed(2)}B` : `$${(reading.value / 1e12).toFixed(1)}T`,
+      updated: `${reading.year} annual`,
+      live: true,
+      source: "World Bank",
+      sourceHref: population
+        ? "https://data.worldbank.org/indicator/SP.POP.TOTL?locations=1W"
+        : "https://data.worldbank.org/indicator/NY.GDP.MKTP.CD?locations=1W",
+      note: population
+        ? "Annual world population estimate from the World Bank; this is not a real-time population count."
+        : "Annual world GDP in current US dollars from the World Bank; not adjusted for purchasing power or inflation.",
+      chartPoint: { year: reading.year, value: reading.value / (population ? 1e9 : 1e12) },
+    };
+  };
 
-function parseNoaaCo2(text: string): { value: number; year: number; month: number } | null {
-  return parseNoaaGreenhouseGas(text);
-}
-
-function parseNoaaCh4(text: string): { value: number; year: number; month: number } | null {
-  return parseNoaaGreenhouseGas(text);
-}
-
-function parseNoaaGreenhouseGas(text: string): { value: number; year: number; month: number } | null {
-  const rows = text
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => /^\d{4}\s+\d{1,2}\s+/.test(line));
-
-  if (rows.length === 0) {
-    return null;
-  }
-
-  const parts = rows[rows.length - 1].split(/\s+/);
-  const year = Number(parts[0]);
-  const month = Number(parts[1]);
-  const ppm = Number(parts[3]);
-
-  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(ppm)) {
-    return null;
-  }
-
-  return { value: ppm, year, month };
-}
-
-function formatTemperature(value: number): string {
-  const sign = value >= 0 ? "+" : "";
-  return `${sign}${value.toFixed(2)} C`;
-}
-
-function formatCo2(value: number): string {
-  return `${Math.round(value)} ppm`;
-}
-
-function formatCh4(value: number): string {
-  return `${Math.round(value).toLocaleString("en-US")} ppb`;
-}
-
-function formatPopulation(value: number): string {
-  if (value >= 1e9) {
-    return `${(value / 1e9).toFixed(2)}B`;
-  }
-
-  if (value >= 1e6) {
-    return `${(value / 1e6).toFixed(1)}M`;
-  }
-
-  return value.toLocaleString("en-US");
-}
-
-function formatGdp(value: number): string {
-  return `$${Math.round(value / 1e12)}T`;
-}
-
-function parseWorldBankIndicator(json: unknown): { value: number; year: number } | null {
-  if (!Array.isArray(json) || json.length < 2) {
-    return null;
-  }
-
-  const rows = json[1];
-  if (!Array.isArray(rows)) {
-    return null;
-  }
-
-  for (const row of rows) {
-    if (!row || typeof row !== "object") {
-      continue;
-    }
-
-    const year = Number((row as { date?: string }).date);
-    const value = Number((row as { value?: number | null }).value);
-
-    if (Number.isFinite(year) && Number.isFinite(value)) {
-      return { value, year };
-    }
-  }
-
-  return null;
-}
-
-function formatMonthYear(year: number, month: number): string {
-  const label = monthNames[month - 1] ?? "—";
-  return `${label} ${year}`;
-}
-
-export async function fetchLiveVitalSignUpdates(): Promise<LiveVitalSignUpdate[]> {
-  const updates: LiveVitalSignUpdate[] = [];
-
-  const [gistempResult, co2Result, ch4Result, populationResult, gdpResult] = await Promise.allSettled([
-    fetch(GISTEMP_URL, { next: { revalidate: 86_400 } }),
-    fetch(CO2_URL, { next: { revalidate: 86_400 } }),
-    fetch(CH4_URL, { next: { revalidate: 86_400 } }),
-    fetch(WORLD_POPULATION_URL, { next: { revalidate: 86_400 } }),
-    fetch(WORLD_GDP_URL, { next: { revalidate: 86_400 } }),
+  // Isolate the whole fetch/decode/parse operation. One malformed response must
+  // not discard readings successfully obtained from the other sources.
+  const results = await Promise.allSettled([
+    temperature(),
+    greenhouseGas(CO2_URL, "atmospheric-co2", "ppm"),
+    greenhouseGas(CH4_URL, "atmospheric-methane", "ppb"),
+    worldBank(WORLD_POPULATION_URL, "human-population"),
+    worldBank(WORLD_GDP_URL, "global-gdp"),
   ]);
-
-  if (gistempResult.status === "fulfilled" && gistempResult.value.ok) {
-    const csv = await gistempResult.value.text();
-    const parsed = parseGistempAnomaly(csv);
-    if (parsed) {
-      updates.push({
-        id: "global-temperature",
-        value: formatTemperature(parsed.value),
-        updated: `${parsed.year} annual (live)`,
-        live: true,
-        chartPoint: { year: parsed.year, value: parsed.value },
-      });
-    }
-  }
-
-  if (co2Result.status === "fulfilled" && co2Result.value.ok) {
-    const text = await co2Result.value.text();
-    const parsed = parseNoaaCo2(text);
-    if (parsed) {
-      updates.push({
-        id: "atmospheric-co2",
-        value: formatCo2(parsed.value),
-        updated: `${formatMonthYear(parsed.year, parsed.month)} (live)`,
-        live: true,
-        chartPoint: { year: parsed.year + (parsed.month - 1) / 12, value: parsed.value },
-      });
-    }
-  }
-
-  if (ch4Result.status === "fulfilled" && ch4Result.value.ok) {
-    const text = await ch4Result.value.text();
-    const parsed = parseNoaaCh4(text);
-    if (parsed) {
-      updates.push({
-        id: "atmospheric-methane",
-        value: formatCh4(parsed.value),
-        updated: `${formatMonthYear(parsed.year, parsed.month)} (live)`,
-        live: true,
-        chartPoint: { year: parsed.year + (parsed.month - 1) / 12, value: parsed.value },
-      });
-    }
-  }
-
-  if (populationResult.status === "fulfilled" && populationResult.value.ok) {
-    const json = (await populationResult.value.json()) as unknown;
-    const parsed = parseWorldBankIndicator(json);
-    if (parsed) {
-      updates.push({
-        id: "human-population",
-        value: formatPopulation(parsed.value),
-        updated: `${parsed.year} (live)`,
-        live: true,
-        chartPoint: { year: parsed.year, value: parsed.value / 1e9 },
-      });
-    }
-  }
-
-  if (gdpResult.status === "fulfilled" && gdpResult.value.ok) {
-    const json = (await gdpResult.value.json()) as unknown;
-    const parsed = parseWorldBankIndicator(json);
-    if (parsed) {
-      updates.push({
-        id: "global-gdp",
-        value: formatGdp(parsed.value),
-        updated: `${parsed.year} (live)`,
-        live: true,
-        chartPoint: { year: parsed.year, value: parsed.value / 1e12 },
-      });
-    }
-  }
-
-  return updates;
+  return results.flatMap((result) => result.status === "fulfilled" && result.value ? [result.value] : []);
 }

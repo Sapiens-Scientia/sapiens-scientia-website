@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { PlatformIntroduction } from "@/components/platform-introduction";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { TerraExplorer } from "@/components/terra-explorer";
@@ -26,34 +27,13 @@ const terraScope = [
 
 export default function TerraPage() {
   return (
-    <main className="min-h-screen bg-black px-6 py-8 text-white sm:px-10">
+    <main className="atlas-page min-h-screen px-6 py-8 sm:px-10">
       <SiteNav />
 
-      <section className="mx-auto flex max-w-7xl flex-col gap-10">
-        <header className="max-w-4xl">
-          <p className="mb-3 text-xl font-medium uppercase tracking-[0.24em] text-blue-400">
-            Environmental Platform
-          </p>
-          <h1 className="text-5xl font-semibold tracking-normal sm:text-7xl">
-            Terra
-          </h1>
+      <section id="main-content" tabIndex={-1} className="mx-auto flex max-w-7xl flex-col gap-10">
+        <PlatformIntroduction platform="terra" />
 
-          <p className="mt-8 max-w-2xl text-lg leading-8 text-slate-300">
-            A platform for Earth systems, climate, ecology, energy, and the
-            planetary conditions of human civilization — treating the
-            environment not as a backdrop but as an active, coupled system that
-            human life is embedded within.
-          </p>
-          <Link
-            href="/scales"
-            className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-emerald-200 transition-colors hover:text-emerald-50"
-          >
-            Terra sits at the planetary scale — see the ladder
-            <span aria-hidden>→</span>
-          </Link>
-        </header>
-
-        <TerraExplorer />
+        <div id="terra-model" tabIndex={-1}><TerraExplorer /></div>
 
         <section className="flex flex-col gap-6 border-t border-emerald-200/15 pt-10">
           <div className="max-w-3xl">
@@ -62,9 +42,9 @@ export default function TerraPage() {
             </h2>
             <p className="mt-4 text-base leading-7 text-slate-300">
               A patient is read through their vital signs; so is a planet. Terra&apos;s
-              live dashboard charts the measured trends of the Earth system —
-              population, climate, ocean, land, and waste — each from the 1970s with a
-              projection toward 2050, linked back to the body that publishes it.
+              dashboard brings together population, climate, ocean, land, and waste
+              indicators. Explore dated reference series, illustrative projections,
+              and available source updates, with links back to their providers.
             </p>
           </div>
           <Link
@@ -83,12 +63,11 @@ export default function TerraPage() {
         <section className="flex flex-col gap-6 border-t border-emerald-200/15 pt-10">
           <div className="max-w-3xl">
             <h2 className="text-3xl font-semibold tracking-normal text-white sm:text-4xl">
-              Initial Scope
+              What Terra studies
             </h2>
             <p className="mt-4 text-base leading-7 text-slate-300">
-              Terra is a future platform. Its early scope spans the natural and
-              human-shaped systems that together set the environmental terms of
-              civilization.
+              Terra studies the natural and human-shaped systems that together set
+              the environmental conditions of civilization.
             </p>
           </div>
 

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { EarthView3DApp } from "@/components/earthview/earthview-3d-app";
-import { SiteNav } from "@/components/site-nav";
+import { BreadcrumbTrail } from "@/components/breadcrumb-trail";
 import { SiteFooter } from "@/components/site-footer";
 
 export const metadata: Metadata = {
@@ -14,13 +14,7 @@ export default function EarthViewPage() {
   return (
     <main className="flex min-h-screen flex-col bg-black text-white">
       <div className="px-6 py-8 sm:px-10">
-        <SiteNav
-          links={[
-            { href: "/", label: "Home" },
-            { href: "/projects", label: "Projects" },
-            { href: "/platforms/terra", label: "Terra" },
-          ]}
-        />
+        <BreadcrumbTrail path="/projects/earthview" />
 
         <header className="mx-auto mb-6 flex max-w-7xl flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -37,13 +31,13 @@ export default function EarthViewPage() {
       </div>
 
       <div className="relative mx-auto w-full max-w-7xl flex-1 px-4 pb-4 sm:px-6">
-        <section className="h-[min(76vh,860px)] min-h-[560px] overflow-hidden border border-white/10 bg-black">
+        <section id="main-content" tabIndex={-1} className="h-[min(76vh,860px)] min-h-[560px] overflow-hidden border border-white/10 bg-black">
           <EarthView3DApp />
         </section>
         <p className="mt-3 text-center text-xs text-slate-500">
           Return to the{" "}
-          <Link href="/" className="text-slate-400 underline-offset-2 hover:text-blue-300 hover:underline">
-            homepage globe
+          <Link href="/meta-earth#globe" className="text-slate-400 underline-offset-2 hover:text-blue-300 hover:underline">
+            Meta Earth globe
           </Link>
           .
         </p>

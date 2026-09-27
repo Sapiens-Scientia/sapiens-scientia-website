@@ -27,6 +27,7 @@ import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import type { SomaLensId, SomaScaleId } from "@/lib/soma";
 import type { Theme } from "@/lib/use-theme";
+import { useWebGLSupport } from "@/hooks/use-webgl-support";
 import type { SomaReferenceModelStatus } from "@/lib/soma-models";
 import {
   scaleOrder,
@@ -861,7 +862,9 @@ export default function SomaAtlasCanvas(props: SomaAtlasCanvasProps) {
   const background = props.theme === "light" ? "#eee9e4" : "#000000";
   const detailWorld = props.scale !== "organism" && props.scale !== "system";
   const [canvasEpoch, setCanvasEpoch] = useState(0);
-  const [canvasHealth, setCanvasHealth] = useState<"ready" | "recovering">("ready");
+  const [canvasHealth, setCanvasHealth] = useState<"ready" | "recovering" | "unavailable">("ready");
+  const supported = useWebGLSupport(canvasEpoch);
+  const recoveryAttempts = useRef(0);
   const recoveryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const detachCanvasListeners = useRef<() => void>(() => {});
 
@@ -878,8 +881,13 @@ export default function SomaAtlasCanvas(props: SomaAtlasCanvasProps) {
   }, [clearRecoveryTimer]);
 
   const handleCanvasFailure = useCallback(() => {
-    setCanvasHealth("recovering");
     clearRecoveryTimer();
+    if (recoveryAttempts.current >= 2) {
+      setCanvasHealth("unavailable");
+      return;
+    }
+    recoveryAttempts.current += 1;
+    setCanvasHealth("recovering");
     recoveryTimer.current = setTimeout(restartCanvas, 1200);
   }, [clearRecoveryTimer, restartCanvas]);
 
@@ -889,20 +897,15 @@ export default function SomaAtlasCanvas(props: SomaAtlasCanvasProps) {
 
     const handleContextLost = (event: Event) => {
       event.preventDefault();
-      setCanvasHealth("recovering");
-      clearRecoveryTimer();
-      recoveryTimer.current = setTimeout(restartCanvas, 1200);
+      handleCanvasFailure();
     };
     const handleContextRestored = () => {
       clearRecoveryTimer();
+      recoveryAttempts.current = 0;
       setCanvasHealth("ready");
       state.invalidate();
     };
-    const handleContextCreationError = () => {
-      setCanvasHealth("recovering");
-      clearRecoveryTimer();
-      recoveryTimer.current = setTimeout(restartCanvas, 1200);
-    };
+    const handleContextCreationError = handleCanvasFailure;
 
     canvas.addEventListener("webglcontextlost", handleContextLost);
     canvas.addEventListener("webglcontextrestored", handleContextRestored);
@@ -915,7 +918,7 @@ export default function SomaAtlasCanvas(props: SomaAtlasCanvasProps) {
 
     setCanvasHealth("ready");
     state.invalidate();
-  }, [clearRecoveryTimer, restartCanvas]);
+  }, [clearRecoveryTimer, handleCanvasFailure]);
 
   useEffect(() => () => {
     clearRecoveryTimer();
@@ -923,14 +926,21 @@ export default function SomaAtlasCanvas(props: SomaAtlasCanvasProps) {
   }, [clearRecoveryTimer]);
 
   useEffect(() => {
-    if (props.scale === "organism" || props.scale === "system") {
+    if (supported && (props.scale === "organism" || props.scale === "system")) {
       useGLTF.preload(anatomyModelPath, false, true);
     }
-  }, [props.scale]);
+  }, [props.scale, supported]);
+
+  const unavailable = supported === false || canvasHealth === "unavailable";
+  const retry = () => {
+    recoveryAttempts.current = 0;
+    setCanvasHealth("ready");
+    restartCanvas();
+  };
 
   return (
     <div className="soma-canvas" data-canvas-health={canvasHealth}>
-      <div className="soma-canvas-webgl" aria-hidden="true">
+      {supported && !unavailable && <div className="soma-canvas-webgl" aria-hidden="true">
         <SomaCanvasErrorBoundary key={canvasEpoch} onFailure={handleCanvasFailure}>
           <Canvas
             dpr={SOMA_DPR}
@@ -944,12 +954,12 @@ export default function SomaAtlasCanvas(props: SomaAtlasCanvasProps) {
             <AtlasWorld {...props} />
           </Canvas>
         </SomaCanvasErrorBoundary>
-      </div>
-      {canvasHealth === "recovering" ? (
+      </div>}
+      {unavailable || canvasHealth === "recovering" || supported === null ? (
         <div className="soma-canvas-recovery" role="status" aria-live="polite">
           <span aria-hidden />
-          <p>Reconnecting the anatomical atlas</p>
-          <button type="button" onClick={restartCanvas}>Restart 3D view</button>
+          <p>{unavailable ? "The 3D view is unavailable. Explore the anatomy using the scale, system, and detail controls." : supported === null ? "Preparing the anatomical atlas" : "Reconnecting the anatomical atlas"}</p>
+          {(unavailable || canvasHealth === "recovering") && <button type="button" onClick={retry}>Restart 3D view</button>}
         </div>
       ) : null}
     </div>

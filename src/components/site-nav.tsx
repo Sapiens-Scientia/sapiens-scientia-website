@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { ChevronDown, Menu as MenuIcon, Moon, Sun, X } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useTheme } from "@/lib/use-theme";
 
 type SiteNavLink = {
@@ -19,83 +20,83 @@ type SiteNavItem = SiteNavLink & {
   children?: SiteNavChild[];
 };
 
-type SiteNavProps = {
-  /**
-   * Flat link list. When provided, the nav renders these as a simple row —
-   * used by deep pages that pass a breadcrumb trail. When omitted, the full
-   * grouped site navigation (with dropdowns) is rendered instead.
-   */
-  links?: SiteNavLink[];
-};
-
 // The complete public route inventory, grouped so every page is reachable from
 // the nav. Nested sections (the Persona body tree, Projects) collapse into
 // dropdowns; everything else stays a top-level link. Keep in sync with the app
 // directory and docs/ROUTES.md.
 const primaryNav: SiteNavItem[] = [
-  { href: "/", label: "Home" },
+  {
+    href: "/meta-earth", label: "Atlas",
+    children: [
+      { href: "/meta-earth", label: "Meta Earth · Start exploring" },
+      { href: "/ontology", label: "The Map · Concepts & relationships" },
+      { href: "/", label: "The History of the Universe" },
+      { href: "/projects", label: "All projects" },
+      { href: "/projects/earthview", label: "EarthView 3D", indent: true },
+      { href: "/projects/big-bang-universe", label: "Big Bang Universe", indent: true },
+    ],
+  },
   {
     href: "/platforms",
     label: "Platforms",
     children: [
       { href: "/platforms", label: "All platforms" },
       { href: "/platforms/persona", label: "Persona" },
-      { href: "/platforms/persona/salus", label: "Salus", indent: true },
-      { href: "/platforms/persona/salus/soma", label: "Soma", indent: true },
-      { href: "/platforms/persona/salus/soma/morbus", label: "Morbus", indent: true },
-      { href: "/platforms/persona/domus", label: "Domus", indent: true },
+      { href: "/platforms/persona/salus", label: "Salus · Health", indent: true },
+      { href: "/platforms/persona/salus/soma", label: "Soma · Body", indent: true },
+      { href: "/platforms/persona/salus/soma/morbus", label: "Morbus · Disease", indent: true },
+      { href: "/platforms/persona/domus", label: "Domus · Home", indent: true },
       { href: "/platforms/societas", label: "Societas" },
       { href: "/platforms/terra", label: "Terra" },
     ],
   },
-  { href: "/ontology", label: "The Map" },
-  { href: "/meta-earth", label: "Meta Earth" },
-  { href: "/scales", label: "Scales" },
-  { href: "/chronos", label: "Chronos" },
-  { href: "/vitals", label: "Vitals" },
+  { href: "/scales", label: "Scale" },
+  { href: "/chronos", label: "Time" },
   {
-    href: "/projects",
-    label: "Projects",
+    href: "/vitals", label: "Evidence",
     children: [
-      { href: "/projects", label: "All projects" },
-      { href: "/projects/sapiens-scientia-data-index", label: "Data Index" },
-      { href: "/projects/earthview", label: "EarthView 3D" },
-      { href: "/projects/big-bang-universe", label: "Big Bang Universe" },
+      { href: "/vitals", label: "Planetary Vital Signs" },
+      { href: "/projects/sapiens-scientia-data-index", label: "Data Index · Public sources" },
     ],
   },
 ];
 
 const linkBase =
-  "relative py-1 transition-all duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-sky-300";
+  "relative flex min-h-11 items-center px-3 py-2 transition-colors lg:px-0";
 
 function ActiveUnderline() {
   return (
-    <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-gradient-to-r from-sky-400 to-emerald-400 animate-pulse rounded-full" />
+    <span aria-hidden="true" className="absolute bottom-0 left-3 right-3 h-px bg-current lg:left-0 lg:right-0" />
   );
 }
 
-export function SiteNav({ links }: SiteNavProps) {
+export function SiteNav() {
   const { theme, toggleTheme } = useTheme();
   const pathname = usePathname();
+  const id = useId();
   const [openMenu, setOpenMenu] = useState<string | null>(null);
-  const navRef = useRef<HTMLDivElement>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const navRef = useRef<HTMLElement>(null);
+  const mobileButtonRef = useRef<HTMLButtonElement>(null);
+  const menuButtonRefs = useRef(new Map<string, HTMLButtonElement>());
 
-  // Close any open dropdown on outside click or Escape. (Navigation closes it
-  // via the link onClick handlers below, since the nav stays mounted across
-  // client-side route changes.)
   useEffect(() => {
-    if (!openMenu) {
-      return;
-    }
+    if (!openMenu && !mobileOpen) return;
 
     const onPointerDown = (event: PointerEvent) => {
-      if (navRef.current && !navRef.current.contains(event.target as Node)) {
+      if (!navRef.current?.contains(event.target as Node)) {
         setOpenMenu(null);
+        setMobileOpen(false);
       }
     };
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
+      if (event.key !== "Escape") return;
+      if (openMenu) {
+        menuButtonRefs.current.get(openMenu)?.focus();
         setOpenMenu(null);
+      } else {
+        mobileButtonRef.current?.focus();
+        setMobileOpen(false);
       }
     };
 
@@ -105,153 +106,124 @@ export function SiteNav({ links }: SiteNavProps) {
       document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [openMenu]);
-
-  const isExactActive = (href: string) =>
-    href === "/" ? pathname === "/" : pathname === href;
+  }, [openMenu, mobileOpen]);
 
   const isWithin = (href: string) =>
-    href === "/"
-      ? pathname === "/"
-      : pathname === href || pathname?.startsWith(`${href}/`);
+    pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
 
-  // Within a dropdown, only the deepest matching child is highlighted so that,
-  // e.g., on /platforms/persona/salus/soma only "Soma" lights up — not every
-  // ancestor that is also a path prefix.
-  const activeChildHref = (children: SiteNavChild[]) => {
-    let best: string | null = null;
-    for (const child of children) {
-      if (isWithin(child.href) && (!best || child.href.length > best.length)) {
-        best = child.href;
-      }
-    }
-    return best;
+  // A route can sit under a broad group (Projects) and a more specific one
+  // (Evidence). Highlight only the group with the closest matching destination.
+  const activeGroup = primaryNav.map((item) => ({
+    href: item.href,
+    match: Math.max(-1, ...[item, ...(item.children ?? [])]
+      .filter((link) => isWithin(link.href)).map((link) => link.href.length)),
+  })).sort((a, b) => b.match - a.match)[0];
+
+  const closeNavigation = () => {
+    setOpenMenu(null);
+    setMobileOpen(false);
   };
-
-  const themeToggle = (
-    <button
-      onClick={toggleTheme}
-      className="theme-toggle-btn pointer-events-auto rounded border border-white/10 bg-white/[0.03] px-3.5 py-1.5 text-xs font-semibold tracking-wide text-slate-300 transition-all hover:bg-white/[0.08] hover:text-white cursor-pointer"
-      aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-    >
-      {theme === "dark" ? "☀ Light Mode" : "☾ Dark Mode"}
-    </button>
-  );
-
-  // Flat breadcrumb mode: deep pages pass their trail explicitly.
-  if (links) {
-    return (
-      <nav
-        aria-label="Primary navigation"
-        className="sticky top-4 z-50 mb-10 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-xl border border-white/10 bg-black/60 px-6 py-3 text-sm font-medium text-slate-300 backdrop-blur-md shadow-lg sm:mb-14 pointer-events-auto"
-      >
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-          {links.map((link) => {
-            const active = isWithin(link.href);
-            return (
-              <Link
-                key={`${link.href}-${link.label}`}
-                href={link.href}
-                className={`${linkBase} ${
-                  active ? "text-white font-semibold" : "text-slate-400 hover:text-white"
-                }`}
-              >
-                {link.label}
-                {active && <ActiveUnderline />}
-              </Link>
-            );
-          })}
-        </div>
-        {themeToggle}
-      </nav>
-    );
-  }
 
   return (
     <nav
       ref={navRef}
       aria-label="Primary navigation"
-      className="sticky top-4 z-50 mb-10 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-xl border border-white/10 bg-black/60 px-6 py-3 text-sm font-medium text-slate-300 backdrop-blur-md shadow-lg sm:mb-14 pointer-events-auto"
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) closeNavigation();
+      }}
+      className="site-nav sticky top-0 z-50 mx-auto mb-8 max-w-[1376px] border-b border-white/15 py-3 text-sm font-normal text-slate-300 sm:mb-12 lg:flex lg:items-center lg:justify-between lg:gap-8"
     >
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-        {primaryNav.map((item) => {
+      <div className="flex items-center justify-between gap-3 lg:contents">
+        <Link href="/meta-earth" onClick={closeNavigation} className="flex min-h-11 shrink-0 items-center gap-2.5 text-base tracking-tight text-slate-100 sm:text-lg lg:order-1">
+          <svg viewBox="0 0 34 32" className="h-7 w-7 shrink-0" aria-hidden="true">
+            <path d="M17 5C9 8 4 15 4 24c9 5 17 5 26 0C30 15 25 8 17 5Z" fill="none" stroke="currentColor" strokeOpacity=".45" strokeWidth="1" />
+            <circle cx="17" cy="5" r="4" fill="var(--atlas-persona)" /><circle cx="4" cy="24" r="4.5" fill="var(--atlas-societas)" /><circle cx="30" cy="24" r="4.5" fill="var(--atlas-terra)" />
+          </svg>
+          Sapiens Scientia
+        </Link>
+        <div className="flex items-center gap-1 lg:order-3">
+          <button type="button" onClick={toggleTheme}
+            className="theme-toggle-btn flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-full text-slate-300 transition-colors hover:bg-white/[0.08] hover:text-white"
+            aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}>
+            {theme === "dark" ? <Sun size={19} aria-hidden="true" /> : <Moon size={19} aria-hidden="true" />}
+          </button>
+          <button ref={mobileButtonRef} type="button" aria-expanded={mobileOpen} aria-controls={`${id}-links`}
+            onClick={() => { setMobileOpen(!mobileOpen); setOpenMenu(null); }}
+            className="flex min-h-11 cursor-pointer items-center gap-2 rounded-md px-2 text-xs text-slate-100 lg:hidden">
+            <span className="sr-only">{mobileOpen ? "Close" : "Menu"}</span>
+            {mobileOpen ? <X size={20} aria-hidden="true" /> : <MenuIcon size={20} aria-hidden="true" />}
+          </button>
+        </div>
+      </div>
+
+      <div
+        id={`${id}-links`}
+        className={`${mobileOpen ? "flex" : "hidden"} max-h-[calc(100dvh-9rem)] flex-col gap-1 overflow-y-auto border-t border-white/10 pb-2 pt-3 lg:order-2 lg:flex lg:max-h-none lg:flex-row lg:items-center lg:gap-8 lg:overflow-visible lg:border-0 lg:p-0`}
+      >
+        {primaryNav.map((item, index) => {
           if (!item.children) {
-            const active = isExactActive(item.href);
+            const active = pathname === item.href;
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`${linkBase} ${
-                  active ? "text-white font-semibold" : "text-slate-400 hover:text-white"
-                }`}
+                onClick={closeNavigation}
+                aria-current={active ? "page" : undefined}
+                className={`${linkBase} ${active ? "font-semibold text-white" : "text-slate-400 hover:bg-white/[0.04] hover:text-white lg:hover:bg-transparent"}`}
               >
                 {item.label}
-                {active && <ActiveUnderline />}
+                {active ? <ActiveUnderline /> : null}
               </Link>
             );
           }
 
           const open = openMenu === item.href;
-          const sectionActive = isWithin(item.href);
-          const childActiveHref = activeChildHref(item.children);
+          const sectionActive = activeGroup?.match >= 0 && activeGroup.href === item.href;
+          const childActiveHref = item.children
+            .filter((child) => isWithin(child.href))
+            .sort((a, b) => b.href.length - a.href.length)[0]?.href;
+          const panelId = `${id}-section-${index}`;
 
           return (
-            <div key={item.href} className="relative">
+            <div key={item.href} className="relative" onBlur={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget) && open) setOpenMenu(null);
+            }}>
               <button
+                ref={(button) => {
+                  if (button) menuButtonRefs.current.set(item.href, button);
+                  else menuButtonRefs.current.delete(item.href);
+                }}
                 type="button"
                 onClick={() => setOpenMenu(open ? null : item.href)}
-                aria-haspopup="menu"
                 aria-expanded={open}
-                className={`${linkBase} inline-flex items-center gap-1 cursor-pointer ${
-                  sectionActive ? "text-white font-semibold" : "text-slate-400 hover:text-white"
-                }`}
+                aria-controls={panelId}
+                className={`${linkBase} w-full cursor-pointer justify-between gap-2 ${sectionActive ? "font-semibold text-white" : "text-slate-400 hover:text-white"}`}
               >
                 {item.label}
-                <span
-                  aria-hidden
-                  className={`text-[0.6rem] leading-none transition-transform duration-200 ${
-                    open ? "rotate-180" : ""
-                  }`}
-                >
-                  ▾
-                </span>
-                {sectionActive && <ActiveUnderline />}
+                <ChevronDown aria-hidden="true" size={13} className={`transition-transform ${open ? "rotate-180" : ""}`} />
+                {sectionActive ? <ActiveUnderline /> : null}
               </button>
-
-              {open && (
-                <div
-                  role="menu"
-                  aria-label={item.label}
-                  className="absolute left-0 top-full mt-3 min-w-[12rem] flex flex-col gap-0.5 rounded-xl border border-white/10 bg-black/60 p-2 text-sm backdrop-blur-md shadow-xl"
-                >
-                  {item.children.map((child) => {
-                    const active = child.href === childActiveHref;
-                    return (
-                      <Link
-                        key={child.href}
-                        href={child.href}
-                        role="menuitem"
-                        onClick={() => setOpenMenu(null)}
-                        className={`rounded-md px-3 py-1.5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300 ${
-                          child.indent ? "pl-6" : ""
-                        } ${
-                          active
-                            ? "bg-white/[0.06] text-white font-semibold"
-                            : "text-slate-400 hover:bg-white/[0.05] hover:text-white"
-                        }`}
-                      >
-                        {child.label}
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
+              <div
+                id={panelId}
+                hidden={!open}
+                className="site-nav-dropdown ml-3 border-l border-white/15 pl-2 lg:absolute lg:left-0 lg:top-full lg:mt-2 lg:ml-0 lg:min-w-72 lg:rounded-lg lg:border lg:p-2 lg:shadow-xl"
+              >
+                {item.children.map((child) => (
+                  <Link
+                    key={child.href}
+                    href={child.href}
+                    onClick={closeNavigation}
+                    aria-current={pathname === child.href ? "page" : undefined}
+                    className={`flex min-h-11 items-center rounded-md px-3 py-2 transition-colors ${child.indent ? "pl-6" : ""} ${child.href === childActiveHref ? "bg-white/[0.06] font-semibold text-white" : "text-slate-400 hover:bg-white/[0.05] hover:text-white"}`}
+                  >
+                    {child.label}
+                  </Link>
+                ))}
+              </div>
             </div>
           );
         })}
       </div>
-
-      {themeToggle}
     </nav>
   );
 }

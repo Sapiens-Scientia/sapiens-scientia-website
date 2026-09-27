@@ -26,13 +26,13 @@ const destinations: { href: string; label: string; detail: string; accent: strin
   {
     href: "/chronos",
     label: "The Arc of Time",
-    detail: "Deep time, from the first second to the far future.",
+    detail: "Deep time, from the Big Bang to the human present.",
     accent: "#818cf8",
   },
   {
     href: "/vitals",
     label: "Planetary Vital Signs",
-    detail: "Live readings on temperature, carbon, population, and economy.",
+    detail: "Dated indicators of temperature, carbon, population, and economy.",
     accent: "#fbbf24",
   },
 ];
@@ -82,8 +82,8 @@ export default function NotFound() {
 
         <p className="text-sm text-slate-400">
           Or return to the{" "}
-          <Link href="/" className="text-sky-300 underline-offset-4 hover:underline">
-            homepage
+          <Link href="/meta-earth" className="text-sky-300 underline-offset-4 hover:underline">
+            atlas
           </Link>
           .
         </p>

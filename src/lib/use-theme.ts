@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 
 export type Theme = "dark" | "light";
 
@@ -17,13 +17,28 @@ function emit() {
 }
 
 function subscribe(listener: () => void) {
+  if (listeners.size === 0) {
+    window.addEventListener("storage", syncStoredTheme);
+    // A different tab may have changed the preference between the pre-paint
+    // script and hydration, before this document had a storage subscriber.
+    try {
+      document.documentElement.classList.toggle(LIGHT_CLASS, localStorage.getItem(STORAGE_KEY) === "light");
+    } catch {
+      // Keep the applied class when storage is unavailable.
+    }
+  }
   listeners.add(listener);
-  // Reflect changes made in other tabs.
-  window.addEventListener("storage", listener);
   return () => {
     listeners.delete(listener);
-    window.removeEventListener("storage", listener);
+    if (listeners.size === 0) window.removeEventListener("storage", syncStoredTheme);
   };
+}
+
+function syncStoredTheme(event: StorageEvent) {
+  if (event.key !== STORAGE_KEY && event.key !== null) return;
+  if (event.storageArea && event.storageArea !== localStorage) return;
+  document.documentElement.classList.toggle(LIGHT_CLASS, event.newValue === "light");
+  emit();
 }
 
 function getSnapshot(): Theme {
@@ -48,14 +63,7 @@ function applyTheme(theme: Theme) {
 }
 
 export function useTheme() {
-  const [theme, setThemeState] = useState<Theme>("dark");
-
-  useEffect(() => {
-    const updateTheme = () => setThemeState(getSnapshot());
-
-    updateTheme();
-    return subscribe(updateTheme);
-  }, []);
+  const theme = useSyncExternalStore(subscribe, getSnapshot, () => "dark" as Theme);
 
   // Read the live snapshot at call time so rapid toggles before a re-render
   // don't act on a stale closured value.

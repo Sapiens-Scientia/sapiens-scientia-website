@@ -2,33 +2,21 @@
 
 import { useMemo, useState } from "react";
 import { dataIndexSections, dataIndexTitleForSlug } from "@/lib/data-index";
+import { useUrlHash } from "@/hooks/use-url-hash";
 
 export function DataIndexExplorer() {
   const [query, setQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState<string | null>(() => {
-    if (typeof window === "undefined") {
-      return null;
-    }
-
-    const slug = window.location.hash.replace(/^#/, "");
-    return slug ? dataIndexTitleForSlug(slug) : null;
-  });
+  const [hash, setHash] = useUrlHash();
+  const activeCategory = dataIndexTitleForSlug(hash);
 
   const selectCategory = (title: string | null) => {
-    setActiveCategory(title);
+    const section = dataIndexSections.find((entry) => entry.title === title);
+    setHash(section?.slug ?? "");
+  };
 
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    if (title) {
-      const section = dataIndexSections.find((entry) => entry.title === title);
-      if (section) {
-        window.history.replaceState(null, "", `#${section.slug}`);
-      }
-    } else {
-      window.history.replaceState(null, "", window.location.pathname);
-    }
+  const clearFilters = () => {
+    setQuery("");
+    selectCategory(null);
   };
 
   const normalizedQuery = query.trim().toLowerCase();
@@ -43,7 +31,7 @@ export function DataIndexExplorer() {
             return true;
           }
 
-          const haystack = `${item.name} ${item.role} ${section.title} ${section.description}`.toLowerCase();
+          const haystack = `${item.name} ${item.shortName ?? ""} ${item.role} ${section.title} ${section.description}`.toLowerCase();
           return haystack.includes(normalizedQuery);
         }),
       }))
@@ -68,17 +56,18 @@ export function DataIndexExplorer() {
               className="border border-white/15 bg-black/40 px-3 py-2 text-base text-slate-100 placeholder:text-slate-500 focus:border-sky-400/50 focus:outline-none"
             />
           </label>
-          <p className="font-mono text-xs uppercase tracking-[0.16em] text-slate-500">
+          <p role="status" aria-atomic="true" className="font-mono text-xs uppercase tracking-[0.16em] text-slate-400">
             {visibleCount} source{visibleCount === 1 ? "" : "s"} shown
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by category">
           <button
             type="button"
             onClick={() => selectCategory(null)}
+            aria-pressed={activeCategory === null}
             className={[
-              "border px-3 py-1.5 text-xs font-medium uppercase tracking-[0.14em] transition-colors",
+              "min-h-10 cursor-pointer border px-3 py-2 text-xs font-medium uppercase tracking-[0.14em] transition-colors",
               activeCategory === null
                 ? "border-sky-400/50 bg-sky-400/10 text-sky-200"
                 : "border-white/10 bg-white/[0.02] text-slate-400 hover:border-white/20 hover:text-slate-200",
@@ -90,11 +79,12 @@ export function DataIndexExplorer() {
             <button
               key={section.title}
               type="button"
+              aria-pressed={activeCategory === section.title}
               onClick={() =>
                 selectCategory(activeCategory === section.title ? null : section.title)
               }
               className={[
-                "border px-3 py-1.5 text-xs font-medium uppercase tracking-[0.14em] transition-colors",
+                "min-h-10 cursor-pointer border px-3 py-2 text-xs font-medium uppercase tracking-[0.14em] transition-colors",
                 activeCategory === section.title
                   ? "border-sky-400/50 bg-sky-400/10 text-sky-200"
                   : "border-white/10 bg-white/[0.02] text-slate-400 hover:border-white/20 hover:text-slate-200",
@@ -104,12 +94,23 @@ export function DataIndexExplorer() {
             </button>
           ))}
         </div>
+        {query || activeCategory ? (
+          <button type="button" onClick={clearFilters} className="min-h-10 w-fit cursor-pointer text-sm font-medium text-sky-300 underline underline-offset-4 hover:text-sky-200">
+            Clear filters
+          </button>
+        ) : null}
       </div>
 
       {filteredSections.length === 0 ? (
-        <p className="border border-white/10 bg-white/[0.02] p-6 text-center text-slate-400">
-          No databases match your search. Try a broader term or clear the category filter.
-        </p>
+        <div className="border border-white/10 bg-white/[0.02] p-6 text-center">
+          <h2 className="text-lg font-medium text-slate-100">No sources found</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-400">
+            Try a broader search term{activeCategory ? " or choose another category" : ""}.
+          </p>
+          <button type="button" onClick={clearFilters} className="mt-4 min-h-11 cursor-pointer border border-sky-400/40 px-4 py-2 text-sm text-sky-200 hover:bg-sky-400/10">
+            Reset search and categories
+          </button>
+        </div>
       ) : (
         <div className="grid gap-12">
           {filteredSections.map((section) => (

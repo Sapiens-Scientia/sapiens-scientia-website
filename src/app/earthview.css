@@ -1,4 +1,4 @@
-:root {
+.earth-shell {
   color-scheme: light;
   --background: #f8fafc;
   --foreground: #0f172a;
@@ -9,17 +9,18 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-:root.dark {
+.earth-shell[data-scene-theme="dark"] {
   color-scheme: dark;
   --background: #020617;
   --foreground: #f8fafc;
 }
 
-* {
+.earth-shell,
+.earth-shell * {
   box-sizing: border-box;
 }
 
-button {
+.earth-shell button {
   font: inherit;
 }
 
@@ -88,7 +89,7 @@ button {
   opacity: 0.72;
 }
 
-.earth-brand h1 {
+.earth-brand h2 {
   margin: 0;
   font-size: clamp(24px, 5vw, 48px);
   line-height: 0.95;
@@ -536,7 +537,7 @@ button {
     gap: 8px;
   }
 
-  .earth-brand h1 {
+  .earth-brand h2 {
     font-size: 28px;
   }
 

@@ -68,6 +68,9 @@ export function BigBangUniverseExperience({
   return (
     <div
       ref={rootRef}
+      tabIndex={0}
+      role="region"
+      aria-label="Cosmic timeline. Use the controls to explore time."
       className={[
         "big-bang-universe prestart relative h-full min-h-screen overflow-hidden",
         embedded ? "embedded" : "",
@@ -79,7 +82,9 @@ export function BigBangUniverseExperience({
         .join(" ")}
     >
       <div id="stage">
-        <canvas id="c" />
+        <canvas id="c" aria-hidden="true" />
+
+        {!journey && <div id="startPrompt"><button id="startBtn" type="button">Begin the timeline</button><p>Or use the time slider to explore at your own pace.</p></div>}
 
         {siteIntro ? (
           <button id="skipAnimationBtn" type="button">
@@ -88,7 +93,7 @@ export function BigBangUniverseExperience({
         ) : null}
 
         <div id="title">
-          <h1>The History of the Universe</h1>
+          {embedded || journey ? <h2>The History of the Universe</h2> : <h1>The History of the Universe</h1>}
           <p>13.8 billion years · logarithmic time</p>
         </div>
 
@@ -135,13 +140,13 @@ export function BigBangUniverseExperience({
             <div id="scrubtip" />
           </div>
           <div className="speeds" id="speeds">
-            <button className="btn" type="button" data-s="0.5">
+            <button className="btn" type="button" data-s="0.5" aria-pressed="false">
               0.5x
             </button>
-            <button className="btn active" type="button" data-s="1">
+            <button className="btn active" type="button" data-s="1" aria-pressed="true">
               1x
             </button>
-            <button className="btn" type="button" data-s="2">
+            <button className="btn" type="button" data-s="2" aria-pressed="false">
               2x
             </button>
           </div>

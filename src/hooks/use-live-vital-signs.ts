@@ -32,6 +32,10 @@ export function mergeLiveVitalSigns(
       ...sign,
       value: update.value,
       updated: update.updated,
+      source: update.source,
+      sourceHref: update.sourceHref,
+      note: update.note,
+      referenceSource: sign.referenceSource ?? { label: sign.source, href: sign.sourceHref },
       liveChartPoint: update.chartPoint,
     };
   });
@@ -43,8 +47,10 @@ export function useLiveVitalSigns() {
 
   useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 15_000);
 
-    fetch("/api/vital-signs")
+    fetch("/api/vital-signs", { signal: controller.signal })
       .then((response) => {
         if (!response.ok) {
           throw new Error("Vital signs request failed");
@@ -56,17 +62,21 @@ export function useLiveVitalSigns() {
           return;
         }
 
-        setUpdates(payload.updates ?? []);
-        setStatus("ready");
+        const received = Array.isArray(payload.updates) ? payload.updates : [];
+        setUpdates(received);
+        setStatus(received.length > 0 ? "ready" : "error");
       })
       .catch(() => {
         if (!cancelled) {
           setStatus("error");
         }
-      });
+      })
+      .finally(() => window.clearTimeout(timeout));
 
     return () => {
       cancelled = true;
+      window.clearTimeout(timeout);
+      controller.abort();
     };
   }, []);
 

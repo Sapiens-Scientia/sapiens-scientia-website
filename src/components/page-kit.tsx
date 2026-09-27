@@ -8,8 +8,6 @@ import { SiteFooter } from "@/components/site-footer";
 // and scope pills. Per-platform accents are passed as hex colors so the same
 // primitives can render Salus sky, Societas indigo, and Terra emerald surfaces.
 
-type SiteNavLink = { href: string; label: string };
-
 const DEFAULT_ACCENT = "#60a5fa"; // text-blue-400, the site default eyebrow tone
 
 const maxWidthClass = {
@@ -26,20 +24,18 @@ function withAlpha(hex: string, alpha: string) {
 }
 
 export function PageShell({
-  navLinks,
   maxWidth = "full",
   gap = "gap-10",
   children,
 }: {
-  navLinks?: SiteNavLink[];
   maxWidth?: MaxWidth;
   gap?: string;
   children: ReactNode;
 }) {
   return (
     <main className="min-h-screen bg-black px-6 py-8 text-white sm:px-10">
-      <SiteNav links={navLinks} />
-      <section className={`mx-auto flex ${maxWidthClass[maxWidth]} flex-col ${gap}`}>
+      <SiteNav />
+      <section id="main-content" tabIndex={-1} className={`mx-auto flex ${maxWidthClass[maxWidth]} flex-col ${gap}`}>
         {children}
       </section>
       <SiteFooter />
@@ -61,12 +57,12 @@ export function PageHeader({
   return (
     <header className="max-w-4xl">
       <p
-        className="mb-3 text-xl font-medium uppercase tracking-[0.24em]"
+        className="mb-4 text-xs font-medium uppercase tracking-[0.16em]"
         style={{ color: accent }}
       >
         {eyebrow}
       </p>
-      <h1 className="text-5xl font-semibold tracking-normal sm:text-7xl">{title}</h1>
+      <h1 className="text-4xl font-medium leading-[1.08] tracking-tight sm:text-6xl lg:text-7xl">{title}</h1>
       {children ? (
         <div className="mt-8 max-w-2xl text-lg leading-8 text-slate-300">
           {children}

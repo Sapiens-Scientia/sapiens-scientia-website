@@ -7,9 +7,10 @@ This is the current public route inventory for the Sapiens Scientia website.
 | Route | File | Purpose |
 |---|---|---|
 | `/` | `src/app/page.tsx` | Homepage "The History of the Universe" journey (`src/components/lab/you-are-here.tsx`, formerly "You Are Here" — file keeps the original slug): one scroll from the Big Bang through cosmic and geologic time, then down the reader's cosmic address to a live sunlit globe, ending with a handoff button into Meta Earth. `/#end` opens directly on the finale; `/lab/you-are-here` redirects here. |
-| `/meta-earth` | `src/app/meta-earth/page.tsx` | Meta Earth page: the Current Sunlight globe carrying the planetary connectivity layer, under the Physical Systems / Meta Systems / Information Systems and platforms overlays, plus overview content and the Meta-Entity framework (`#meta-entities`). Reached from the end of the homepage journey. |
-| `/scales` | `src/app/scales/page.tsx` | Ladder of Scale, from particles to the Sun. |
-| `/chronos` | `src/app/chronos/page.tsx` | Arc of Time, from the Big Bang to the present. |
+| `/meta-earth` | `src/app/meta-earth/page.tsx` | Atlas hub with three platform lenses, connected globe, Scale/Time/Evidence entries, and question-led paths. `#lens-persona`, `#lens-societas`, and `#lens-terra` select lenses; `#globe` opens the full globe workspace; `#meta-entities` retains the conceptual framework. |
+| `/ontology` | `src/app/ontology/page.tsx` | The full system map of canonical concepts, domains, and relationships. |
+| `/scales` | `src/app/scales/page.tsx` | Ladder of Scale, from particles to the Sun; shareable selection hashes such as `#homo-sapiens` and `#the-earth`. |
+| `/chronos` | `src/app/chronos/page.tsx` | Arc of Time, from the Big Bang to the present; shareable moment hashes such as `#first-life`. |
 | `/platforms` | `src/app/platforms/page.tsx` | Cross-platform systems map and simulator. |
 | `/vitals` | `src/app/vitals/page.tsx` | Planetary vital signs dashboard. |
 | `/projects` | `src/app/projects/page.tsx` | Project index. |
@@ -44,8 +45,9 @@ This is the current public route inventory for the Sapiens Scientia website.
 
 ## Navigation Notes
 
-- `src/components/home-nav.tsx` controls the Meta Earth overlay navigation.
-- `src/components/site-nav.tsx` controls standard page navigation.
+- `src/components/site-nav.tsx` groups public destinations under Atlas, Platforms, Scale, Time, and Evidence. The brand returns to `/meta-earth`.
+- Breadcrumbs retain the canonical route hierarchy and begin at Atlas.
+- `src/lib/exploration.ts` supplies suggested reading paths used by the atlas and contextual footer.
 - `src/components/site-footer.tsx` controls the sitewide footer.
 - Public project links are centralized in `src/lib/projects.ts`.
 

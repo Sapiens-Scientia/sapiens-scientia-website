@@ -1,118 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 
-type Scenario = {
-  name: string;
-  description: string;
-  wealth: number;
-  civic: number;
-  digital: number;
-};
-
-const scenarios: Scenario[] = [
-  {
-    name: "Contemporary Baseline",
-    description: "Reflects the current state of global systems: high concentration of capital, under-pressure civic institutions, and uneven but expanding digital networks.",
-    wealth: 30,
-    civic: 40,
-    digital: 68,
-  },
-  {
-    name: "Market Oligarchy",
-    description: "Characterized by unchecked wealth concentration, weakened civic guardrails, and commercialized digital monopolies. Drives severe wealth inequality and displacement.",
-    wealth: 10,
-    civic: 20,
-    digital: 75,
-  },
-  {
-    name: "Social Democracy",
-    description: "Focuses on equitable resource distribution, robust civic protections, and high public investments. Drastically reduces poverty and displacement risk.",
-    wealth: 75,
-    civic: 85,
-    digital: 90,
-  },
-  {
-    name: "Authoritarian Technocracy",
-    description: "Universal digital tracking and high connectivity paired with highly restricted civic space. Maintains moderate economic control but with high liberties risk.",
-    wealth: 45,
-    civic: 10,
-    digital: 95,
-  },
-  {
-    name: "Digital Commons",
-    description: "A cooperative system built on open-source digital infrastructure, decentralized resource allocation, and participatory democratic institutions.",
-    wealth: 85,
-    civic: 90,
-    digital: 98,
-  },
-];
-
-const societasDomains = [
-  {
-    name: "Institutions and governance",
-    detail: "States, law, bureaucracies, and the formal and informal rules that coordinate collective action.",
-  },
-  {
-    name: "Economics and exchange",
-    detail: "Production, markets, labor, finance, and the distribution of material resources across populations.",
-  },
-  {
-    name: "Technology and tools",
-    detail: "The accumulating stock of techniques and machines that extends human capability and reshapes society.",
-  },
-  {
-    name: "Communication and media",
-    detail: "Language, writing, networks, and platforms through which information and meaning circulate.",
-  },
-  {
-    name: "Education and knowledge",
-    detail: "The transmission of skills, norms, and understanding across generations and institutions.",
-  },
-  {
-    name: "Cooperation and conflict",
-    detail: "Alliances, trust, violence, and displacement — the dynamics that bind groups together or tear them apart.",
-  },
-];
-
-const civilizationalSignals = [
-  {
-    value: "8.2B",
-    label: "people alive",
-    detail: "Humanity reached about 8.2 billion in 2024 and is projected to peak near 10.3 billion in the mid-2080s before slowly declining.",
-    source: "UN",
-  },
-  {
-    value: "$118T",
-    label: "world output",
-    detail: "Global GDP reached roughly $118 trillion in current dollars in 2024 — concentrated in a handful of economies and unevenly shared.",
-    source: "IMF",
-  },
-  {
-    value: "5.5B",
-    label: "people online",
-    detail: "About 5.5 billion people — 68% of humanity — used the internet in 2024, while 2.6 billion, mostly rural and low-income, remained offline.",
-    source: "ITU",
-  },
-  {
-    value: "817M",
-    label: "in extreme poverty",
-    detail: "Under the World Bank's updated $3.00-a-day line, about 817 million people lived in extreme poverty in 2024.",
-    source: "World Bank",
-  },
-  {
-    value: "72%",
-    label: "live under autocratization",
-    detail: "By 2024, 72% of the world population lived in autocratizing or autocratic states, and autocracies outnumbered democracies.",
-    source: "V-Dem",
-  },
-  {
-    value: "123M",
-    label: "forcibly displaced",
-    detail: "Forced displacement reached 123 million by the end of 2024 — about one in every 67 people — a twelfth consecutive annual increase.",
-    source: "UNHCR",
-  },
-];
+import { scenarios, societasDomains, civilizationalSignals, type Scenario } from "@/lib/societas";
 
 function CircularGauge({
   value,
@@ -180,6 +70,7 @@ function CircularGauge({
 }
 
 export function SocietasExplorer() {
+  const scenarioId = useId();
   const [selectedScenario, setSelectedScenario] = useState("Contemporary Baseline");
   const [wealthDistribution, setWealthDistribution] = useState(30);
   const [civicSpace, setCivicSpace] = useState(40);
@@ -192,17 +83,17 @@ export function SocietasExplorer() {
     setDigitalAccess(scenario.digital);
   };
 
-  // Causal simulation calculations
+  // Illustrative formulas; these are not an empirically fitted causal model.
   const poverty = Math.max(1.2, 22.0 - (wealthDistribution * 0.18) - (civicSpace * 0.04));
   const autocratizationRisk = Math.max(5, Math.min(95, 94 - (civicSpace * 0.88) - (wealthDistribution * 0.08)));
   const online = Math.min(100, Math.max(10, digitalAccess * 0.94 + (wealthDistribution * 0.06)));
   const displacement = Math.max(12, 148 - (civicSpace * 0.78) - (wealthDistribution * 0.38));
 
   // baseline comparisons
-  const baselinePoverty = 9.9;
-  const baselineAutocracy = 72;
-  const baselineOnline = 68;
-  const baselineDisplacement = 123;
+  const baselinePoverty = 22.0 - 30 * 0.18 - 40 * 0.04;
+  const baselineAutocracy = 94 - 40 * 0.88 - 30 * 0.08;
+  const baselineOnline = 68 * 0.94 + 30 * 0.06;
+  const baselineDisplacement = 148 - 40 * 0.78 - 30 * 0.38;
 
   const getDeltaString = (simValue: number, baseline: number, unit = "") => {
     const delta = simValue - baseline;
@@ -220,20 +111,22 @@ export function SocietasExplorer() {
         <div className="flex flex-col gap-6">
           <div>
             <span className="text-[0.62rem] font-bold uppercase tracking-widest text-amber-400">
-              Causal Feedback Loop Model
+              Illustrative relationships
             </span>
-            <h3 className="text-2xl font-bold mt-1 text-white">System Dynamics Simulator</h3>
+            <h3 className="text-2xl font-bold mt-1 text-white">Explore a societal scenario</h3>
             <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-              Societal institutions are coupled loops. Adjust structural inputs or select a civilizational preset below to simulate how resource allocations and civic trust steer human outcomes.
+              Change the assumptions about resources, civic space, and digital access to explore how this simplified model links them to social outcomes.
             </p>
+            <p className="mt-2 text-xs leading-relaxed text-amber-300/80">An illustrative model for exploring assumptions. These outputs are not measurements or forecasts.</p>
           </div>
 
           {/* Scenario Selector Dropdown */}
           <div className="flex flex-col gap-2">
-            <label className="text-[10px] font-mono text-slate-400 uppercase tracking-widest">
+            <label htmlFor={scenarioId} className="text-[10px] font-mono text-slate-400 uppercase tracking-widest">
               Civilizational Scenario Preset
             </label>
             <select
+              id={scenarioId}
               value={selectedScenario}
               onChange={(e) => {
                 const target = scenarios.find((s) => s.name === e.target.value);
@@ -241,6 +134,7 @@ export function SocietasExplorer() {
               }}
               className="w-full bg-slate-900 border border-white/10 px-3.5 py-2.5 rounded-lg text-sm text-slate-200 focus:outline-none focus:border-amber-400 cursor-pointer"
             >
+              {selectedScenario === "Custom Adjustments" ? <option value="Custom Adjustments">Custom adjustments</option> : null}
               {scenarios.map((s) => (
                 <option key={s.name} value={s.name}>
                   {s.name}
@@ -248,7 +142,7 @@ export function SocietasExplorer() {
               ))}
             </select>
             <p className="text-xs text-slate-400 italic mt-1.5 leading-relaxed">
-              {scenarios.find((s) => s.name === selectedScenario)?.description}
+              {scenarios.find((s) => s.name === selectedScenario)?.description ?? "Your own combination of resource distribution, civic space, and digital access."}
             </p>
           </div>
 
@@ -263,6 +157,7 @@ export function SocietasExplorer() {
               </div>
               <input
                 type="range"
+                aria-label="Resource distribution"
                 min="5"
                 max="95"
                 value={wealthDistribution}
@@ -270,7 +165,7 @@ export function SocietasExplorer() {
                   setWealthDistribution(Number(e.target.value));
                   setSelectedScenario("Custom Adjustments");
                 }}
-                className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-300"
+                className="h-8 w-full cursor-pointer accent-amber-300"
               />
               <p className="text-[10px] text-slate-500 leading-normal">
                 Higher values indicate broad wealth participation; lower values represent capital concentration.
@@ -286,6 +181,7 @@ export function SocietasExplorer() {
               </div>
               <input
                 type="range"
+                aria-label="Civic space and protections"
                 min="5"
                 max="95"
                 value={civicSpace}
@@ -293,7 +189,7 @@ export function SocietasExplorer() {
                   setCivicSpace(Number(e.target.value));
                   setSelectedScenario("Custom Adjustments");
                 }}
-                className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-300"
+                className="h-8 w-full cursor-pointer accent-amber-300"
               />
               <p className="text-[10px] text-slate-500 leading-normal">
                 Measures democratic health, legal protections, press freedom, and civic institutional trust.
@@ -309,6 +205,7 @@ export function SocietasExplorer() {
               </div>
               <input
                 type="range"
+                aria-label="Digital infrastructure"
                 min="10"
                 max="98"
                 value={digitalAccess}
@@ -316,7 +213,7 @@ export function SocietasExplorer() {
                   setDigitalAccess(Number(e.target.value));
                   setSelectedScenario("Custom Adjustments");
                 }}
-                className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-300"
+                className="h-8 w-full cursor-pointer accent-amber-300"
               />
               <p className="text-[10px] text-slate-500 leading-normal">
                 Reflects global internet penetration and connection quality.
@@ -328,7 +225,7 @@ export function SocietasExplorer() {
         {/* Dynamic HUD Circular Gauges */}
         <div className="grid gap-4 sm:grid-cols-2">
           <CircularGauge
-            label="Projected Extreme Poverty"
+            label="Simulated Extreme Poverty"
             value={poverty}
             color={poverty > 12 ? "#f87171" : poverty > 6 ? "#fbbf24" : "#34d399"}
             deltaText={getDeltaString(poverty, baselinePoverty, "%")}
@@ -390,7 +287,7 @@ export function SocietasExplorer() {
             Civilizational Signals
           </h2>
           <p className="mt-4 text-base leading-7 text-slate-300">
-            A few population-scale indicators trace where human society stands: still growing and rapidly connecting, but with persistent poverty, eroding democratic governance, and record forced displacement.
+            Dated reference statistics give context for population, connectivity, resources, and displacement. Each links to its source; the scenario above does not predict these figures.
           </p>
         </div>
 
@@ -404,9 +301,9 @@ export function SocietasExplorer() {
                 <p className="text-4xl font-semibold tracking-normal text-white">
                   {signal.value}
                 </p>
-                <p className="text-xs font-medium uppercase tracking-[0.16em] text-amber-200/70">
-                  {signal.source}
-                </p>
+                <a href={signal.href} target="_blank" rel="noreferrer" className="text-right text-xs leading-5 text-amber-200 underline underline-offset-4">
+                  {signal.source}<span className="sr-only"> source for {signal.label}</span>
+                </a>
               </div>
               <h3 className="mt-4 text-base font-semibold text-slate-100">
                 {signal.label}

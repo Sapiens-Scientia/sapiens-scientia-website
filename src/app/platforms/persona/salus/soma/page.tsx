@@ -13,7 +13,7 @@ export default function SomaPage() {
   return (
     <main className="soma-page min-h-screen px-4 pb-8 pt-4 text-white sm:px-6">
       <BreadcrumbTrail path="/platforms/persona/salus/soma" />
-      <SomaExperience />
+      <div id="main-content" tabIndex={-1}><SomaExperience /></div>
       <div className="soma-footer-shell">
         <SiteFooter />
       </div>

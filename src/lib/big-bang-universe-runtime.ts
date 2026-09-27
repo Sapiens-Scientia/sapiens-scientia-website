@@ -6,6 +6,8 @@ export function mountBigBangUniverse(root, options = {}) {
   let disposed = false;
   let animationFrameId = 0;
   let resizeObserver = null;
+  let intersectionObserver = null;
+  let inViewport = true;
   const abort = new AbortController();
   const listen = (target, type, listener, optionsArg) => {
     target.addEventListener(type, listener, { ...(optionsArg || {}), signal: abort.signal });
@@ -212,7 +214,7 @@ export function mountBigBangUniverse(root, options = {}) {
   const observableUniverseImage = new Image();
   observableUniverseImage.decoding = "async";
   observableUniverseImage.src = "/images/observable-universe-logarithmic-illustration.png";
-  listen(observableUniverseImage, "load", () => { if (!disposed) animationFrameId = requestAnimationFrame((now) => draw(currentP, now * 0.001)); });
+  listen(observableUniverseImage, "load", () => { if (!disposed && inViewport && !document.hidden) draw(currentP, performance.now() * 0.001); });
 
   const SVG_PLAY = '<svg viewBox="0 0 24 24" width="13" height="13"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>';
   const SVG_PAUSE = '<svg viewBox="0 0 24 24" width="13" height="13"><path d="M6 5h4v14H6zM14 5h4v14h-4z" fill="currentColor"/></svg>';
@@ -228,7 +230,8 @@ export function mountBigBangUniverse(root, options = {}) {
 
   // Build cards (clickable: travel to that moment; hover: highlight node)
   MS.forEach((m) => {
-    const el = document.createElement("div");
+    const el = document.createElement("button");
+    el.type = "button";
     el.className = "card";
     el.style.setProperty("--mcol", m.color);
     el.innerHTML =
@@ -238,6 +241,8 @@ export function mountBigBangUniverse(root, options = {}) {
     listen(el, "click", () => travelTo(m.vy));
     listen(el, "mouseenter", () => { m.hover = true; });
     listen(el, "mouseleave", () => { m.hover = false; });
+    listen(el, "focus", () => { m.hover = true; });
+    listen(el, "blur", () => { m.hover = false; });
     cardsRoot.appendChild(el);
     m.el = el;
   });
@@ -880,6 +885,8 @@ export function mountBigBangUniverse(root, options = {}) {
     for (const m of MS) {
       const on = cardsVisible && currentP >= m.vy - 0.0005;
       m.el.classList.toggle("show", on);
+      m.el.tabIndex = on ? 0 : -1;
+      m.el.setAttribute("aria-hidden", String(!on));
       const justCrossed = on && (currentP - m.vy) < 0.02;
       m.el.classList.toggle("pop", justCrossed);
     }
@@ -896,6 +903,7 @@ export function mountBigBangUniverse(root, options = {}) {
     tempEl.innerHTML = `<small>Temp</small> ${formatTemp(tempAt(t))}`;
     if (!scrubbing) scrub.value = Math.round(currentP * 1000);
     scrub.style.setProperty("--fill", (currentP * 100).toFixed(2) + "%");
+    scrub.setAttribute("aria-valuetext", formatAge(t) + " since the Big Bang");
   }
 
   // ---- Loop / state -------------------------------------------------------
@@ -923,7 +931,8 @@ export function mountBigBangUniverse(root, options = {}) {
   }
 
   function frame(now) {
-    if (disposed) return;
+    animationFrameId = 0;
+    if (disposed || !inViewport || document.hidden) return;
     const raw = Math.max(0, now - last); last = now;
     const dt = Math.min(raw, 60);        // simulation step (pauses gracefully)
     const wdt = Math.min(raw, 500);      // wall-clock step for cinematic decays,
@@ -970,6 +979,7 @@ export function mountBigBangUniverse(root, options = {}) {
     playing = true;
     preroll = reduceMotion ? 0 : PREROLL_T;
     syncPlay();
+    updateHash();
   }
   function skipToEnd() {
     currentP = 1; prevP = 1; targetP = null; cmbGlow = 0; focusA = 0; flashA = 0;
@@ -978,7 +988,10 @@ export function mountBigBangUniverse(root, options = {}) {
     syncPlay();
     syncStartChrome();
   }
-  function syncPlay() { playBtn.innerHTML = playing ? SVG_PAUSE : SVG_PLAY; }
+  function syncPlay() {
+    playBtn.innerHTML = playing ? SVG_PAUSE : SVG_PLAY;
+    playBtn.setAttribute("aria-label", playing ? "Pause timeline" : "Play timeline");
+  }
 
   // ---- Events -------------------------------------------------------------
   // True while the page waits for its first start.
@@ -998,6 +1011,11 @@ export function mountBigBangUniverse(root, options = {}) {
     last = performance.now(); syncPlay();
   }
   listen(playBtn, "click", togglePlay);
+  const startBtn = root.querySelector("#startBtn");
+  if (startBtn) listen(startBtn, "click", () => {
+    ignite();
+    playBtn.focus();
+  });
   listen(restartBtn, "click", () => { resetRun(); last = performance.now(); });
   if (skipAnimationBtn) listen(skipAnimationBtn, "click", skipToEnd);
 
@@ -1023,7 +1041,10 @@ export function mountBigBangUniverse(root, options = {}) {
   listen(root.querySelector("#speeds"), "click", (e) => {
     const b = e.target.closest("[data-s]"); if (!b) return;
     speed = +b.dataset.s;
-    [...e.currentTarget.children].forEach(c => c.classList.toggle("active", c === b));
+    [...e.currentTarget.children].forEach(c => {
+      c.classList.toggle("active", c === b);
+      c.setAttribute("aria-pressed", String(c === b));
+    });
   });
 
   // Theme: the void flips between deep space and blank page; the cosmos stays dark.
@@ -1051,7 +1072,7 @@ export function mountBigBangUniverse(root, options = {}) {
     const th = root.classList.contains("light") ? "light" : "dark";
     // some browsers refuse replaceState on file:// — deep links are a nicety,
     // never let them break scrubbing
-    try { history.replaceState(null, "", `#t=${currentP.toFixed(3)}&theme=${th}`); } catch (err) {}
+    try { history.replaceState(history.state, "", `#t=${currentP.toFixed(3)}&theme=${th}`); } catch (err) {}
   }
   function applyHash() {
     if (options.syncHash === false) return;
@@ -1069,14 +1090,15 @@ export function mountBigBangUniverse(root, options = {}) {
     }
   }
 
-  listen(document, "keydown", (e) => {
-    if (e.target.tagName === "INPUT" || e.target.tagName === "BUTTON") return;
+  listen(root, "keydown", (e) => {
+    if (journeyMode || e.target.closest("input, button, a, select, textarea, [contenteditable]")) return;
     if (e.code === "Space") { e.preventDefault(); togglePlay(); }
     else if (e.code === "ArrowRight") {
+      e.preventDefault();
       targetP = null; preroll = 0; const to = Math.min(1, currentP + 0.015);
       crossings(currentP, to); prevP = currentP = to;
     }
-    else if (e.code === "ArrowLeft") { targetP = null; preroll = 0; prevP = currentP = Math.max(0, currentP - 0.015); }
+    else if (e.code === "ArrowLeft") { e.preventDefault(); targetP = null; preroll = 0; prevP = currentP = Math.max(0, currentP - 0.015); }
     else if (e.code === "KeyR") { resetRun(); last = performance.now(); }
     else if (e.code === "KeyT") { themeBtn.click(); }
   });
@@ -1129,9 +1151,26 @@ export function mountBigBangUniverse(root, options = {}) {
     if (nearTodayRim(e)) { enterObservableUniverse(); return; }
   });
 
-  // No visibilitychange time-reset needed: dt is capped at 60ms per frame, so
-  // returning to a hidden tab can never produce a time jump — and resetting
-  // `last` on visibility churn starves the simulation in throttled tabs.
+  // Keep the current moment while offscreen, without spending CPU on a hidden
+  // canvas. Reset the frame clock only when visibility actually changes.
+  function syncVisibility() {
+    if (inViewport && !document.hidden) {
+      last = performance.now();
+      if (!animationFrameId) animationFrameId = requestAnimationFrame(frame);
+    } else if (animationFrameId) {
+      cancelAnimationFrame(animationFrameId);
+      animationFrameId = 0;
+    }
+  }
+  listen(document, "visibilitychange", syncVisibility);
+  if (window.IntersectionObserver) {
+    intersectionObserver = new IntersectionObserver(([entry]) => {
+      if (inViewport === entry.isIntersecting) return;
+      inViewport = entry.isIntersecting;
+      syncVisibility();
+    });
+    intersectionObserver.observe(root);
+  }
   listen(window, "resize", layout);
   // The bar's height changes when its content wraps (mobile) or the age text
   // grows — re-flow everything positioned beneath it.
@@ -1178,6 +1217,9 @@ export function mountBigBangUniverse(root, options = {}) {
     abort.abort();
     if (animationFrameId) cancelAnimationFrame(animationFrameId);
     if (resizeObserver) resizeObserver.disconnect();
+    if (intersectionObserver) intersectionObserver.disconnect();
+    cardsRoot.replaceChildren();
+    scrubwrap.querySelectorAll(".tick").forEach((tick) => tick.remove());
   };
   return { dispose, setProgress, getTodayRimRect, getReadout };
 }

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { SiteNav } from "@/components/site-nav";
+import { BreadcrumbTrail } from "@/components/breadcrumb-trail";
 import { SiteFooter } from "@/components/site-footer";
 import { DataIndexExplorer } from "@/components/data-index-explorer";
 import { dataIndexEntryCount, dataIndexSections } from "@/lib/data-index";
@@ -13,20 +13,14 @@ export const metadata: Metadata = {
 export default function SapiensScientiaDataIndexPage() {
   return (
     <main className="min-h-screen bg-black px-6 py-8 text-white sm:px-10">
-      <SiteNav
-        links={[
-          { href: "/", label: "Home" },
-          { href: "/projects", label: "Projects" },
-          { href: "/platforms", label: "Platforms" },
-        ]}
-      />
+      <BreadcrumbTrail path="/projects/sapiens-scientia-data-index" />
 
-      <section className="mx-auto flex max-w-6xl flex-col gap-14">
+      <section id="main-content" tabIndex={-1} className="mx-auto flex max-w-6xl flex-col gap-14">
         <header className="max-w-4xl">
-          <p className="mb-3 text-xl font-medium uppercase tracking-[0.24em] text-blue-400">
+          <p className="mb-4 text-xs font-medium uppercase tracking-[0.16em] text-blue-400">
             Sapiens Scientia
           </p>
-          <h1 className="max-w-4xl text-5xl font-semibold tracking-normal sm:text-7xl">
+          <h1 className="max-w-4xl text-4xl font-medium leading-[1.08] tracking-tight sm:text-6xl lg:text-7xl">
             Sapiens Scientia Data Index
           </h1>
           <p className="mt-6 max-w-3xl text-2xl leading-tight text-slate-300 sm:text-3xl">

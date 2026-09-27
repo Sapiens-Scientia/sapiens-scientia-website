@@ -1,6 +1,6 @@
 # Decisions
 
-This file records durable project decisions for Sapiens Scientia. Add entries when a choice changes how future agents should reason about the site, taxonomy, architecture, or public narrative.
+This file records durable project decisions for Sapiens Scientia. Entries form a history: later decisions supersede earlier route and nesting choices. Use CONTENT_MODEL.md and ROUTES.md for the current model. Add entries when a choice changes how future agents should reason about the site, taxonomy, architecture, or public narrative.
 
 ## Documentation Lives In This Repository
 
@@ -211,3 +211,36 @@ and it emphasizes emergence and persistence over hierarchy — components drift 
 turn over while the ring holding them does not move.
 
 Source of truth: `src/lib/meta-entities.ts`.
+
+
+## Make Meta Earth the everyday atlas entry (2026-09-26)
+
+The project needs a usable entry for visitors who arrive to explore a question,
+not only an immersive cosmic introduction. `/` retains the History of the
+Universe, while the shared brand/navigation return to the atlas at `/meta-earth`.
+The journey offers a direct atlas link, chapter jumps, and a text reading mode.
+The old requirement to reach the finale before entering Meta Earth is superseded.
+
+Meta Earth defaults to a simple three-lens overview with a connected planet and
+question-led paths. The full scientific globe workspace lives at `#globe` and is
+opened deliberately. Do not mount both globe renderers at once. The Meta-Entity
+framework and its existing deep link remain below the overview.
+
+Scale and Time are sibling views with the same list/inspector interaction; data
+and ontology stay in their existing source modules. Evidence groups Vital Signs
+and the Data Index. These navigation labels and suggested paths do not alter
+Persona / Societas / Terra or the canonical module hierarchy.
+
+Use open editorial layouts, fine rules, readable Geist typography, and the three
+lens accents to make the surfaces feel related. Preserve the warm-paper light
+theme and the interactive scientific scenes. Generated design concepts guide
+layout; they are not shipped as images replacing working controls or data.
+
+## Separate reference charts from source updates (2026-09-26)
+
+The manually curated historical points and trend extensions in `vital-signs.ts`
+are not complete source datasets. Label them as rounded reference series and
+illustrative projections. Display a newly fetched observation as a separate point
+with its own period and provider, retaining the original series attribution.
+Never substitute zero for missing data or treat a partial NASA year as a published
+annual mean. Preserve successful source updates when another source fails.

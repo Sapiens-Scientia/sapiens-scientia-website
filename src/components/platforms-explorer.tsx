@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useUrlHash } from "@/hooks/use-url-hash";
 import Link from "next/link";
 import {
   platformColorOf,
@@ -283,30 +283,12 @@ function SystemsMap({
 }
 
 export function PlatformsExplorer() {
-  const [selectedCoupling, setSelectedCoupling] = useState<string | null>(() => {
-    if (typeof window === "undefined") {
-      return null;
-    }
-
-    const slug = window.location.hash.replace(/^#/, "");
-    return platformCouplingBySlug[slug]?.name ?? null;
-  });
+  const [hash, setHash] = useUrlHash();
+  const selectedCoupling = platformCouplingBySlug[hash]?.name ?? null;
 
   const selectCoupling = (name: string | null) => {
-    setSelectedCoupling(name);
-
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    if (name) {
-      const coupling = couplings.find((entry) => entry.name === name);
-      if (coupling) {
-        window.history.replaceState(null, "", `#${coupling.slug}`);
-      }
-    } else {
-      window.history.replaceState(null, "", window.location.pathname);
-    }
+    const coupling = couplings.find((entry) => entry.name === name);
+    setHash(coupling?.slug ?? "");
   };
 
   const activeCoupling = couplings.find((c) => c.name === selectedCoupling) || null;
@@ -335,7 +317,7 @@ export function PlatformsExplorer() {
 
         {/* Detailed Feedback Loop Card (Targeted Expanded view) */}
         {activeCoupling && (
-          <article className="border border-emerald-400/30 bg-emerald-400/[0.035] p-6 rounded shadow-[0_0_24px_rgba(52,211,153,0.12)] flex flex-col gap-4 animate-fadeIn">
+          <article id="coupling-detail" aria-live="polite" className="border border-emerald-400/30 bg-emerald-400/[0.035] p-6 rounded shadow-[0_0_24px_rgba(52,211,153,0.12)] flex flex-col gap-4 animate-fadeIn">
             <div className="flex justify-between items-start gap-4">
               <div>
                 <span className="text-xs font-bold uppercase tracking-widest text-emerald-300">
@@ -347,6 +329,8 @@ export function PlatformsExplorer() {
                 </p>
               </div>
               <button
+                type="button"
+                aria-label="Close coupling details"
                 onClick={() => selectCoupling(null)}
                 className="cursor-pointer border border-white/10 bg-white/[0.02] text-slate-300 hover:bg-white/[0.08] hover:text-white text-xs px-2.5 py-1 transition-all"
               >
@@ -369,8 +353,7 @@ export function PlatformsExplorer() {
             return (
               <article
                 key={coupling.name}
-                onClick={() => selectCoupling(isSelected ? null : coupling.name)}
-                className={`flex flex-col gap-3 border p-4 transition-all cursor-pointer select-none ${
+                className={`relative flex flex-col gap-3 border p-4 transition-all ${
                   isSelected
                     ? "border-emerald-300 bg-emerald-300/[0.04]"
                     : "border-white/10 bg-white/[0.025] hover:border-white/20 hover:bg-white/[0.05]"
@@ -378,14 +361,22 @@ export function PlatformsExplorer() {
               >
                 <div className="flex items-center justify-between gap-3">
                   <h3 className="text-base font-semibold text-slate-50">
-                    {coupling.name}
+                    <button
+                      type="button"
+                      onClick={() => selectCoupling(isSelected ? null : coupling.name)}
+                      aria-expanded={isSelected}
+                      aria-controls={isSelected ? "coupling-detail" : undefined}
+                      className="cursor-pointer text-left after:absolute after:inset-0"
+                    >
+                      {coupling.name}
+                    </button>
                   </h3>
                   <span className="shrink-0 text-[0.65rem] font-medium uppercase tracking-[0.14em] text-slate-500">
                     {coupling.links.length === 3 ? "All three" : "Pairwise"}
                   </span>
                 </div>
                 <p className="text-sm leading-6 text-slate-400">{coupling.detail}</p>
-                <div className="mt-auto flex flex-wrap gap-2 pt-1">
+                <div className="relative z-10 mt-auto flex flex-wrap gap-2 pt-1">
                   {coupling.links.map((id) => (
                     <PlatformLink key={id} id={id} />
                   ))}

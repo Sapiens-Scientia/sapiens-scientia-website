@@ -29,12 +29,12 @@ export default function MorbusPage() {
     <main className="min-h-screen bg-black px-6 py-8 text-white sm:px-10">
       <BreadcrumbTrail path="/platforms/persona/salus/soma/morbus" />
 
-      <section className="mx-auto flex max-w-7xl flex-col gap-10">
+      <section id="main-content" tabIndex={-1} className="mx-auto flex max-w-7xl flex-col gap-10">
         <header className="max-w-4xl">
-          <p className="mb-3 text-xl font-medium uppercase tracking-[0.24em] text-emerald-300/90">
+          <p className="mb-4 text-xs font-medium uppercase tracking-[0.16em] text-emerald-300/90">
             Soma · Disease Ontology
           </p>
-          <h1 className="text-5xl font-semibold tracking-normal sm:text-7xl">
+          <h1 className="text-4xl font-medium leading-[1.08] tracking-tight sm:text-6xl lg:text-7xl">
             Morbus
           </h1>
 

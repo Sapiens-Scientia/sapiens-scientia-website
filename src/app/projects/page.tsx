@@ -15,12 +15,12 @@ export default function ProjectsPage() {
     <main className="min-h-screen bg-black px-6 py-8 text-white sm:px-10">
       <SiteNav />
 
-      <section className="mx-auto flex max-w-3xl flex-col gap-10">
+      <section id="main-content" tabIndex={-1} className="mx-auto flex max-w-3xl flex-col gap-10">
         <div>
-          <p className="mb-3 text-xl font-medium uppercase tracking-[0.24em] text-blue-400">
+          <p className="mb-4 text-xs font-medium uppercase tracking-[0.16em] text-blue-400">
             Sapiens Scientia
           </p>
-          <h1 className="text-5xl font-semibold tracking-normal sm:text-7xl">Projects</h1>
+          <h1 className="text-4xl font-medium leading-[1.08] tracking-tight sm:text-6xl lg:text-7xl">Projects</h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300">
             Public tools and indexes that extend Meta Earth — curated knowledge infrastructure,
             immersive Earth exploration, and cosmic-scale visualizations.

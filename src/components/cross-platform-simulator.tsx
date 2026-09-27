@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
+import { useUrlHash } from "@/hooks/use-url-hash";
 import { platformCouplingBySlug } from "@/lib/platform-couplings";
 import {
   buildScenarioHash,
   computeCrossPlatformScenario,
   parseScenarioHash,
   scenarioBaselines,
-  scenarioInputsFromLocation,
   scenarioPresets,
   type ScenarioInputs,
 } from "@/lib/cross-platform-simulator";
@@ -38,11 +38,12 @@ function SliderControl({
       </div>
       <input
         type="range"
+        aria-label={label}
         min={0}
         max={100}
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
-        className="w-full accent-sky-400"
+        className="min-h-8 w-full cursor-pointer accent-sky-400"
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={value}
@@ -87,78 +88,59 @@ function MetricCard({
 }
 
 export function CrossPlatformSimulator() {
-  const [inputs, setInputs] = useState<ScenarioInputs>(scenarioInputsFromLocation);
-  const [linkCopied, setLinkCopied] = useState(false);
-  const userAdjusted = useRef(false);
-
+  const [hash, setHash] = useUrlHash();
+  const [localInputs, setLocalInputs] = useState<{ hash: string; value: ScenarioInputs } | null>(null);
+  const [shareMessage, setShareMessage] = useState("");
+  const inputs = localInputs?.hash === hash
+    ? localInputs.value
+    : parseScenarioHash(hash) ?? scenarioBaselines;
   const outputs = useMemo(() => computeCrossPlatformScenario(inputs), [inputs]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const raw = window.location.hash.replace(/^#/, "");
-    const slug = raw.split("?")[0];
-    if (slug && platformCouplingBySlug[slug]) {
-      return;
-    }
-
-    if (parseScenarioHash(window.location.hash) || userAdjusted.current) {
-      window.history.replaceState(null, "", `#${buildScenarioHash(inputs)}`);
-    }
-  }, [inputs]);
+  const couplingIsSelected = Boolean(platformCouplingBySlug[hash]);
 
   const couplingSlug = Object.values(platformCouplingBySlug).find(
     (coupling) => coupling.name === outputs.dominantCoupling,
   )?.slug;
 
-  const reset = () => {
-    userAdjusted.current = false;
-    setInputs(scenarioBaselines);
-
-    if (typeof window !== "undefined") {
-      const raw = window.location.hash.replace(/^#/, "");
-      const slug = raw.split("?")[0];
-      if (!slug || !platformCouplingBySlug[slug]) {
-        window.history.replaceState(null, "", window.location.pathname);
-      }
+  const updateInputs = (next: ScenarioInputs, replace = false) => {
+    setShareMessage("");
+    if (couplingIsSelected) {
+      setLocalInputs({ hash, value: next });
+    } else {
+      setLocalInputs(null);
+      setHash(buildScenarioHash(next), { replace });
     }
+  };
+
+  const reset = () => {
+    setShareMessage("");
+    setLocalInputs(null);
+    if (!couplingIsSelected) setHash("");
   };
 
   const patch = (key: keyof ScenarioInputs, value: number) => {
-    userAdjusted.current = true;
-    setInputs((current) => ({ ...current, [key]: value }));
-  };
-
-  const applyPreset = (presetInputs: ScenarioInputs) => {
-    userAdjusted.current = true;
-    setInputs(presetInputs);
+    updateInputs({ ...inputs, [key]: value }, true);
   };
 
   const copyScenarioLink = async () => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const url = `${window.location.origin}${window.location.pathname}#${buildScenarioHash(inputs)}`;
+    const url = new URL(window.location.href);
+    url.hash = buildScenarioHash(inputs);
     try {
-      await navigator.clipboard.writeText(url);
-      setLinkCopied(true);
-      window.setTimeout(() => setLinkCopied(false), 2000);
+      await navigator.clipboard.writeText(url.href);
+      setShareMessage("Link copied.");
     } catch {
-      // Clipboard may be unavailable; hash URL still works manually.
+      setHash(buildScenarioHash(inputs), { replace: true });
+      setShareMessage("Copy is unavailable. The address bar now contains your scenario link.");
     }
   };
 
   const baselineOutputs = useMemo(() => computeCrossPlatformScenario(scenarioBaselines), []);
 
-  const delta = (value: number, baseline: number, unit: string, invert = false) => {
+  const delta = (value: number, baseline: number, unit: string) => {
     const diff = value - baseline;
     if (Math.abs(diff) < 0.15) {
       return "Near baseline";
     }
-    const sign = invert ? (diff > 0 ? "−" : "+") : diff > 0 ? "+" : "";
+    const sign = diff > 0 ? "+" : "−";
     return `${sign}${Math.abs(diff).toFixed(1)}${unit} vs. baseline`;
   };
 
@@ -222,15 +204,18 @@ export function CrossPlatformSimulator() {
           onClick={copyScenarioLink}
           className="w-fit cursor-pointer border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400 transition-colors hover:border-emerald-400/35 hover:text-emerald-200"
         >
-          {linkCopied ? "Link copied" : "Copy share link"}
+          Copy share link
         </button>
 
-        <div className="flex flex-wrap gap-2">
+        <p role="status" className="text-sm text-emerald-300">{shareMessage}</p>
+
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Scenario presets">
           {scenarioPresets.map((preset) => (
             <button
               key={preset.id}
               type="button"
-              onClick={() => applyPreset(preset.inputs)}
+              onClick={() => updateInputs(preset.inputs)}
+              aria-pressed={buildScenarioHash(inputs) === buildScenarioHash(preset.inputs)}
               className="cursor-pointer border border-white/10 bg-white/[0.02] px-2.5 py-1 text-[0.65rem] font-semibold uppercase tracking-wider text-slate-400 transition-colors hover:border-emerald-400/35 hover:text-emerald-200"
             >
               {preset.label}
@@ -283,6 +268,12 @@ export function CrossPlatformSimulator() {
             {couplingSlug ? (
               <Link
                 href={`/platforms#${couplingSlug}`}
+                onClick={(event) => {
+                  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+                  event.preventDefault();
+                  setHash(couplingSlug);
+                  requestAnimationFrame(() => document.getElementById("coupling-detail")?.scrollIntoView({ block: "center" }));
+                }}
                 className="text-xs font-semibold text-emerald-200 underline-offset-2 hover:underline"
               >
                 {outputs.dominantCoupling} →

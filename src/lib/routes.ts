@@ -24,17 +24,19 @@ const ROUTE_LABELS: Record<string, string> = {
   "/projects": "Projects",
   "/projects/sapiens-scientia-data-index": "Data Index",
   "/projects/earthview": "EarthView 3D",
+  "/projects/big-bang-universe": "Big Bang Universe",
 };
 
 export type Crumb = { href: string; label: string };
 
 /**
- * Build the ancestor trail for a path: Home, then each cumulative path segment
+ * Build the explorer trail for a path: Atlas, then each cumulative path segment
  * that has a known label. e.g. "/platforms/persona/salus" →
- * Home › Platforms › Persona › Salus.
+ * Atlas › Platforms › Persona › Salus.
  */
 export function breadcrumbTrail(path: string): Crumb[] {
-  const trail: Crumb[] = [{ href: "/", label: ROUTE_LABELS["/"] }];
+  const trail: Crumb[] = [{ href: "/meta-earth", label: "Atlas" }];
+  if (path === "/meta-earth") return trail;
   let acc = "";
   for (const segment of path.split("/").filter(Boolean)) {
     acc += `/${segment}`;

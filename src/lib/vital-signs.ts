@@ -82,8 +82,10 @@ export type EarthVitalSign = {
   };
   updated: string;
   value: string;
+  referenceSource?: { label: string; href: string };
   liveChartPoint?: { year: number; value: number };
   historicalData?: {
+    label?: string;
     points: { year: number; value: number }[];
     projection?: { year: number; value: number }[];
     unit: string;
@@ -449,6 +451,7 @@ export const earthVitalSigns: EarthVitalSign[] = [
     source: "NASA JPL",
     sourceHref: "https://www.nasa.gov/earth/nasa-analysis-shows-la-nina-limited-sea-level-rise-in-2025/",
     historicalData: {
+      label: "Sea level relative to 1993 (cm)",
       points: [
         { year: 1993, value: 0.0 },
         { year: 2000, value: 2.2 },
@@ -476,6 +479,7 @@ export const earthVitalSigns: EarthVitalSign[] = [
     source: "NASA / NSIDC",
     sourceHref: "https://science.nasa.gov/earth/explore/earth-indicators/arctic-sea-ice-minimum-extent/",
     historicalData: {
+      label: "September minimum extent (million km²)",
       points: [
         { year: 1980, value: 7.8 },
         { year: 1990, value: 6.2 },

@@ -1,6 +1,8 @@
 /* eslint-disable */
+import { EarthTexture, NightOverlay } from '@/components/earthview/globe/earth-surface'
+import { ResilientEarthCanvas } from '@/components/resilient-earth-canvas'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber'
+import { useFrame, useLoader, useThree } from '@react-three/fiber'
 import { Billboard, Line, OrbitControls, Text } from '@react-three/drei'
 import * as THREE from 'three'
 import { useAppContext } from '../contexts'
@@ -450,138 +452,6 @@ function Stars({ isDark, theme }: { isDark: boolean; theme: ThemeMode }) {
                 sizeAttenuation
             />
         </points>
-    )
-}
-
-function EarthTexture({ isDark, theme, rotationOffset = 0 }: { isDark: boolean; theme: ThemeMode; rotationOffset?: number }) {
-    const surfaceTexture = useLoader(THREE.TextureLoader, '/earth-blue-marble-5400x2700.jpg')
-
-    const displayTexture = useMemo(() => {
-        surfaceTexture.colorSpace = THREE.SRGBColorSpace
-        surfaceTexture.wrapS = THREE.RepeatWrapping
-        surfaceTexture.wrapT = THREE.ClampToEdgeWrapping
-        surfaceTexture.anisotropy = 8
-
-        const image = surfaceTexture.image as CanvasImageSource | undefined
-        if (!image || typeof document === 'undefined') return surfaceTexture
-
-        const canvas = document.createElement('canvas')
-        const width = 'naturalWidth' in image ? image.naturalWidth : ('videoWidth' in image ? image.videoWidth : (image as any).width)
-        const height = 'naturalHeight' in image ? image.naturalHeight : ('videoHeight' in image ? image.videoHeight : (image as any).height)
-        if (!width || !height) return surfaceTexture
-
-        canvas.width = width
-        canvas.height = height
-        const ctx = canvas.getContext('2d', { willReadFrequently: true })
-        if (!ctx) return surfaceTexture
-
-        ctx.drawImage(image, 0, 0, width, height)
-        const imageData = ctx.getImageData(0, 0, width, height)
-        const { data } = imageData
-
-        for (let i = 0; i < data.length; i += 4) {
-            let r = data[i]
-            let g = data[i + 1]
-            let b = data[i + 2]
-            const oceanStrength = Math.max(0, b - Math.max(r, g)) / 255
-            const globalLift = isDark ? 24 : theme === 'sepia' ? 28 : 32
-            const oceanLift = (isDark ? 68 : theme === 'sepia' ? 76 : 82) * oceanStrength
-            const saturationLift = 1 + (isDark ? 0.1 : theme === 'sepia' ? 0.12 : 0.08) + oceanStrength * (isDark ? 0.26 : theme === 'sepia' ? 0.3 : 0.24)
-
-            data[i] = Math.min(255, (r + globalLift + oceanLift * 0.28) * saturationLift)
-            data[i + 1] = Math.min(255, (g + globalLift + oceanLift * 0.62) * saturationLift)
-            data[i + 2] = Math.min(255, (b + globalLift + oceanLift) * saturationLift)
-        }
-
-        ctx.putImageData(imageData, 0, 0)
-        const processedTexture = new THREE.CanvasTexture(canvas)
-        processedTexture.colorSpace = THREE.SRGBColorSpace
-        processedTexture.wrapS = THREE.RepeatWrapping
-        processedTexture.wrapT = THREE.ClampToEdgeWrapping
-        processedTexture.anisotropy = 8
-        processedTexture.needsUpdate = true
-        return processedTexture
-    }, [surfaceTexture, isDark, theme])
-
-    return (
-        <mesh rotation={[0, rotationOffset, 0]}>
-            <sphereGeometry args={[1, 64, 64]} />
-            <meshBasicMaterial map={displayTexture} toneMapped={false} color="#ffffff" />
-        </mesh>
-    )
-}
-
-const nightVertexShader = `
-    varying vec3 vNormal;
-
-    void main() {
-        vNormal = normalize(normal);
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-    }
-`
-
-const nightFragmentShader = `
-    uniform vec3 uSunDirection;
-    uniform float uNightOpacity;
-    varying vec3 vNormal;
-
-    void main() {
-        vec3 normal = normalize(vNormal);
-        float sunDot = dot(normal, uSunDirection);
-        float nightFactor = 1.0 - smoothstep(-0.105, 0.035, sunDot);
-        vec3 nightColor = vec3(0.01, 0.015, 0.06);
-        float terminatorGlow = smoothstep(-0.105, -0.02, sunDot) * smoothstep(0.07, -0.005, sunDot);
-        float atmosphereRim = smoothstep(-0.18, -0.04, sunDot) * smoothstep(0.11, 0.005, sunDot);
-        vec3 glowColor = vec3(1.0, 0.6, 0.15);
-        vec3 atmosColor = vec3(0.45, 0.65, 1.0);
-        vec3 color = nightColor * nightFactor + glowColor * terminatorGlow * 0.45 + atmosColor * atmosphereRim * 0.15;
-        float alpha = nightFactor * uNightOpacity + terminatorGlow * 0.35 + atmosphereRim * 0.08;
-        gl_FragColor = vec4(color, alpha);
-    }
-`
-
-function NightOverlay({ isDark, sunDirection }: { isDark: boolean; sunDirection: THREE.Vector3 }) {
-    const materialRef = useRef<THREE.ShaderMaterial>(null)
-    const sunDirectionRef = useRef(sunDirection.clone())
-    const nightOpacityRef = useRef(isDark ? 0.82 : 0.65)
-    const uniforms = useMemo(() => ({
-        uSunDirection: { value: sunDirection.clone() },
-        uNightOpacity: { value: isDark ? 0.68 : 0.52 },
-    }), [])
-
-    useEffect(() => {
-        sunDirectionRef.current.copy(sunDirection)
-        if (materialRef.current) {
-            materialRef.current.uniforms.uSunDirection.value.copy(sunDirection)
-        }
-    }, [sunDirection])
-
-    useEffect(() => {
-        nightOpacityRef.current = isDark ? 0.82 : 0.65
-        if (materialRef.current) {
-            materialRef.current.uniforms.uNightOpacity.value = nightOpacityRef.current
-        }
-    }, [isDark])
-
-    useFrame(() => {
-        if (!materialRef.current) return
-        materialRef.current.uniforms.uSunDirection.value.copy(sunDirectionRef.current)
-        materialRef.current.uniforms.uNightOpacity.value = nightOpacityRef.current
-    })
-
-    return (
-        <mesh>
-            <sphereGeometry args={[1.002, 64, 64]} />
-            <shaderMaterial
-                ref={materialRef}
-                vertexShader={nightVertexShader}
-                fragmentShader={nightFragmentShader}
-                uniforms={uniforms}
-                transparent
-                depthWrite={false}
-                side={THREE.FrontSide}
-            />
-        </mesh>
     )
 }
 
@@ -2572,44 +2442,16 @@ interface UnifiedEarthViewProps {
 
 export function UnifiedEarthView({ className, style, mode, dateOffsetMs = 0, rotationOffsetMs = 0, sunOrbitProgress = 0, sunOrbitActive = false, isDarkOverride, orbitTiltView = false, orbitTiltStripsVisible = true, resetViewKey = 0, selectedGalaxyEventKey, galaxyDiskSize, galaxyDiskRotationDeg, homeCoords, timezone, timezoneRingScale = 1, interactive = true, paused = false }: UnifiedEarthViewProps) {
     const { isDark, theme } = useAppContext()
-    const [ready, setReady] = useState(false)
-    const [contextResetKey, setContextResetKey] = useState(0)
     const sceneIsDark = isDarkOverride ?? isDark
     const bgColor = sceneIsDark ? '#0a0a12' : theme === 'sepia' ? '#fbf4e6' : '#ffffff'
     const initialCamera = getCameraPosition(mode)
 
-    const handleCreated = useCallback((state: any) => {
-        state.gl.setClearColor(bgColor, 1)
-        const canvas = state.gl.domElement as HTMLCanvasElement
-        const handleContextLost = (event: Event) => {
-            event.preventDefault()
-            setReady(false)
-            window.setTimeout(() => {
-                setContextResetKey((key) => key + 1)
-            }, 80)
-        }
-        canvas.addEventListener('webglcontextlost', handleContextLost, { once: true })
-        setReady(true)
-    }, [bgColor])
-
     return (
         <div className={className} style={style}>
-            <Canvas
-                key={contextResetKey}
-                camera={{ position: initialCamera.toArray(), fov: 48 }}
-                onCreated={handleCreated}
-                gl={{ antialias: true, alpha: true }}
-                dpr={[1, 1.5]}
-                frameloop={paused ? 'never' : 'always'}
-                style={{
-                    background: bgColor,
-                    opacity: ready ? 1 : 0,
-                    transition: 'opacity 0.3s ease',
-                }}
-            >
+            <ResilientEarthCanvas camera={{ position: initialCamera.toArray(), fov: 48 }} backgroundColor={bgColor} paused={paused}>
                 <SceneBackground color={bgColor} />
                 <UnifiedScene mode={mode} isDark={sceneIsDark} theme={theme} dateOffsetMs={dateOffsetMs} rotationOffsetMs={rotationOffsetMs} sunOrbitProgress={sunOrbitProgress} sunOrbitActive={sunOrbitActive} homeCoords={homeCoords} timezone={timezone} timezoneRingScale={timezoneRingScale} orbitTiltView={orbitTiltView} orbitTiltStripsVisible={orbitTiltStripsVisible} resetViewKey={resetViewKey} selectedGalaxyEventKey={selectedGalaxyEventKey} galaxyDiskSize={galaxyDiskSize} galaxyDiskRotationDeg={galaxyDiskRotationDeg} interactive={interactive} />
-            </Canvas>
+            </ResilientEarthCanvas>
         </div>
     )
 }

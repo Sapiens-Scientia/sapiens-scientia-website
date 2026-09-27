@@ -12,19 +12,14 @@ import {
 export const metadata: Metadata = {
   title: "Scales | Sapiens Scientia",
   description:
-    "The Ladder of Scale: the nested-systems hierarchy behind Sapiens Scientia, from elementary particles to the Sun — Microsystems, Mesosystems, Macrosystems, and Megasystems.",
+    "The Ladder of Scale: the nested-systems hierarchy behind Sapiens Scientia, from elementary particles to solar-system distances — Nanosystems, Microsystems, Mesosystems, Macrosystems, and Megasystems.",
 };
 
 export default function ScalesPage() {
   return (
     <PageShell>
       <PageHeader eyebrow="Sapiens Scientia · Structure of Reality" title="The Ladder of Scale">
-        <p>
-          Sapiens Scientia is built on a single idea: reality is a nested
-          hierarchy of systems, each one assembled from the scale below it.
-          This is that hierarchy made navigable — a powers-of-ten climb from
-          elementary particles, through the human body, up to society, the
-          planet, and the star that powers it.
+        <p>Move from particles to planets through five tiers of nested systems. Select a scale to see its characteristic size and the platforms that study it.
         </p>
       </PageHeader>
 
@@ -35,25 +30,7 @@ export default function ScalesPage() {
       </div>
 
       <section className="flex flex-col gap-7">
-        <div className="max-w-3xl">
-          <h2 className="text-3xl font-semibold tracking-normal text-white sm:text-4xl">
-            One Ladder, Five Tiers
-          </h2>
-          <p className="mt-4 text-base leading-7 text-slate-300">
-            The same matter, organized at ever-larger scales, becomes physics,
-            then biology, then society, then a planet. The ladder below plots
-            characteristic sizes on a logarithmic axis; each rung is a kind of
-            system the platforms study. Homo sapiens sits near the middle —
-            the scale from which every other rung is read. Click a rung to pin it
-            and share via URL hash (e.g. <code className="text-sky-200">/scales#homo-sapiens</code>).
-          </p>
-        </div>
-
         <ScaleLadder />
-        <p className="text-xs leading-5 text-slate-500">
-          Positions are order-of-magnitude characteristic sizes on a base-10
-          log axis, not precise measurements.
-        </p>
       </section>
 
       <section className="flex flex-col gap-7 border-t border-white/10 pt-10">

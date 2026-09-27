@@ -50,7 +50,7 @@ function clampScenarioValue(value: number): number {
 
 export function parseScenarioHash(hash: string): ScenarioInputs | null {
   const raw = hash.replace(/^#/, "");
-  if (!raw.startsWith(scenarioHashId)) {
+  if (!raw.startsWith(`${scenarioHashId}?`)) {
     return null;
   }
 
@@ -60,13 +60,11 @@ export function parseScenarioHash(hash: string): ScenarioInputs | null {
   }
 
   const params = new URLSearchParams(raw.slice(queryStart + 1));
-  const freshwaterStress = Number(params.get("fw"));
-  const civicSpace = Number(params.get("cv"));
-  const healthcareAccess = Number(params.get("hc"));
-
-  if ([freshwaterStress, civicSpace, healthcareAccess].some((value) => Number.isNaN(value))) {
+  const rawValues = [params.get("fw"), params.get("cv"), params.get("hc")];
+  if (rawValues.some((value) => value === null || value.trim() === "" || !Number.isFinite(Number(value)))) {
     return null;
   }
+  const [freshwaterStress, civicSpace, healthcareAccess] = rawValues.map(Number);
 
   return {
     freshwaterStress: clampScenarioValue(freshwaterStress),

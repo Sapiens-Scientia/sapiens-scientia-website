@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { morbusAxisNames, morbusDiseases } from "@/lib/morbus";
+import { useUrlHash } from "@/hooks/use-url-hash";
 
 const axisAbbrev: Record<string, string> = {
   Anatomical: "Anat",
@@ -16,21 +17,25 @@ const axisAbbrev: Record<string, string> = {
 };
 
 export function MorbusAxisMatrix() {
+  const [, setHash] = useUrlHash();
+
   return (
-    <div className="overflow-x-auto border border-white/10 bg-white/[0.015]">
-      <table className="w-full min-w-[52rem] border-collapse text-left text-xs">
+    <div className="min-w-0 overflow-x-auto border border-white/10 bg-white/[0.015]" role="region" aria-label="Disease axes comparison; scroll horizontally to see all axes" tabIndex={0}>
+      <table className="relative w-full min-w-[52rem] border-collapse text-left text-xs">
+        <caption className="sr-only">Select a disease to explore its nine axes below.</caption>
         <thead>
           <tr className="border-b border-white/10 bg-white/[0.03]">
-            <th className="sticky left-0 z-10 bg-[#0a0a0a] px-3 py-2 font-semibold uppercase tracking-wider text-slate-400">
+            <th scope="col" className="sticky left-0 z-10 bg-[#0a0a0a] px-3 py-2 font-semibold uppercase tracking-wider text-slate-400">
               Disease
             </th>
             {morbusAxisNames.map((axis) => (
               <th
                 key={axis}
+                scope="col"
                 className="px-2 py-2 text-center font-semibold uppercase tracking-wider text-emerald-300/80"
                 title={axis}
               >
-                {axisAbbrev[axis] ?? axis.slice(0, 4)}
+                <abbr title={axis} className="cursor-help no-underline">{axisAbbrev[axis] ?? axis.slice(0, 4)}</abbr>
               </th>
             ))}
           </tr>
@@ -38,14 +43,26 @@ export function MorbusAxisMatrix() {
         <tbody>
           {morbusDiseases.map((disease) => (
             <tr key={disease.id} className="border-b border-white/5 hover:bg-white/[0.02]">
-              <td className="sticky left-0 z-10 bg-[#0a0a0a] px-3 py-2">
+              <th scope="row" className="sticky left-0 z-10 bg-[#0a0a0a] px-3 py-2">
                 <Link
                   href={`/platforms/persona/salus/soma/morbus#${disease.id}`}
+                  onClick={(event) => {
+                    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+                    event.preventDefault();
+                    setHash(disease.id);
+                    requestAnimationFrame(() => {
+                      document.getElementById("morbus-detail-title")?.focus({ preventScroll: true });
+                      document.getElementById("morbus-explorer")?.scrollIntoView({
+                        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
+                        block: "start",
+                      });
+                    });
+                  }}
                   className="font-medium text-slate-200 underline-offset-2 hover:text-emerald-200 hover:underline"
                 >
                   {disease.name.replace(/ \(.*\)$/, "")}
                 </Link>
-              </td>
+              </th>
               {morbusAxisNames.map((axisName) => {
                 const axis = disease.axes.find((entry) => entry.axis === axisName);
                 return (
@@ -54,9 +71,9 @@ export function MorbusAxisMatrix() {
                       <span
                         className="inline-block size-2 rounded-full bg-emerald-400/80"
                         title={`${axisName}: ${axis.value}`}
-                      />
+                      ><span className="sr-only">{axis.value}</span></span>
                     ) : (
-                      <span className="inline-block size-2 rounded-full bg-white/10" title="No axis entry" />
+                      <span className="inline-block size-2 rounded-full bg-white/10" title="No axis entry"><span className="sr-only">No axis entry</span></span>
                     )}
                   </td>
                 );

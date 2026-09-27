@@ -13,6 +13,7 @@ Use these docs before changing platform names, ontology terms, major narrative l
 | `ROUTES.md` | Current public route inventory and the primary source modules/components behind each route. |
 | `DECISIONS.md` | Durable decisions that should survive across implementation sessions. |
 | `AGENT_HANDOFF.md` | Practical handoff context, current constraints, and future-agent notes. |
+| `UX_REVIEW.md` | The latest experience redesign, visual fidelity review, and verification record. |
 
 ## Editing Rules
 

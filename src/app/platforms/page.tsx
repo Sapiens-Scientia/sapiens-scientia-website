@@ -46,9 +46,9 @@ export default function PlatformsPage() {
     <main className="min-h-screen bg-black px-6 py-8 text-white sm:px-10">
       <SiteNav />
 
-      <section className="mx-auto flex max-w-7xl flex-col gap-14">
+      <section id="main-content" tabIndex={-1} className="mx-auto flex max-w-7xl flex-col gap-14">
         <header className="max-w-4xl">
-          <p className="mb-3 text-xl font-medium uppercase tracking-[0.24em] text-blue-400">
+          <p className="mb-4 text-xs font-medium uppercase tracking-[0.16em] text-blue-400">
             Sapiens Scientia · Architecture
           </p>
           <h1 className="text-3xl font-semibold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl sm:whitespace-nowrap">

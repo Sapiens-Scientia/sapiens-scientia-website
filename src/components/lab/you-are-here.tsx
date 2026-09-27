@@ -6,7 +6,7 @@
 //
 // The brief (self-prompt):
 //   One unbroken shot from the first instant of time to the reader's own
-//   ticking second. Scroll is the only control and it changes meaning as you
+//   ticking second. Scroll changes meaning as you
 //   go: first a throttle through time (all 13.8 billion years), then a descent
 //   through space (an exponential zoom down the reader's cosmic mailing
 //   address), then it runs out of universe and lands on NOW — a live clock,
@@ -25,10 +25,13 @@
 import * as THREE from "three";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { Volume2, VolumeX } from "lucide-react";
+import { ArrowRight, Volume2, VolumeX } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppProvider } from "@/components/earthview/contexts";
 import { useSunlightPreview } from "@/hooks/use-sunlight-preview";
+import { useCameraMirror } from "@/hooks/use-camera-mirror";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { guessLocation } from "@/lib/guess-location";
 import { getChartContinuationCamera } from "@/components/lab/earth-geometry";
 
@@ -781,12 +784,10 @@ function makeDrone(): Drone {
 // ---------------------------------------------------------------------------
 
 type AltimeterMode = "time" | "geo" | "scale" | "now";
-type MirrorState = "off" | "pending" | "on" | "denied";
 
 export function YouAreHereExperience() {
   const journeyRef = useRef<HTMLDivElement | null>(null);
   const canvasHostRef = useRef<HTMLDivElement | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
   const mirrorWinRef = useRef<HTMLDivElement | null>(null);
   const cursorRef = useRef<HTMLDivElement | null>(null);
   const readoutBigRef = useRef<HTMLDivElement | null>(null);
@@ -805,17 +806,22 @@ export function YouAreHereExperience() {
   const smoothRef = useRef(0);
   const geoRef = useRef(guessLocation());
   const droneRef = useRef<Drone | null>(null);
-  const mirrorOnRef = useRef(false);
   const scrollAnimRef = useRef(0);
 
-  const [beatIdx, setBeatIdx] = useState(-1);
+  const [beatIdx, setBeatIdx] = useState(0);
+  const reducedMotion = useReducedMotion();
+  const compactViewport = useMediaQuery("(max-height: 680px)");
+  const [readingMode, setReadingMode] = useState<"auto" | "text" | "animated">("auto");
+  const [graphicsFailed, setGraphicsFailed] = useState(false);
+  const [addressOpen, setAddressOpen] = useState(false);
+  const textOnly = graphicsFailed || readingMode === "text" || (readingMode === "auto" && reducedMotion);
   const [addrCount, setAddrCount] = useState(0);
   const [altMode, setAltMode] = useState<AltimeterMode>("time");
   const [started, setStarted] = useState(false);
   const [arrived, setArrived] = useState(false); // Movement III reached
   const [ended, setEnded] = useState(false);
   const [soundOn, setSoundOn] = useState(false);
-  const [mirror, setMirror] = useState<MirrorState>("off");
+  const { mirror, videoRef, mirrorOnRef, openMirror, closeMirror } = useCameraMirror();
   // the Current Earth Sunlight finale layer
   const sunLayerRef = useRef<HTMLDivElement | null>(null);
   const sunAlphaRef = useRef(0);
@@ -837,13 +843,28 @@ export function YouAreHereExperience() {
 
   // ------------------------------------------------------------------ scene
   useEffect(() => {
+    if (textOnly) return;
     const host = canvasHostRef.current;
     if (!host) return;
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     // the Thread of Life only shows at lg+; below it, keep the globe centred
     const wideMql = window.matchMedia("(min-width: 1024px)");
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    } catch {
+      // WebGL availability is an external capability, only known after trying
+      // to allocate the renderer. A failed allocation must expose the story.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setGraphicsFailed(true);
+      return;
+    }
+    const handleContextLost = (event: Event) => {
+      event.preventDefault();
+      setGraphicsFailed(true);
+    };
+    renderer.domElement.addEventListener("webglcontextlost", handleContextLost);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.8));
     renderer.setClearColor(0x000000, 0);
     host.appendChild(renderer.domElement);
@@ -1898,6 +1919,7 @@ export function YouAreHereExperience() {
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", resize);
+      renderer.domElement.removeEventListener("webglcontextlost", handleContextLost);
       scene.traverse((obj) => {
         const mesh = obj as THREE.Mesh;
         if (mesh.geometry) mesh.geometry.dispose();
@@ -1905,19 +1927,20 @@ export function YouAreHereExperience() {
       for (const d of disposables) d.dispose();
       renderer.domElement.remove();
     };
-    // The scene mounts exactly once; everything dynamic flows through refs.
-  }, []);
+    // Recreate the scene only when switching presentation or motion preference;
+    // scroll and live scene state still flow through refs.
+  }, [textOnly, reducedMotion, mirrorOnRef]);
 
   // ----------------------------------------------------------------- sound
   const toggleSound = useCallback(() => setSoundOn((on) => !on), []);
   useEffect(() => {
-    if (soundOn) {
+    if (soundOn && !textOnly) {
       if (!droneRef.current) droneRef.current = makeDrone();
       droneRef.current.enable();
     } else {
       droneRef.current?.disable();
     }
-  }, [soundOn]);
+  }, [soundOn, textOnly]);
   useEffect(() => () => { droneRef.current?.dispose(); }, []);
 
   // Paint the document itself in the lab's void-black and disable overscroll
@@ -1948,7 +1971,7 @@ export function YouAreHereExperience() {
   // Arriving at /#end (Meta Earth's "You Are Here" link) opens on the
   // journey's last frame — the live finale — instead of the singularity.
   useEffect(() => {
-    if (window.location.hash !== "#end") return;
+    if (textOnly || window.location.hash !== "#end") return;
     const jump = () => {
       window.scrollTo(0, document.documentElement.scrollHeight);
     };
@@ -1956,40 +1979,7 @@ export function YouAreHereExperience() {
     // Once more after layout settles, in case fonts/canvas shifted heights.
     const raf = requestAnimationFrame(jump);
     return () => cancelAnimationFrame(raf);
-  }, []);
-
-  // --------------------------------------------------------------- mirror
-  const openMirror = useCallback(async () => {
-    setMirror("pending");
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user" }, audio: false,
-      });
-      const video = videoRef.current;
-      if (!video) {
-        stream.getTracks().forEach((tr) => tr.stop());
-        return;
-      }
-      video.srcObject = stream;
-      await video.play();
-      mirrorOnRef.current = true;
-      setMirror("on");
-    } catch {
-      setMirror("denied");
-    }
-  }, []);
-  const closeMirror = useCallback(() => {
-    const video = videoRef.current;
-    const stream = video?.srcObject as MediaStream | null;
-    stream?.getTracks().forEach((tr) => tr.stop());
-    if (video) video.srcObject = null;
-    mirrorOnRef.current = false;
-    setMirror("off");
-  }, []);
-  useEffect(() => () => {
-    const stream = videoRef.current?.srcObject as MediaStream | null;
-    stream?.getTracks().forEach((tr) => tr.stop());
-  }, []);
+  }, [textOnly]);
 
   // --------------------------------------------------------------- restart
   const backToBeginning = useCallback(() => {
@@ -1999,6 +1989,12 @@ export function YouAreHereExperience() {
     const startY = window.scrollY;
     const startT = performance.now();
     cancelAnimationFrame(scrollAnimRef.current);
+    window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      smoothRef.current = 0;
+      window.scrollTo(0, top);
+      return;
+    }
     const step = (now: number) => {
       const t = clamp01((now - startT) / 2200);
       const e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -2008,17 +2004,103 @@ export function YouAreHereExperience() {
     scrollAnimRef.current = requestAnimationFrame(step);
   }, []);
 
+  useEffect(() => () => cancelAnimationFrame(scrollAnimRef.current), []);
+
+  const jumpToChapter = (progress: number) => {
+    const root = journeyRef.current;
+    if (!root) return;
+    cancelAnimationFrame(scrollAnimRef.current);
+    closeMirror();
+    smoothRef.current = progress;
+    const rect = root.getBoundingClientRect();
+    window.scrollTo({ top: window.scrollY + rect.top + (rect.height - window.innerHeight) * progress, behavior: "instant" });
+    const url = new URL(window.location.href);
+    url.hash = progress === 1 ? "end" : "";
+    window.history.replaceState(window.history.state, "", url);
+  };
+
+  const readJourney = () => {
+    closeMirror();
+    setSoundOn(false);
+    setReadingMode("text");
+    window.scrollTo({ top: 0, behavior: "instant" });
+  };
+
+  if (textOnly) {
+    return (
+      <div className="yah mx-auto max-w-3xl px-6 py-10 text-[#f2ece1] sm:px-10 sm:py-16">
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#ffb454]">Sapiens Scientia</p>
+        <h2 className="mt-5 text-4xl font-light leading-tight sm:text-6xl">The History of the Universe</h2>
+        <p className="mt-5 max-w-xl text-base leading-7 text-[#c9c2b4]">
+          From the Big Bang to your place on Earth. Read the journey at your own pace.
+        </p>
+        <p className="mt-3 text-sm leading-6 text-[#c9c2b4]">
+          {graphicsFailed ? "The 3D view is unavailable in this browser. The complete story is here to read." : reducedMotion ? "Reading view respects your reduced motion preference." : "Reading view"}
+        </p>
+        {!graphicsFailed ? (
+          <button type="button" onClick={() => {
+            smoothRef.current = 0;
+            setReadingMode("animated");
+            window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+            window.scrollTo({ top: 0, behavior: "instant" });
+          }} className="mt-6 min-h-11 cursor-pointer border border-[#ffb454]/40 px-4 py-2 text-sm text-[#ffb454] hover:bg-[#ffb454]/10">
+            Open the visual journey
+          </button>
+        ) : null}
+        <ol className="mt-12 space-y-10 border-l border-[#ffb454]/25 pl-6 sm:pl-8">
+          {BEATS.filter((item) => !item.live).map((item) => (
+            <li key={item.title}>
+              <h3 className="text-xl font-medium text-[#f2ece1] sm:text-2xl">{item.title}</h3>
+              <p className="mt-3 text-base leading-7 text-[#c9c2b4]">{item.sub?.replace(" Scroll, and let it begin.", "")}</p>
+            </li>
+          ))}
+        </ol>
+        <Link href="/meta-earth" className="mt-12 inline-flex min-h-12 items-center border border-[#ffb454]/45 px-5 py-3 text-sm font-semibold text-[#ffb454] hover:bg-[#ffb454]/10">
+          Enter Meta Earth <span aria-hidden="true" className="ml-3">→</span>
+        </Link>
+      </div>
+    );
+  }
+
   // ------------------------------------------------------------------- UI
   const beat = beatIdx >= 0 ? BEATS[beatIdx] : null;
 
   return (
-    <div ref={journeyRef} className="yah relative bg-[#050308] text-[#f2ece1]">
+    <div ref={journeyRef} className={`yah ${ended ? "yah-ended" : ""} relative bg-[#050308] text-[#f2ece1]`}>
       <style>{`
         @keyframes yahRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes yahLine { from { opacity: 0; transform: translateX(8px); } to { opacity: 1; transform: translateX(0); } }
         @keyframes yahPulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
         @keyframes yahFade { from { opacity: 0; } to { opacity: 1; } }
         .yah ::selection { background: rgba(255, 180, 84, 0.35); }
+        @media (max-width: 639px) and (max-height: 680px) {
+          .yah-playback { top: 180px; left: 20px; right: 20px; transform: none; translate: none; flex-direction: row; justify-content: flex-end; gap: 18px; }
+          .yah-playback button { min-height: 44px; gap: 7px; padding: 0 8px; background: rgba(5,3,8,.9); border: 1px solid rgba(242,236,225,.25); border-radius: 999px; }
+          .yah-playback button > span:first-child { font-size: 9px; letter-spacing: .12em; }
+          .yah-playback button > span:last-child { height: 28px; width: 28px; border: 0; background: transparent; }
+          .yah-finale-panel { bottom: 72px; }
+          .yah-finale-copy h2 { font-size: 18px; line-height: 1.35; }
+          .yah-finale-copy p { font-size: 11px; }
+          .yah-finale-copy { margin-bottom: 10px; }
+        }
+        @media (max-height: 500px) and (min-width: 640px) {
+          .yah-ended .yah-narration { display: none; }
+          .yah-finale-panel { right: 20px; left: auto; bottom: 18px; width: min(43vw, 370px); transform: none; translate: none; text-align: left; padding: 16px; background: rgba(5,3,8,.92); border: 1px solid rgba(242,236,225,.15); }
+          .yah-finale-copy { display: block; margin-bottom: 12px; }
+          .yah-finale-copy h2 { font-size: 19px; line-height: 1.3; }
+          .yah-finale-copy p { margin-top: 8px; font-size: 11px; }
+          .yah-finale-panel > div > a { margin-top: 10px; }
+          .yah-address { top: 112px; left: 160px; right: auto; width: auto; text-align: left; }
+          .yah-address-toggle { display: block; }
+          .yah-address-label { display: none; }
+          #cosmic-address-lines { display: none; max-height: calc(100dvh - 170px); overflow: auto; background: #050308; border: 1px solid rgba(242,236,225,.15); padding: 12px; }
+          #cosmic-address-lines[data-open="true"] { display: block; }
+          .yah-restart { top: 112px; }
+          .yah-playback { top: 178px; left: 32px; right: auto; transform: none; translate: none; flex-direction: row; gap: 24px; }
+          .yah-sound { bottom: 18px; left: 32px; right: auto; }
+          .yah-ended .yah-readout { display: none; }
+        }
+
         .yah-life-node { transition: opacity 0.55s ease; }
         .yah-life-node circle { transition: r 0.4s ease, fill 0.4s ease; }
         .yah-life-active circle.yah-life-dot { r: 4.4px; fill: #fff6e6; }
@@ -2029,7 +2111,30 @@ export function YouAreHereExperience() {
       `}</style>
 
       <div className="relative" style={{ height: `calc(${SCROLL_VH}vh + 100vh)` }}>
-        <div className="sticky top-0 h-screen w-full overflow-hidden">
+        <div className="sticky top-0 h-dvh w-full overflow-hidden">
+          <div className="absolute left-5 top-4 z-50 flex max-w-[calc(100%-2.5rem)] flex-col items-start gap-2 sm:left-8 sm:top-5">
+            <div className="flex w-full items-center justify-between gap-5 text-[10px] text-[#c9c2b4]">
+              <span className="font-semibold uppercase tracking-[0.16em]">Sapiens Scientia</span>
+              <Link href="/meta-earth" className="inline-flex min-h-8 items-center gap-2 underline underline-offset-4 hover:text-[#ffb454]">Explore the atlas<ArrowRight size={12} aria-hidden="true" /></Link>
+            </div>
+            <div className="flex items-center gap-4">
+              <select
+                aria-label="Jump to a chapter"
+                value={altMode === "time" ? "0" : altMode === "geo" ? "0.395" : altMode === "scale" ? "0.625" : "1"}
+                onChange={(event) => jumpToChapter(Number(event.target.value))}
+                className="min-h-10 max-w-52 cursor-pointer rounded border border-[#f2ece1]/20 bg-[#050308]/90 px-2 text-xs font-normal tracking-normal text-[#f2ece1]"
+                style={{ colorScheme: "dark" }}
+              >
+                <option value="0">01 · The beginning</option>
+                <option value="0.395">02 · Earth &amp; life</option>
+                <option value="0.625">03 · Across space</option>
+                <option value="1">04 · You are here</option>
+              </select>
+            <button type="button" onClick={readJourney} className="min-h-10 cursor-pointer text-xs text-[#c9c2b4] underline underline-offset-4 hover:text-[#ffb454]">
+              Read the journey
+            </button>
+            </div>
+          </div>
           {/* the mirror — a live porthole hanging from your pin on the globe */}
           <div
             ref={mirrorWinRef}
@@ -2079,6 +2184,7 @@ export function YouAreHereExperience() {
             >
               <AppProvider>
                 <SunlightGlobe
+                  showGuides={!compactViewport}
                   className="h-full w-full"
                   mode="globe"
                   isDarkOverride
@@ -2113,14 +2219,6 @@ export function YouAreHereExperience() {
             className="pointer-events-none absolute z-30 -translate-x-1/2 translate-y-3 whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.22em] text-[#ffb454] opacity-0 transition-opacity duration-300"
           >
             ↑ you are here
-          </div>
-
-          {/* lab badge */}
-          <div
-            className={`pointer-events-none absolute left-5 top-5 z-40 text-[10px] font-semibold uppercase tracking-[0.26em] text-[#8a8378] transition-opacity duration-1000 ${started ? "opacity-100" : "opacity-0"}`}
-          >
-            <span className="sm:hidden">Sapiens Scientia</span>
-            <span className="hidden sm:inline">Sapiens Scientia · The History of the Universe</span>
           </div>
 
           {/* spacetime altimeter */}
@@ -2252,12 +2350,23 @@ export function YouAreHereExperience() {
 
           {/* the cosmic address, typing itself */}
           <div
-            className={`absolute right-5 top-5 z-40 w-[15.5rem] text-right transition-opacity duration-1000 sm:right-8 sm:top-8 ${started ? "opacity-100" : "opacity-0"}`}
+            aria-hidden={!started}
+            className={`yah-address absolute right-5 top-32 z-40 text-right transition-opacity duration-1000 sm:right-8 sm:top-8 sm:w-[15.5rem] ${started ? "opacity-100" : "pointer-events-none opacity-0"}`}
           >
-            <div className="text-[9px] font-bold uppercase tracking-[0.3em] text-[#8a8378]">
+            <button
+              type="button"
+              onClick={() => setAddressOpen(!addressOpen)}
+              aria-expanded={addressOpen}
+              aria-controls="cosmic-address-lines"
+              tabIndex={started ? 0 : -1}
+              className="yah-address-toggle min-h-10 cursor-pointer border border-[#f2ece1]/20 bg-[#050308]/80 px-3 text-[10px] font-medium text-[#c9c2b4] backdrop-blur-sm sm:hidden"
+            >
+              Your cosmic address <span aria-hidden="true">{addressOpen ? "▴" : "▾"}</span>
+            </button>
+            <div className="yah-address-label hidden text-[9px] font-bold uppercase tracking-[0.3em] text-[#8a8378] sm:block">
               your cosmic address
             </div>
-            <div className="mt-2 space-y-1 font-mono">
+            <div id="cosmic-address-lines" data-open={addressOpen} className={`${addressOpen ? "block" : "hidden"} mt-2 w-[15.5rem] space-y-1 border border-[#f2ece1]/15 bg-[#050308]/95 p-3 font-mono sm:block sm:border-0 sm:bg-transparent sm:p-0`}>
               {ADDRESS.slice(0, addrCount).map((line) => (
                 <div key={line.line} className="[animation:yahLine_0.7s_ease_both]">
                   <span className="text-[11px] tracking-[0.08em] text-[#f2ece1]">
@@ -2285,7 +2394,7 @@ export function YouAreHereExperience() {
 
           {/* the big readout */}
           <div
-            className={`pointer-events-none absolute bottom-6 left-5 z-40 transition-opacity duration-1000 sm:bottom-8 sm:left-8 ${started ? "opacity-100" : "opacity-0"}`}
+            className={`yah-readout pointer-events-none absolute bottom-6 left-5 z-40 transition-opacity duration-1000 sm:bottom-8 sm:left-8 ${started ? "opacity-100" : "opacity-0"}`}
           >
             <div ref={readoutBigRef} className="font-mono text-xl font-extralight tabular-nums tracking-tight text-[#f2ece1] sm:text-4xl" />
             <div ref={readoutSmallRef} className="mt-1 text-[10px] uppercase tracking-[0.2em] text-[#8a8378]" />
@@ -2313,7 +2422,7 @@ export function YouAreHereExperience() {
           ) : beat ? (
             <div
               key={beatIdx}
-              className="pointer-events-none absolute bottom-[26vh] left-1/2 z-40 w-[min(38rem,calc(100vw-3rem))] -translate-x-1/2 text-center [animation:yahRise_0.7s_ease_both] sm:bottom-[16vh]"
+              className={`yah-narration pointer-events-none absolute bottom-[26vh] left-1/2 z-40 w-[min(38rem,calc(100vw-3rem))] -translate-x-1/2 text-center [animation:yahRise_0.7s_ease_both] sm:bottom-[16vh] ${ended ? "hidden sm:block" : ""}`}
             >
               <h2 className="text-2xl font-light leading-tight tracking-tight text-[#f2ece1] drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)] sm:text-4xl">
                 {beat.title}
@@ -2330,12 +2439,18 @@ export function YouAreHereExperience() {
 
           {/* the mirror invitation (raised above the clock line on phones) */}
           {arrived ? (
-            <div className="absolute bottom-20 left-1/2 z-40 -translate-x-1/2 text-center sm:bottom-8">
+            <div className="yah-finale-panel absolute bottom-20 left-1/2 z-40 w-[calc(100%-2.5rem)] max-w-lg -translate-x-1/2 text-center sm:bottom-8 sm:w-auto sm:max-w-none">
+              {ended && beat ? (
+                <div className="yah-finale-copy mb-4 sm:hidden">
+                  <h2 className="text-xl font-light leading-snug text-[#f2ece1] drop-shadow-[0_2px_12px_rgba(0,0,0,0.95)]">{beat.title}</h2>
+                  <p className="mt-2 text-xs leading-5 text-[#c9c2b4]">{beat.sub}</p>
+                </div>
+              ) : null}
               {mirror === "on" ? (
                 <button
                   type="button"
                   onClick={closeMirror}
-                  className="cursor-pointer border border-[#f2ece1]/15 bg-black/40 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#c9c2b4] backdrop-blur-sm transition-colors hover:text-[#f2ece1]"
+                  className="min-h-11 cursor-pointer border border-[#f2ece1]/15 bg-black/40 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#c9c2b4] backdrop-blur-sm transition-colors hover:text-[#f2ece1]"
                 >
                   ✕ close the mirror
                 </button>
@@ -2345,7 +2460,7 @@ export function YouAreHereExperience() {
                     type="button"
                     onClick={openMirror}
                     disabled={mirror === "pending"}
-                    className="cursor-pointer whitespace-nowrap border border-[#ffb454]/40 bg-black/40 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#ffb454] backdrop-blur-sm transition-colors hover:bg-[#ffb454]/10 disabled:opacity-50"
+                    className="min-h-11 cursor-pointer whitespace-nowrap border border-[#ffb454]/40 bg-black/40 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#ffb454] backdrop-blur-sm transition-colors hover:bg-[#ffb454]/10 disabled:opacity-50"
                   >
                     {mirror === "pending" ? "opening…" : "☉ see yourself in it"}
                   </button>
@@ -2362,7 +2477,9 @@ export function YouAreHereExperience() {
               >
                 <Link
                   href="/meta-earth"
-                  className="mt-4 inline-block whitespace-nowrap border border-[#ffb454]/45 bg-black/40 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#ffb454] backdrop-blur-sm transition-colors hover:bg-[#ffb454]/10"
+                  tabIndex={ended ? 0 : -1}
+                  aria-hidden={!ended}
+                  className="mt-4 inline-flex min-h-11 items-center whitespace-nowrap border border-[#ffb454]/45 bg-black/40 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#ffb454] backdrop-blur-sm transition-colors hover:bg-[#ffb454]/10"
                 >
                   enter meta earth →
                 </Link>
@@ -2372,7 +2489,7 @@ export function YouAreHereExperience() {
 
           {/* finale animations: play controls on the right edge */}
           {finaleOn ? (
-            <div className="absolute right-5 top-1/2 z-40 flex -translate-y-1/2 flex-col items-end gap-3 sm:right-8">
+            <div className="yah-playback absolute right-5 top-1/2 z-40 flex -translate-y-1/2 flex-col items-end gap-3 sm:right-8">
               {(
                 [
                   ["day", "one day"],
@@ -2397,7 +2514,7 @@ export function YouAreHereExperience() {
                       {label}
                     </span>
                     <span
-                      className={`flex h-9 w-9 items-center justify-center rounded-full border backdrop-blur-sm transition-colors ${
+                      className={`flex h-11 w-11 items-center justify-center rounded-full border backdrop-blur-sm transition-colors ${
                         active
                           ? "border-[#ffb454]/70 bg-[#ffb454]/10 text-[#ffb454]"
                           : "border-[#f2ece1]/25 bg-black/40 text-[#c9c2b4] group-hover:border-[#f2ece1]/55 group-hover:text-[#f2ece1]"
@@ -2426,7 +2543,7 @@ export function YouAreHereExperience() {
             aria-pressed={soundOn}
             aria-label={soundOn ? "Turn sound off" : "Turn sound on"}
             title={soundOn ? "Sound on" : "Sound off"}
-            className={`absolute bottom-6 right-5 z-40 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border bg-black/40 backdrop-blur-sm transition-colors sm:bottom-8 sm:right-8 ${
+            className={`yah-sound absolute bottom-6 right-5 z-40 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border bg-black/40 backdrop-blur-sm transition-colors sm:bottom-8 sm:right-8 ${
               soundOn
                 ? "border-[#ffb454]/70 bg-[#ffb454]/10 text-[#ffb454]"
                 : "border-[#f2ece1]/25 text-[#c9c2b4] hover:border-[#f2ece1]/55 hover:text-[#f2ece1]"
@@ -2444,7 +2561,7 @@ export function YouAreHereExperience() {
             <button
               type="button"
               onClick={backToBeginning}
-              className="absolute left-5 top-12 z-40 cursor-pointer border border-[#f2ece1]/15 bg-black/40 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#c9c2b4] backdrop-blur-sm transition-colors hover:text-[#f2ece1]"
+              className="yah-restart absolute left-5 top-32 z-40 min-h-10 cursor-pointer border border-[#f2ece1]/15 bg-black/40 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#c9c2b4] backdrop-blur-sm transition-colors hover:text-[#f2ece1] sm:left-8"
             >
               ↺ begin again
             </button>

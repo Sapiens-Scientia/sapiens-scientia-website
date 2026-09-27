@@ -1,7 +1,8 @@
 "use client";
 
 /* eslint-disable */
-import React, { useEffect, useMemo, useState } from 'react'
+import { useVisibleScene } from '@/hooks/use-visible-scene'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Axis3d, ChevronLeft, ChevronRight, Globe2, Layers2, Moon, Orbit, RotateCcw, Sparkles, Sun, Waves } from 'lucide-react'
 import { GALAXY_TIMELINE_EVENTS, UnifiedEarthView, type EarthVisualizationMode } from './globe/UnifiedEarthView'
 import { AppProvider, useAppContext } from './contexts'
@@ -61,6 +62,8 @@ function formatEventBrowserYear(yearMa: string) {
 
 function EarthView3DExperience() {
   const { isDark } = useAppContext()
+  const sceneRef = useRef<HTMLDivElement>(null)
+  const sceneActive = useVisibleScene(sceneRef)
   const [mode, setMode] = useState<EarthVisualizationMode>(readStoredMode)
   const [sceneIsDark, setSceneIsDark] = useState(() => readStoredSceneDark(isDark))
   const [previewMode, setPreviewMode] = useState<PreviewMode | null>(null)
@@ -151,10 +154,11 @@ function EarthView3DExperience() {
   }
 
   return (
-    <main className="earth-shell">
+    <div ref={sceneRef} className="earth-shell" data-scene-theme={sceneIsDark ? "dark" : "light"}>
       <section className={`earth-stage ${effectiveSceneIsDark ? 'earth-stage-dark' : 'earth-stage-light'}`} aria-label={`${activeMode.label} visualization`}>
         <UnifiedEarthView
           className="earth-canvas"
+          paused={!sceneActive}
           mode={mode}
           dateOffsetMs={mode === 'globe' ? dateOffsetMs : 0}
           rotationOffsetMs={mode === 'globe' ? rotationOffsetMs : 0}
@@ -172,7 +176,7 @@ function EarthView3DExperience() {
         <header className="earth-topbar" aria-label="Visualization controls">
           <div className="earth-brand">
             <span>Earth View</span>
-            <h1>{activeMode.label}</h1>
+            <h2>{activeMode.label}</h2>
           </div>
 
           <div className="earth-actions">
@@ -349,7 +353,7 @@ function EarthView3DExperience() {
         )}
 
       </section>
-    </main>
+    </div>
   )
 }
 

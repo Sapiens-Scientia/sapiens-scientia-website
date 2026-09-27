@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BigBangUniverseExperience } from "@/components/big-bang-universe-experience";
 import { SiteFooter } from "@/components/site-footer";
-import { SiteNav } from "@/components/site-nav";
+import { BreadcrumbTrail } from "@/components/breadcrumb-trail";
 
 export const metadata: Metadata = {
   title: "Big Bang Universe | Sapiens Scientia",
@@ -13,21 +13,15 @@ export const metadata: Metadata = {
 export default function BigBangUniversePage() {
   return (
     <main className="flex min-h-screen flex-col bg-black px-6 py-8 text-white sm:px-10">
-      <SiteNav
-        links={[
-          { href: "/", label: "Home" },
-          { href: "/projects", label: "Projects" },
-          { href: "/chronos", label: "Chronos" },
-        ]}
-      />
+      <BreadcrumbTrail path="/projects/big-bang-universe" />
 
-      <section className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6">
+      <section id="main-content" tabIndex={-1} className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6">
         <header className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-end">
           <div>
-            <p className="mb-3 text-xl font-medium uppercase tracking-[0.24em] text-blue-400">
+            <p className="mb-4 text-xs font-medium uppercase tracking-[0.16em] text-blue-400">
               Sapiens Scientia
             </p>
-            <h1 className="max-w-4xl text-5xl font-semibold tracking-normal sm:text-7xl">
+            <h1 className="max-w-4xl text-4xl font-medium leading-[1.08] tracking-tight sm:text-6xl lg:text-7xl">
               Big Bang Universe
             </h1>
             <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-300">
@@ -55,7 +49,7 @@ export default function BigBangUniversePage() {
 
         <section
           aria-label="Interactive Big Bang Universe diagram"
-          className="relative min-h-[680px] overflow-hidden border border-white/10 bg-black shadow-[0_0_44px_rgba(15,23,42,0.45)] lg:h-[min(76vh,900px)]"
+          className="relative h-[760px] min-h-[680px] overflow-hidden border border-white/10 bg-black shadow-[0_0_44px_rgba(15,23,42,0.45)] lg:h-[min(76vh,900px)]"
         >
           <BigBangUniverseExperience embedded className="absolute inset-0 min-h-0" />
         </section>

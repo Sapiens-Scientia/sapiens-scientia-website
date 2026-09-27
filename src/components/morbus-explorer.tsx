@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { morbusDiseases, morbusGroupKinds, type DiseaseData } from "@/lib/morbus";
+import { useUrlHash } from "@/hooks/use-url-hash";
 
 const diseaseGroups = morbusGroupKinds;
 
@@ -539,19 +540,16 @@ function getDigitalQueriesForDisease(disease: DiseaseData): DigitalQuery[] {
 }
 
 export function MorbusExplorer() {
-  const [selectedId, setSelectedId] = useState(() => {
-    if (typeof window === "undefined") {
-      return morbusDiseases[0]?.id ?? "ibd";
-    }
-
-    const hashId = window.location.hash.replace(/^#/, "");
-    return morbusDiseases.some((disease) => disease.id === hashId)
-      ? hashId
-      : morbusDiseases[0]?.id ?? "ibd";
-  });
-  const [selectedAxisIndex, setSelectedAxisIndex] = useState<number | null>(null);
-  const [query, setQuery] = useState("");
-  const [groupFilter, setGroupFilter] = useState<string | null>(null);
+  const [hash, setHash] = useUrlHash();
+  const [selectedAxis, setSelectedAxis] = useState<{ diseaseId: string; index: number } | null>(null);
+  const [shareStatus, setShareStatus] = useState<{ diseaseId: string; message: string } | null>(null);
+  const [filters, setFilters] = useState<{ hash: string; query: string; group: string | null }>({ hash: "", query: "", group: null });
+  // A new link from the matrix or browser history must not stay hidden behind
+  // a filter from the previous selection. In-list selections retain filters.
+  const query = filters.hash === hash ? filters.query : "";
+  const groupFilter = filters.hash === hash ? filters.group : null;
+  const setQuery = (next: string) => setFilters({ hash, query: next, group: groupFilter });
+  const setGroupFilter = (next: string | null) => setFilters({ hash, query, group: next });
   const [activeDbTab, setActiveDbTab] = useState<"PubMed" | "ClinVar" | "UniProt" | "Open Targets">("PubMed");
 
   const filteredDiseases = useMemo(
@@ -567,15 +565,13 @@ export function MorbusExplorer() {
   );
 
   const activeDisease =
-    morbusDiseases.find((disease) => disease.id === selectedId) || morbusDiseases[0];
+    filteredDiseases.find((disease) => disease.id === hash) || filteredDiseases[0] || morbusDiseases[0];
 
   const selectDisease = (id: string) => {
-    setSelectedId(id);
-    setSelectedAxisIndex(null);
-
-    if (typeof window !== "undefined") {
-      window.history.replaceState(null, "", `#${id}`);
-    }
+    setSelectedAxis(null);
+    setShareStatus(null);
+    setFilters({ hash: id, query, group: groupFilter });
+    setHash(id);
   };
 
   const copyDiseaseLink = async () => {
@@ -583,12 +579,19 @@ export function MorbusExplorer() {
       return;
     }
 
-    const url = `${window.location.origin}${window.location.pathname}#${selectedId}`;
+    setFilters({ hash: activeDisease.id, query, group: groupFilter });
+    setHash(activeDisease.id);
+    const url = window.location.href;
     try {
       await navigator.clipboard.writeText(url);
+      setShareStatus({ diseaseId: activeDisease.id, message: "Link copied." });
     } catch {
-      // Clipboard may be unavailable; hash URL still works manually.
+      setShareStatus({ diseaseId: activeDisease.id, message: "Copy is unavailable. The address bar now contains the link to this disease." });
     }
+  };
+
+  const clearFilters = () => {
+    setFilters({ hash, query: "", group: null });
   };
 
   const digitalQueries = useMemo(() => getDigitalQueriesForDisease(activeDisease), [activeDisease]);
@@ -604,11 +607,11 @@ export function MorbusExplorer() {
   const dbTabs: ("PubMed" | "ClinVar" | "UniProt" | "Open Targets")[] = ["PubMed", "ClinVar", "UniProt", "Open Targets"];
 
   return (
-    <div className="flex flex-col gap-8 border border-white/10 bg-white/[0.015] p-6 sm:p-8 rounded-lg">
+    <div id="morbus-explorer" className="flex min-w-0 scroll-mt-24 flex-col gap-8 border border-white/10 bg-white/[0.015] p-4 sm:p-8 rounded-lg">
       <div className="flex flex-col gap-4 border-b border-white/10 pb-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <p className="font-mono text-xs uppercase tracking-[0.16em] text-slate-500">
-            {morbusDiseases.length} exemplar diseases · 9 axes each
+          <p role="status" aria-atomic="true" className="font-mono text-xs uppercase tracking-[0.16em] text-slate-400">
+            {filteredDiseases.length} of {morbusDiseases.length} exemplars · 9 axes each
           </p>
           <input
             type="search"
@@ -616,14 +619,15 @@ export function MorbusExplorer() {
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search diseases or axes…"
             aria-label="Search Morbus diseases"
-            className="w-full max-w-sm border border-white/10 bg-black/40 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-emerald-300/40 focus:outline-none"
+            className="w-full max-w-sm border border-white/10 bg-black/40 px-3 py-2 text-base text-slate-100 placeholder:text-slate-500 focus:border-emerald-300/40 focus:outline-none"
           />
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by disease group">
           <button
             type="button"
             onClick={() => setGroupFilter(null)}
+            aria-pressed={groupFilter === null}
             className={`cursor-pointer px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-all ${
               groupFilter === null
                 ? "bg-emerald-300/15 text-emerald-200"
@@ -637,6 +641,7 @@ export function MorbusExplorer() {
               key={group}
               type="button"
               onClick={() => setGroupFilter(groupFilter === group ? null : group)}
+              aria-pressed={groupFilter === group}
               className={`cursor-pointer px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-all ${
                 groupFilter === group
                   ? "bg-emerald-300/15 text-emerald-200"
@@ -648,14 +653,21 @@ export function MorbusExplorer() {
           ))}
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        {query || groupFilter ? (
+          <button type="button" onClick={clearFilters} className="min-h-10 w-fit cursor-pointer text-sm text-emerald-300 underline underline-offset-4">
+            Clear filters
+          </button>
+        ) : null}
+
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Select a disease">
           {filteredDiseases.map((disease) => (
             <button
               key={disease.id}
               type="button"
               onClick={() => selectDisease(disease.id)}
+              aria-pressed={activeDisease.id === disease.id}
               className={`cursor-pointer px-4 py-2 text-sm font-medium transition-all ${
-                selectedId === disease.id
+                activeDisease.id === disease.id
                   ? "border-b-2 border-emerald-300 text-emerald-100 bg-white/[0.04]"
                   : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.02]"
               }`}
@@ -664,19 +676,26 @@ export function MorbusExplorer() {
             </button>
           ))}
           {filteredDiseases.length === 0 && (
-            <p className="text-sm text-slate-500">No diseases match this filter.</p>
+            <div className="w-full py-6 text-center">
+              <h3 className="text-lg font-medium text-slate-100">No diseases found</h3>
+              <p className="mt-2 text-sm text-slate-400">Try a broader term or clear the filters to see all exemplars.</p>
+              <button type="button" onClick={clearFilters} className="mt-4 min-h-11 cursor-pointer border border-emerald-300/40 px-4 py-2 text-sm text-emerald-200 hover:bg-emerald-300/10">
+                Reset search and groups
+              </button>
+            </div>
           )}
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-[1.2fr_0.8fr]">
+      {filteredDiseases.length > 0 ? <>
+      <div className="grid min-w-0 gap-6 md:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-3">
             <span className="rounded bg-emerald-300/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-300">
               {activeDisease.group}
             </span>
           </div>
-          <h3 className="text-2xl font-bold text-slate-100">{activeDisease.name}</h3>
+          <h3 id="morbus-detail-title" tabIndex={-1} className="text-2xl font-bold text-slate-100">{activeDisease.name}</h3>
           <button
             type="button"
             onClick={copyDiseaseLink}
@@ -684,6 +703,9 @@ export function MorbusExplorer() {
           >
             Copy share link
           </button>
+          <p role="status" className="text-sm text-emerald-300">
+            {shareStatus?.diseaseId === activeDisease.id ? shareStatus.message : ""}
+          </p>
           <p className="text-base leading-7 text-slate-300">{activeDisease.description}</p>
         </div>
 
@@ -707,12 +729,13 @@ export function MorbusExplorer() {
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {activeDisease.axes.map((axis, index) => {
-            const isSelected = selectedAxisIndex === index;
+            const isSelected = selectedAxis?.diseaseId === activeDisease.id && selectedAxis.index === index;
             return (
               <button
                 key={axis.axis}
                 type="button"
-                onClick={() => setSelectedAxisIndex(isSelected ? null : index)}
+                onClick={() => setSelectedAxis(isSelected ? null : { diseaseId: activeDisease.id, index })}
+                aria-expanded={isSelected}
                 className={`text-left p-4 border transition-all cursor-pointer flex flex-col gap-2 rounded-lg ${
                   isSelected
                     ? "border-emerald-300 bg-emerald-300/[0.06] shadow-[0_0_18px_rgba(52,211,153,0.15)]"
@@ -754,11 +777,13 @@ export function MorbusExplorer() {
         </div>
 
         {/* Database Selector Tabs */}
-        <div className="flex flex-wrap gap-2 border-b border-white/5 pb-3">
+        <div className="flex flex-wrap gap-2 border-b border-white/5 pb-3" role="group" aria-label="Select a knowledge database">
           {dbTabs.map((tab) => (
             <button
               key={tab}
+              type="button"
               onClick={() => setActiveDbTab(tab)}
+              aria-pressed={activeDbTab === tab}
               className={`cursor-pointer px-3.5 py-1.5 text-xs font-mono font-semibold transition-all rounded border ${
                 activeDbTab === tab
                   ? dbColors[tab] + " shadow-[0_0_12px_rgba(56,189,248,0.1)]"
@@ -775,9 +800,9 @@ export function MorbusExplorer() {
 
         {/* Crosswalk Visualizer Panel */}
         {activeQuery && (
-          <div className="grid gap-6 lg:grid-cols-[1fr_1fr] bg-white/[0.01] border border-white/5 p-5 rounded-lg animate-fadeIn">
+          <div className="grid min-w-0 gap-6 lg:grid-cols-2 bg-white/[0.01] border border-white/5 p-4 sm:p-5 rounded-lg animate-fadeIn">
             {/* Query & Findings info */}
-            <div className="flex flex-col gap-4">
+            <div className="flex min-w-0 flex-col gap-4">
               <div>
                 <p className="text-[0.68rem] font-mono font-semibold text-slate-400 uppercase tracking-widest">
                   Simulated API Request URL
@@ -805,8 +830,8 @@ export function MorbusExplorer() {
             </div>
 
             {/* Simulated Response JSON */}
-            <div className="flex flex-col gap-2">
-              <div className="flex justify-between items-center">
+            <div className="flex min-w-0 flex-col gap-2">
+              <div className="flex flex-wrap justify-between items-center gap-2">
                 <span className="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider">
                   Simulated JSON Response
                 </span>
@@ -821,6 +846,7 @@ export function MorbusExplorer() {
           </div>
         )}
       </div>
+      </> : null}
     </div>
   );
 }

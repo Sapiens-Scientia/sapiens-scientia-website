@@ -23,12 +23,7 @@ export default function ChronosPage() {
         accent="#f59e0b"
         title="The Arc of Time"
       >
-        <p>
-          The Ladder of Scale climbs through space; this is its twin in time.
-          Reality is not only a nested hierarchy of systems — it is a sequence,
-          each scale switched on at a moment in cosmic history. This is that
-          history made navigable: a powers-of-ten arc from the Big Bang, through
-          the origin of life and mind, to the human present.
+        <p>Follow the emergence of matter, life, and civilization. Select a moment to explore its place in deep time and the systems it connects.
         </p>
       </PageHeader>
 
@@ -39,25 +34,7 @@ export default function ChronosPage() {
       </div>
 
       <section className="flex flex-col gap-7">
-        <div className="max-w-3xl">
-          <h2 className="text-3xl font-semibold tracking-normal text-white sm:text-4xl">
-            One Arc, Four Eons
-          </h2>
-          <p className="mt-4 text-base leading-7 text-slate-300">
-            Plotted on a logarithmic time axis with the Big Bang as year 0, the
-            whole of recorded history is the thin bright tail of the arc: the
-            last twelve thousand years of farming, writing, and science take up
-            as much room as billions of years of cosmic and geological time.
-            Deep time is compressed; the human present is stretched wide. Hover
-            any moment to read it.
-          </p>
-        </div>
-
         <ChronosArc />
-        <p className="text-xs leading-5 text-slate-500">
-          Labels show elapsed time since the Big Bang. Rail positions use
-          order-of-magnitude time on a base-10 log axis, not precise dates.
-        </p>
       </section>
 
       <section className="flex flex-col gap-7 border-t border-white/10 pt-10">

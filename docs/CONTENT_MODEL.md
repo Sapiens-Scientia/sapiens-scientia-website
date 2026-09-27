@@ -24,6 +24,30 @@ The Meta Earth page visualizes this as:
 - Sapiens Platforms: Persona, Societas, and Terra as interpretive bridges.
 - Meta-Entities: the structures that build and maintain all of the above.
 
+## Public Exploration Model
+
+The atlas at `/meta-earth` is the everyday entry into the knowledge project.
+Its public invitation is **"One world. Many ways in."**: explore the human, the
+societies we build, and the planet we share. Persona, Societas, and Terra are
+three interpretive lenses on one connected world, not separate products.
+
+The site presents three complementary ways to navigate: **Scale**, **Time**, and
+**Evidence**. These are wayfinding labels, not new ontology domains. "Atlas" in
+navigation refers to the Meta Earth hub; "The Map" links to `/ontology`, which
+retains the full canonical concepts and relationships.
+
+Suggested question paths connect existing pages:
+
+- What keeps a body alive? Soma → Salus → Morbus.
+- How do societies hold together? Meta-Entities → Societas → Platforms.
+- What is changing on Earth? Terra → Vital Signs → Data Index.
+
+These paths are reading suggestions, not parent/child relationships. The
+canonical nesting remains Persona → Salus → Soma → Morbus, with Domus alongside
+Salus. `src/lib/exploration.ts` owns their public copy. The homepage's History of
+the Universe remains an optional narrative entry, with chapter controls and a
+text reading mode. Visitors can enter the atlas without completing the journey.
+
 ## Planetary Connectivity Layer
 
 The Meta Earth hero globe carries a surface network layer arguing that humanity
@@ -72,6 +96,12 @@ competing explanations. Persona reads the individual; Societas reads the
 Meta-Entity.
 
 The source of truth is `src/lib/meta-entities.ts`.
+
+The platform introductions make the same framing concrete: Persona treats the
+person as a living system; Societas studies systems that outlive their members;
+Terra studies the planet's connected systems. They offer entry actions into the
+existing modules and explorers, not a claim that these illustrative tools are
+validated causal models.
 
 ## Platform Naming
 
@@ -139,7 +169,7 @@ Both the Earth Systems and Digital Systems trees are projected from `src/lib/ont
 
 ## Morbus Model
 
-Morbus is the disease ontology module inside Salus. It organizes disease knowledge using:
+Morbus is the disease ontology module inside Soma, within Salus. It organizes disease knowledge using:
 
 - Primary Etiologic Diseases.
 - Secondary Physiological Diseases.
@@ -188,7 +218,11 @@ Domains:
 - Land, Water & Life.
 - Waste & Pollution.
 
-The source of truth is `src/lib/vital-signs.ts`.
+The source of truth is `src/lib/vital-signs.ts`. Distinguish curated reference
+values, illustrative trend extensions, and fetched source observations in public
+copy. "Live" means a source refresh, not real-time measurement, and does not make
+the whole historical chart an authoritative source dataset. Projections and the
+Societas/Terra/cross-platform simulators are illustrative, not validated forecasts.
 
 ## Data Index
 

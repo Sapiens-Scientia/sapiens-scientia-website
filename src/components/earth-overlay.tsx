@@ -23,28 +23,10 @@ import { useTheme } from "@/lib/use-theme";
 
 
 
+// Keep wheel/touch input away from the globe; native overflow scrolling handles
+// the panel. React wheel listeners are passive, so do not cancel or emulate it.
 function stopPanelScrollPropagation(event: React.WheelEvent<HTMLElement> | React.TouchEvent<HTMLElement>) {
   event.stopPropagation();
-}
-
-function useManualPanelWheel<TElement extends HTMLElement>() {
-  const panelRef = useRef<TElement>(null);
-
-  const handlePanelWheel = (event: React.WheelEvent<TElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    const panel = panelRef.current;
-
-    if (!panel) {
-      return;
-    }
-
-    const deltaScale = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? panel.clientHeight : 1;
-    panel.scrollTop += event.deltaY * deltaScale;
-  };
-
-  return { handlePanelWheel, panelRef };
 }
 
 function ConceptColumn({
@@ -270,7 +252,7 @@ function EarthVitalSignsPanel({
   signs: EarthVitalSign[];
   status: LiveVitalSignsStatus;
 }) {
-  const { handlePanelWheel, panelRef } = useManualPanelWheel<HTMLElement>();
+  const panelRef = useRef<HTMLElement>(null);
   const [expandedLabel, setExpandedLabel] = useState<string | null>(null);
 
   return (
@@ -285,8 +267,7 @@ function EarthVitalSignsPanel({
       aria-label="Earth Vital Signs"
       onPointerEnter={onPanelPointerEnter}
       onPointerLeave={onPanelPointerLeave}
-      onWheel={handlePanelWheel}
-      onWheelCapture={handlePanelWheel}
+      onWheelCapture={stopPanelScrollPropagation}
       onTouchMoveCapture={stopPanelScrollPropagation}
     >
       <div className="flex items-start justify-between gap-4">
@@ -297,15 +278,15 @@ function EarthVitalSignsPanel({
           <h2 className="mt-1 text-2xl font-semibold leading-none text-white max-lg:text-xl">Earth Vital Signs</h2>
           {status === "loading" ? (
             <p className="mt-1 font-mono text-[0.58rem] uppercase tracking-[0.14em] text-slate-500">
-              Syncing live readings…
+              Checking source updates…
             </p>
           ) : status === "error" ? (
             <p className="mt-1 font-mono text-[0.58rem] uppercase tracking-[0.14em] text-amber-400/80">
-              Live sync unavailable — showing cached values
+              Source updates unavailable — showing reference values
             </p>
           ) : liveIds.size > 0 ? (
             <p className="mt-1 font-mono text-[0.58rem] uppercase tracking-[0.14em] text-emerald-400/80">
-              {liveIds.size} live reading{liveIds.size === 1 ? "" : "s"}
+              {liveIds.size} source update{liveIds.size === 1 ? "" : "s"}
             </p>
           ) : null}
         </div>
@@ -321,40 +302,36 @@ function EarthVitalSignsPanel({
           return (
             <div
               key={sign.label}
-              onClick={() => setExpandedLabel(isExpanded ? null : sign.label)}
               className={[
                 "border-t border-white/10 pt-2.5 first:border-t-0 first:pt-0 cursor-pointer select-none rounded p-1.5 -mx-1.5 transition-all duration-300",
                 isExpanded ? "bg-white/[0.04] border-l-2 border-l-sky-500 pl-2.5" : "hover:bg-white/[0.02]"
               ].join(" ")}
             >
-              <dt className="flex items-center justify-between gap-3">
+              <dt>
+                <button type="button" className="flex min-h-11 w-full flex-wrap items-center justify-between gap-2 text-left" aria-expanded={isExpanded} aria-controls={`vital-detail-${sign.id}`} onClick={() => setExpandedLabel(isExpanded ? null : sign.label)}>
                 <span className="flex min-w-0 items-center gap-2 text-sm font-semibold text-slate-100">
                   <span
                     className="h-2 w-2 shrink-0 rounded-full"
                     style={{ backgroundColor: sign.accent, boxShadow: `0 0 12px ${sign.accent}` }}
                   />
-                  <span className="truncate">{sign.label}</span>
+                  <span>{sign.label}</span>
                 </span>
                 <span className="flex shrink-0 items-center gap-1.5 font-mono text-xs text-sky-200 font-bold">
                   {liveIds.has(sign.id) ? (
                     <span
                       className="rounded border border-emerald-400/35 bg-emerald-400/10 px-1 py-px text-[0.5rem] font-bold uppercase tracking-[0.12em] text-emerald-300"
-                      title="Live reading from public data source"
+                      title="Latest available observation retrieved from this public source"
                     >
-                      live
+                      updated
                     </span>
                   ) : null}
                   {sign.value}
                 </span>
+                </button>
               </dt>
-              <dd
-                className={[
-                  "overflow-hidden transition-all duration-300 ease-in-out",
-                  isExpanded ? "max-h-[380px] opacity-100 mt-2" : "max-h-0 opacity-0 pointer-events-none"
-                ].join(" ")}
-              >
+              <dd id={`vital-detail-${sign.id}`} hidden={!isExpanded} className="mt-2">
                 <p className="font-mono text-[0.62rem] uppercase tracking-[0.12em] text-slate-400">
-                  Last updated: {sign.updated}
+                  Observation / reference: {sign.updated}
                 </p>
                 {dynamicStatusBar && (
                   <div className="mt-2.5" onClick={(e) => e.stopPropagation()}>
@@ -379,7 +356,7 @@ function EarthVitalSignsPanel({
                 )}
                 <p className="mt-2 text-xs leading-snug text-slate-300/84">{sign.note}</p>
                 
-                <VitalSignChart sign={sign} />
+                {isExpanded && <div className="mt-3"><VitalSignChart sign={sign} /></div>}
 
                 <div className="mt-2">
                   <a
@@ -410,7 +387,7 @@ function DataIndexPanel({
   onPanelPointerEnter: () => void;
   onPanelPointerLeave: () => void;
 }) {
-  const { handlePanelWheel, panelRef } = useManualPanelWheel<HTMLElement>();
+  const panelRef = useRef<HTMLElement>(null);
 
   return (
     <aside
@@ -424,8 +401,7 @@ function DataIndexPanel({
       aria-label="Global Data Index"
       onPointerEnter={onPanelPointerEnter}
       onPointerLeave={onPanelPointerLeave}
-      onWheel={handlePanelWheel}
-      onWheelCapture={handlePanelWheel}
+      onWheelCapture={stopPanelScrollPropagation}
       onTouchMoveCapture={stopPanelScrollPropagation}
     >
       <div className="flex items-start justify-between gap-4">
@@ -786,7 +762,7 @@ function MetaSystemsPanel({
   onPanelPointerLeave: () => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const { handlePanelWheel, panelRef } = useManualPanelWheel<HTMLElement>();
+  const panelRef = useRef<HTMLElement>(null);
 
   return (
     <aside
@@ -800,8 +776,7 @@ function MetaSystemsPanel({
       aria-label="Meta Systems"
       onPointerEnter={onPanelPointerEnter}
       onPointerLeave={onPanelPointerLeave}
-      onWheel={handlePanelWheel}
-      onWheelCapture={handlePanelWheel}
+      onWheelCapture={stopPanelScrollPropagation}
       onTouchMoveCapture={stopPanelScrollPropagation}
     >
       <div className="flex items-center justify-center gap-2">

@@ -157,3 +157,8 @@ export const chronosSources = [
   { label: "Smithsonian — Human Origins", href: "https://humanorigins.si.edu/" },
   { label: "International Commission on Stratigraphy — Geologic Time Scale", href: "https://stratigraphy.org/chart" },
 ];
+
+/** Stable readable fragment for sharing a selected moment. */
+export function chronosEventSlug(name: string) {
+  return name.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
