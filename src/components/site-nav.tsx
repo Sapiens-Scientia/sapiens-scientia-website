@@ -135,10 +135,9 @@ export function SiteNav() {
     >
       <div className="flex items-center justify-between gap-3 lg:contents">
         <Link href="/meta-earth" onClick={closeNavigation} className="flex min-h-11 shrink-0 items-center gap-2.5 text-base tracking-tight text-slate-100 sm:text-lg lg:order-1">
-          <svg viewBox="0 0 34 32" className="h-7 w-7 shrink-0" aria-hidden="true">
-            <path d="M17 5C9 8 4 15 4 24c9 5 17 5 26 0C30 15 25 8 17 5Z" fill="none" stroke="currentColor" strokeOpacity=".45" strokeWidth="1" />
-            <circle cx="17" cy="5" r="4" fill="var(--atlas-persona)" /><circle cx="4" cy="24" r="4.5" fill="var(--atlas-societas)" /><circle cx="30" cy="24" r="4.5" fill="var(--atlas-terra)" />
-          </svg>
+          {/* Native image keeps this tiny vector identical to the browser icon. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/sapiens-scientia.svg" width="32" height="32" className="h-8 w-8 shrink-0" alt="" />
           Sapiens Scientia
         </Link>
         <div className="flex items-center gap-1 lg:order-3">

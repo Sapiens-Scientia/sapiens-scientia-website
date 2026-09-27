@@ -244,3 +244,13 @@ illustrative projections. Display a newly fetched observation as a separate poin
 with its own period and provider, retaining the original series attribution.
 Never substitute zero for missing data or treat a partial NASA year as a published
 annual mean. Preserve successful source updates when another source fails.
+
+## Shared atlas identity mark
+
+The site icon uses three equal cyan, lavender, and sage arcs around a warm-white
+center on ink. It represents Persona, Societas, and Terra as complementary lenses
+on one shared world; it does not introduce an ontology term. The navigation, SVG
+favicon, multi-resolution ICO, and Apple touch icon share this artwork. The source
+is `src/app/icon.svg`; run `node scripts/generate-icons.mjs` to refresh the public
+brand SVG/512px PNG, 180px Apple icon, and 16/32/48px ICO after edits. Next.js file
+metadata conventions register the browser and Apple icons automatically.
